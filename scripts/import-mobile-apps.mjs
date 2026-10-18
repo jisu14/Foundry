@@ -15,6 +15,13 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+  fetchWithRetry,
+  sanitizeError,
+  validateAndDeduplicateObservations,
+  chunkedUpsertObservations,
+  updateSourceOperationalStatus
+} from './utils/production-importer.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,7 +147,7 @@ const VALID_INDICATORS = new Map([
   ]
 ]);
 
-// Helper for Supabase REST API requests using service-role authorization
+// Helper for Supabase REST API requests using service-role authorization with retries
 async function supabaseRequest(endpoint, options = {}) {
   const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${endpoint}`;
   const headers = {
@@ -150,14 +157,14 @@ async function supabaseRequest(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     ...options,
     headers
-  });
+  }, { maxRetries: 3, initialDelayMs: 1000 });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Supabase REST error (${response.status}): ${errorText}`);
+    throw new Error(`Supabase REST error (${response.status}): ${sanitizeError(errorText)}`);
   }
 
   const contentType = response.headers.get('content-type') || '';
@@ -378,22 +385,29 @@ async function runImporter() {
       if (errors.length > 5) console.warn(`  ...and ${errors.length - 5} more.`);
     }
 
-    // 5. Batch Upsert to Supabase
-    console.log('[STEP 4/4] Upserting country observations to Supabase in batches...');
-    const BATCH_SIZE = 100;
-    let totalUpserted = 0;
-
-    for (let i = 0; i < observationsToUpsert.length; i += BATCH_SIZE) {
-      const chunk = observationsToUpsert.slice(i, i + BATCH_SIZE);
-      await supabaseRequest('country_observations?on_conflict=country_code,indicator_code,year', {
-        method: 'POST',
-        headers: { 'Prefer': 'resolution=merge-duplicates' },
-        body: JSON.stringify(chunk)
-      });
-      totalUpserted += chunk.length;
-      process.stdout.write(`\rUpserted ${totalUpserted} / ${observationsToUpsert.length} records...`);
+    // 4. Validate, quarantine corrupted records, and deduplicate before sending
+    const { validObservations, quarantined, stats } = validateAndDeduplicateObservations(observationsToUpsert);
+    if (quarantined.length > 0) {
+      console.warn(`  ⚠ Quarantined ${quarantined.length} malformed records from CSV.`);
+      errors.push(...quarantined.map(q => ({ row: q.row, error: q.reason })));
     }
-    console.log('\n✓ Batch upsert completed successfully.');
+    if (stats.duplicatesResolved > 0) {
+      console.log(`  ℹ Deduplicated ${stats.duplicatesResolved} duplicate records in input.`);
+    }
+
+    // 5. Batch Upsert to Supabase with automatic retry
+    console.log('[STEP 4/4] Upserting country observations to Supabase with exponential backoff...');
+    const { totalUpserted, errors: chunkErrors } = await chunkedUpsertObservations(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      validObservations,
+      { chunkSize: 200 }
+    );
+
+    if (chunkErrors.length > 0) {
+      errors.push(...chunkErrors.map(ce => ({ error: ce.error })));
+    }
+    console.log(`\n✓ Upserted ${totalUpserted} records successfully.`);
 
     // 6. Coverage Breakdown
     const sortedYears = Array.from(observedYears).sort((a, b) => a - b);
@@ -426,9 +440,12 @@ async function runImporter() {
           countries_count: observedCountries.size,
           indicators_count: observationsByIndicator.size,
           errors: errors.slice(0, 50),
-          summary: summaryText
+          summary: sanitizeError(summaryText)
         })
       });
+
+      // Update operational status on source catalog
+      await updateSourceOperationalStatus(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SOURCE_META.id, finalStatus);
     }
 
     console.log('\n============================================================');
@@ -437,7 +454,7 @@ async function runImporter() {
     console.log('============================================================\n');
 
   } catch (err) {
-    console.error(`\n\x1b[31m[FATAL ERROR] Ingestion failed: ${err.message}\x1b[0m`);
+    console.error(`\n\x1b[31m[FATAL ERROR] Ingestion failed: ${sanitizeError(err.message)}\x1b[0m`);
     if (importLogId) {
       try {
         await supabaseRequest(`market_import_logs?id=eq.${importLogId}`, {
@@ -445,10 +462,11 @@ async function runImporter() {
           body: JSON.stringify({
             completed_at: new Date().toISOString(),
             status: 'failed',
-            errors: [{ message: err.message, stack: err.stack }],
-            summary: `Fatal error during Eurostat mobile apps ingestion: ${err.message}`
+            errors: [{ message: sanitizeError(err.message) }],
+            summary: `Fatal error during Eurostat mobile apps ingestion: ${sanitizeError(err.message)}`
           })
         });
+        await updateSourceOperationalStatus(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SOURCE_META.id, 'failed');
       } catch (_) {}
     }
     process.exit(1);

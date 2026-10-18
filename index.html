@@ -1103,6 +1103,25 @@
           </div>
         </div>
 
+        <!-- Operational Health & Admin Alerts Banner -->
+        <div id="coverageAlertsBanner" class="coverage-alerts-banner healthy">
+          <div class="alerts-banner-header">
+            <div class="alerts-status-indicator">
+              <span class="alerts-icon" id="alertsBannerIcon">✓</span>
+              <div>
+                <strong id="alertsBannerTitle">All Data Ingestion Pipelines Nominal</strong>
+                <p id="alertsBannerSubtitle">Automated schedules and staleness thresholds active across all registered data providers.</p>
+              </div>
+            </div>
+            <div class="alerts-banner-meta">
+              <span class="badge-cadence" id="alertsBannerCadenceBadge">SCHEDULES ACTIVE</span>
+            </div>
+          </div>
+          <div id="coverageAlertsDetail" class="alerts-detail-container hidden">
+            <!-- Dynamic alerts when failures or staleness occur -->
+          </div>
+        </div>
+
         <!-- Coverage KPI Stats Bar -->
         <div class="coverage-stats-bar">
           <div class="coverage-kpi-card">

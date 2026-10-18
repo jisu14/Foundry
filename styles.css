@@ -2933,3 +2933,207 @@ input[type="range"]::-webkit-slider-thumb {
 .text-amber { color: #f59e0b !important; }
 .text-danger { color: #ef4444 !important; }
 
+/* ========================================================== */
+/* PRODUCTION OPERATIONS & HEALTH MONITORING                 */
+/* ========================================================== */
+.coverage-alerts-banner {
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coverage-alerts-banner.healthy {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.coverage-alerts-banner.warning {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.coverage-alerts-banner.critical {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.alerts-banner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.alerts-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alerts-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.coverage-alerts-banner.healthy .alerts-icon {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.coverage-alerts-banner.warning .alerts-icon {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.coverage-alerts-banner.critical .alerts-icon {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.alerts-status-indicator strong {
+  font-size: 0.92rem;
+  color: #ffffff;
+  display: block;
+}
+
+.alerts-status-indicator p {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 2px 0 0 0;
+  line-height: 1.35;
+}
+
+.alerts-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-cadence {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(45, 212, 191, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+
+.coverage-alerts-banner.warning .badge-cadence {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.coverage-alerts-banner.critical .badge-cadence {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.alerts-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.alert-item-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  background: #081711;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.alert-item-card.critical {
+  border-left: 3px solid #ef4444;
+}
+
+.alert-item-card.warning {
+  border-left: 3px solid #f59e0b;
+}
+
+.alert-item-content {
+  flex: 1;
+}
+
+.alert-item-title {
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.alert-item-msg {
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.source-cadence-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #051009;
+  border: 1px solid rgba(45, 212, 191, 0.15);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+}
+
+.source-cadence-label {
+  color: var(--text-dim);
+}
+
+.source-cadence-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+.source-staleness-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+
+.source-staleness-tag.fresh {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.source-staleness-tag.stale {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.source-staleness-tag.failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+

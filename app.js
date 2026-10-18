@@ -2391,6 +2391,14 @@ function buildCatalogFallbackCoverage() {
       sourceUrl: 'https://data.worldbank.org/',
       methodologyUrl: 'https://databank.worldbank.org/source/world-development-indicators',
       reuseTerms: 'Creative Commons Attribution 4.0 International (CC-BY 4.0)',
+      updateCadence: 'Quarterly',
+      refreshScheduleCron: '0 2 1 * *',
+      stalenessThresholdDays: 45,
+      consecutiveFailures: 0,
+      daysSinceLastImport: null,
+      isStale: false,
+      isFailed: false,
+      operationalHealth: 'awaiting_ingest',
       lastImportedAt: null,
       importStatus: 'pending',
       importSucceeded: false,
@@ -2405,6 +2413,14 @@ function buildCatalogFallbackCoverage() {
       sourceUrl: 'https://datahub.itu.int/',
       methodologyUrl: 'https://www.itu.int/en/ITU-D/Statistics/Pages/stat/default.aspx',
       reuseTerms: 'ITU Non-Commercial Use with Attribution',
+      updateCadence: 'Semi-annual',
+      refreshScheduleCron: '0 3 1 */3 *',
+      stalenessThresholdDays: 120,
+      consecutiveFailures: 0,
+      daysSinceLastImport: null,
+      isStale: false,
+      isFailed: false,
+      operationalHealth: 'awaiting_ingest',
       lastImportedAt: null,
       importStatus: 'pending',
       importSucceeded: false,
@@ -2419,6 +2435,14 @@ function buildCatalogFallbackCoverage() {
       sourceUrl: 'https://databank.worldbank.org/source/global-financial-inclusion',
       methodologyUrl: 'https://www.worldbank.org/en/publication/globalfindex/methodology',
       reuseTerms: 'Creative Commons Attribution 4.0 International (CC-BY 4.0)',
+      updateCadence: 'Triennial survey wave',
+      refreshScheduleCron: '0 4 15 */3 *',
+      stalenessThresholdDays: 400,
+      consecutiveFailures: 0,
+      daysSinceLastImport: null,
+      isStale: false,
+      isFailed: false,
+      operationalHealth: 'awaiting_ingest',
       lastImportedAt: null,
       importStatus: 'pending',
       importSucceeded: false,
@@ -2433,6 +2457,14 @@ function buildCatalogFallbackCoverage() {
       sourceUrl: 'https://unctadstat.unctad.org/',
       methodologyUrl: 'https://unctadstat.unctad.org/EN/Methodology.html',
       reuseTerms: 'Creative Commons Attribution 3.0 IGO (CC-BY 3.0 IGO)',
+      updateCadence: 'Annual (Spring wave)',
+      refreshScheduleCron: '0 4 1 */2 *',
+      stalenessThresholdDays: 120,
+      consecutiveFailures: 0,
+      daysSinceLastImport: null,
+      isStale: false,
+      isFailed: false,
+      operationalHealth: 'awaiting_ingest',
       lastImportedAt: null,
       importStatus: 'pending',
       importSucceeded: false,
@@ -2447,6 +2479,14 @@ function buildCatalogFallbackCoverage() {
       sourceUrl: 'https://ec.europa.eu/eurostat/web/digital-economy-and-society',
       methodologyUrl: 'https://ec.europa.eu/eurostat/cache/metadata/en/isoc_i_esms.htm',
       reuseTerms: 'European Commission Decision 2011/833/EU (Open Data with Attribution)',
+      updateCadence: 'Annual (December wave)',
+      refreshScheduleCron: '0 5 1 */2 *',
+      stalenessThresholdDays: 120,
+      consecutiveFailures: 0,
+      daysSinceLastImport: null,
+      isStale: false,
+      isFailed: false,
+      operationalHealth: 'awaiting_ingest',
       lastImportedAt: null,
       importStatus: 'pending',
       importSucceeded: false,
@@ -2600,7 +2640,9 @@ function buildCatalogFallbackCoverage() {
     sourcesList: sources,
     indicatorsList,
     topicsList: Array.from(topicMap.values()),
-    missingIndustryDomains
+    missingIndustryDomains,
+    operationalAlerts: [],
+    overallOperationalStatus: 'healthy'
   };
 }
 
@@ -2649,6 +2691,9 @@ async function renderCoverageView() {
   // 1. Update KPI bar
   updateCoverageKPIs(coverageData);
 
+  // 1b. Update Operational Alerts Banner
+  updateCoverageAlertsBanner(coverageData);
+
   // 2. Render Source Health Cards
   renderSourceHealthGrid(coverageData.sourcesList);
 
@@ -2660,6 +2705,56 @@ async function renderCoverageView() {
 
   // 5. Render Identified Gaps & Advisor
   renderGapAnalysis(coverageData);
+}
+
+function updateCoverageAlertsBanner(data) {
+  const banner = document.getElementById('coverageAlertsBanner');
+  const icon = document.getElementById('alertsBannerIcon');
+  const title = document.getElementById('alertsBannerTitle');
+  const subtitle = document.getElementById('alertsBannerSubtitle');
+  const badge = document.getElementById('alertsBannerCadenceBadge');
+  const detailContainer = document.getElementById('coverageAlertsDetail');
+
+  if (!banner) return;
+
+  const alerts = data.operationalAlerts || [];
+  const status = data.overallOperationalStatus || (alerts.some(a => a.type === 'critical') ? 'critical' : alerts.some(a => a.type === 'warning') ? 'warning' : 'healthy');
+
+  banner.className = `coverage-alerts-banner ${status}`;
+
+  if (status === 'critical') {
+    if (icon) icon.textContent = '✕';
+    if (title) title.textContent = 'Critical Ingestion Pipeline Failure Detected';
+    if (subtitle) subtitle.textContent = 'One or more scheduled provider refreshes failed. Automated retry with exponential backoff is active.';
+    if (badge) badge.textContent = 'ATTENTION REQUIRED';
+  } else if (status === 'warning') {
+    if (icon) icon.textContent = '⚠';
+    if (title) title.textContent = 'Data Freshness Warning / Staleness Exceeded';
+    if (subtitle) subtitle.textContent = 'One or more data sources have exceeded their freshness threshold or logged partial ingestion warnings.';
+    if (badge) badge.textContent = 'STALENESS WARNING';
+  } else {
+    if (icon) icon.textContent = '✓';
+    if (title) title.textContent = 'All Data Ingestion Pipelines Nominal';
+    if (subtitle) subtitle.textContent = 'Automated refresh schedules and freshness thresholds configured across all 5 official data providers.';
+    if (badge) badge.textContent = 'SCHEDULES ACTIVE';
+  }
+
+  if (detailContainer) {
+    if (alerts.length > 0) {
+      detailContainer.classList.remove('hidden');
+      detailContainer.innerHTML = alerts.map(a => `
+        <div class="alert-item-card ${a.type}">
+          <div class="alert-item-content">
+            <div class="alert-item-title">${escapeHtml(a.title)}</div>
+            <div class="alert-item-msg">${escapeHtml(a.message)} ${a.action ? `<em>${escapeHtml(a.action)}</em>` : ''}</div>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      detailContainer.classList.add('hidden');
+      detailContainer.innerHTML = '';
+    }
+  }
 }
 
 function updateCoverageKPIs(data) {
@@ -2693,14 +2788,16 @@ function renderSourceHealthGrid(sources) {
 
   container.innerHTML = sources.map(src => {
     let statusPillHtml = '';
-    if (src.importSucceeded || src.importStatus === 'success') {
+    if (src.isFailed || src.operationalHealth === 'critical_failure') {
+      statusPillHtml = `<span class="health-pill failed">✕ Ingest Failed (Retrying)</span>`;
+    } else if (src.isStale || src.operationalHealth === 'warning_stale') {
+      statusPillHtml = `<span class="health-pill partial">⚠ Refresh Overdue</span>`;
+    } else if (src.importSucceeded || src.importStatus === 'success') {
       statusPillHtml = `<span class="health-pill success">✓ Succeeded</span>`;
     } else if (src.importStatus === 'running') {
       statusPillHtml = `<span class="health-pill running">⏳ Ingesting</span>`;
-    } else if (src.importStatus === 'partial_failure') {
+    } else if (src.importStatus === 'partial_failure' || src.operationalHealth === 'warning_partial') {
       statusPillHtml = `<span class="health-pill partial">⚠ Partial Ingest</span>`;
-    } else if (src.importStatus === 'failed') {
-      statusPillHtml = `<span class="health-pill failed">✕ Ingest Failed</span>`;
     } else {
       statusPillHtml = `<span class="health-pill awaiting">● Catalog Ready</span>`;
     }
@@ -2718,6 +2815,12 @@ function renderSourceHealthGrid(sources) {
       }
     }
 
+    const stalenessTag = src.isStale
+      ? `<span class="source-staleness-tag stale">Stale (${src.daysSinceLastImport}d ago)</span>`
+      : src.daysSinceLastImport !== null && src.daysSinceLastImport !== undefined
+        ? `<span class="source-staleness-tag fresh">Fresh (${src.daysSinceLastImport}d ago)</span>`
+        : `<span class="source-staleness-tag">Limit: ${src.stalenessThresholdDays || 90}d</span>`;
+
     return `
       <div class="source-health-card">
         <div class="source-health-header">
@@ -2728,10 +2831,24 @@ function renderSourceHealthGrid(sources) {
           ${statusPillHtml}
         </div>
 
+        <div class="source-cadence-row">
+          <span class="source-cadence-label">Schedule &amp; Cadence</span>
+          <span class="source-cadence-val">
+            ${escapeHtml(src.updateCadence || 'Periodic')}
+            <span class="badge-cadence" style="font-size: 0.65rem; margin-left: 4px;">cron: ${escapeHtml(src.refreshScheduleCron || '0 3 1 * *')}</span>
+          </span>
+        </div>
+
         <div class="source-health-metrics">
           <div class="source-metric-box">
             <span class="source-metric-label">Last Ingested</span>
             <span class="source-metric-val">${formattedDate}</span>
+          </div>
+          <div class="source-metric-box">
+            <span class="source-metric-label">Freshness Status</span>
+            <span class="source-metric-val" style="display: flex; align-items: center; margin-top: 2px;">
+              ${stalenessTag}
+            </span>
           </div>
           <div class="source-metric-box">
             <span class="source-metric-label">Live Observations</span>
@@ -2740,10 +2857,6 @@ function renderSourceHealthGrid(sources) {
           <div class="source-metric-box">
             <span class="source-metric-label">Covered Economies</span>
             <span class="source-metric-val" style="color: var(--cyan);">${src.countriesCoveredCount || 0} nations</span>
-          </div>
-          <div class="source-metric-box">
-            <span class="source-metric-label">Source ID</span>
-            <span class="source-metric-val" style="font-size: 0.74rem; color: #94a3b8;">${escapeHtml(src.id)}</span>
           </div>
         </div>
 

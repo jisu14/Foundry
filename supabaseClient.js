@@ -834,8 +834,18 @@
         { code: 'AUS', name: 'Australia' }
       ];
 
-      // 1. Process sources
+      // 1. Process sources & operational health
       const sourcesMap = new Map();
+      const operationalAlerts = [];
+
+      const defaultSchedules = {
+        world_bank: { cadence: 'Quarterly', cron: '0 2 1 * *', stalenessDays: 45 },
+        itu_datahub: { cadence: 'Semi-annual', cron: '0 3 1 */3 *', stalenessDays: 120 },
+        global_findex: { cadence: 'Triennial survey wave', cron: '0 4 15 */3 *', stalenessDays: 400 },
+        unctadstat: { cadence: 'Annual (Spring wave)', cron: '0 4 1 */2 *', stalenessDays: 120 },
+        eurostat: { cadence: 'Annual (December wave)', cron: '0 5 1 */2 *', stalenessDays: 120 }
+      };
+
       sources.forEach(src => {
         const srcLogs = importLogs.filter(l => l.source_id === src.id);
         const latestLog = srcLogs.length > 0 ? srcLogs[0] : null;
@@ -844,16 +854,25 @@
         const reportedObs = srcObs.filter(o => o.value !== null && o.value !== undefined);
         const uniqueCountries = new Set(reportedObs.map(o => o.country_code));
 
+        const defaults = defaultSchedules[src.id] || { cadence: 'Periodic', cron: '0 3 1 * *', stalenessDays: 90 };
+        const updateCadence = src.update_cadence || defaults.cadence;
+        const refreshScheduleCron = src.refresh_schedule_cron || defaults.cron;
+        const stalenessThresholdDays = src.staleness_threshold_days || defaults.stalenessDays;
+        const consecutiveFailures = src.consecutive_failures || 0;
+
         let lastImportedAt = null;
-        let importStatus = 'no_records';
+        let importStatus = src.last_import_status || 'no_records';
         let importSucceeded = false;
         let recordsCount = srcObs.length;
 
         if (latestLog) {
           lastImportedAt = latestLog.completed_at || latestLog.started_at;
-          importStatus = latestLog.status;
-          importSucceeded = latestLog.status === 'success';
+          importStatus = src.last_import_status || latestLog.status;
+          importSucceeded = (importStatus === 'success');
           recordsCount = latestLog.records_imported || srcObs.length;
+        } else if (src.last_imported_at) {
+          lastImportedAt = src.last_imported_at;
+          importSucceeded = (importStatus === 'success');
         } else if (srcObs.length > 0) {
           const timestamps = srcObs.map(o => new Date(o.imported_at).getTime()).filter(t => !isNaN(t));
           if (timestamps.length > 0) {
@@ -869,6 +888,56 @@
           importSucceeded = false;
         }
 
+        // Calculate staleness
+        let daysSinceLastImport = null;
+        let isStale = false;
+        if (lastImportedAt) {
+          const lastTs = new Date(lastImportedAt).getTime();
+          if (!isNaN(lastTs)) {
+            daysSinceLastImport = Math.max(0, Math.floor((Date.now() - lastTs) / (1000 * 60 * 60 * 24)));
+            if (daysSinceLastImport > stalenessThresholdDays) {
+              isStale = true;
+            }
+          }
+        }
+
+        const isFailed = (importStatus === 'failed' || consecutiveFailures > 0);
+
+        let operationalHealth = 'awaiting_ingest';
+        if (isFailed) {
+          operationalHealth = 'critical_failure';
+          operationalAlerts.push({
+            type: 'critical',
+            sourceId: src.id,
+            sourceName: src.name,
+            title: `Ingestion Error: ${src.name}`,
+            message: `Latest import failed${consecutiveFailures > 0 ? ` (${consecutiveFailures} consecutive failure[s])` : ''}. Automated retry with exponential backoff active.`,
+            action: 'Inspect audit logs or execute manual retry.'
+          });
+        } else if (importStatus === 'partial' || importStatus === 'partial_failure') {
+          operationalHealth = 'warning_partial';
+          operationalAlerts.push({
+            type: 'warning',
+            sourceId: src.id,
+            sourceName: src.name,
+            title: `Partial Ingestion: ${src.name}`,
+            message: 'Some records or indicators failed schema validation while others succeeded.',
+            action: 'Review ingest audit log details.'
+          });
+        } else if (isStale) {
+          operationalHealth = 'warning_stale';
+          operationalAlerts.push({
+            type: 'warning',
+            sourceId: src.id,
+            sourceName: src.name,
+            title: `Data Staleness Exceeded: ${src.name}`,
+            message: `Last imported ${daysSinceLastImport} days ago, exceeding the ${stalenessThresholdDays}-day freshness window for ${updateCadence} updates.`,
+            action: 'Scheduled cron refresh will trigger at next cycle.'
+          });
+        } else if (importSucceeded || recordsCount > 0) {
+          operationalHealth = 'healthy';
+        }
+
         sourcesMap.set(src.id, {
           id: src.id,
           name: src.name,
@@ -876,6 +945,14 @@
           sourceUrl: src.source_url,
           methodologyUrl: src.methodology_url,
           reuseTerms: src.reuse_terms,
+          updateCadence,
+          refreshScheduleCron,
+          stalenessThresholdDays,
+          consecutiveFailures,
+          daysSinceLastImport,
+          isStale,
+          isFailed,
+          operationalHealth,
           lastCheckedAt: src.last_checked_at,
           lastImportedAt,
           importStatus,
@@ -1082,6 +1159,12 @@
 
       const sortedYears = Array.from(allReportedYears).sort((a, b) => a - b);
 
+      const overallOperationalStatus = operationalAlerts.some(a => a.type === 'critical')
+        ? 'critical'
+        : operationalAlerts.some(a => a.type === 'warning')
+          ? 'warning'
+          : 'healthy';
+
       return {
         sourcesCount: sources.length,
         indicatorsCount: indicators.length,
@@ -1097,7 +1180,9 @@
         indicatorsList: Array.from(indicatorsMap.values()),
         topicsList,
         missingIndustryDomains,
-        benchmarkCountries
+        benchmarkCountries,
+        operationalAlerts,
+        overallOperationalStatus
       };
     }
   }

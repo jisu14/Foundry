@@ -1,0 +1,81 @@
+name: Foundry Market Data Production Refresh
+# ==============================================================================
+# Workflow: .github/workflows/market-data-refresh.yml
+# Description: Automated, secure production schedule for refreshing Foundry's
+#              market data sources based on each source's official update cadence.
+# Secrets Required in GitHub Repository Settings:
+#   - SUPABASE_URL: Project REST URL (e.g. https://xyz.supabase.co)
+#   - SUPABASE_SERVICE_ROLE_KEY: Private service_role key (bypasses RLS for write ops)
+# ==============================================================================
+
+on:
+  schedule:
+    # Runs daily at 03:00 UTC to evaluate due sources and check for staleness
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Refresh Execution Mode'
+        required: true
+        default: 'due-only'
+        type: choice
+        options:
+          - due-only
+          - all
+          - dry-run
+      target_source:
+        description: 'Specific Source ID (optional: world_bank, itu_datahub, global_findex, unctadstat, eurostat)'
+        required: false
+        default: ''
+
+jobs:
+  refresh-market-data:
+    name: Execute Scheduled Ingestion
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check Out Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install --production
+
+      - name: Execute Market Data Ingestion Orchestrator
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.mode }}" = "all" ]; then
+              ARGS="--all"
+            elif [ "${{ inputs.mode }}" = "dry-run" ]; then
+              ARGS="--dry-run"
+            else
+              ARGS="--due-only"
+            fi
+            if [ -n "${{ inputs.target_source }}" ]; then
+              ARGS="$ARGS --source=${{ inputs.target_source }}"
+            fi
+          else
+            ARGS="--due-only"
+          fi
+
+          echo "Executing: node scripts/run-all-scheduled-imports.mjs $ARGS"
+          node scripts/run-all-scheduled-imports.mjs $ARGS
+
+      - name: Health Audit Check
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "Running post-ingest dry-run audit..."
+          node scripts/run-all-scheduled-imports.mjs --dry-run

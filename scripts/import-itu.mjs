@@ -9,6 +9,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {
+  fetchWithRetry,
+  sanitizeError,
+  validateAndDeduplicateObservations,
+  chunkedUpsertObservations,
+  updateSourceOperationalStatus
+} from './utils/production-importer.mjs';
 
 // Load .env without third-party dependencies
 function loadEnv() {
@@ -92,7 +99,7 @@ const VALID_INDICATORS = new Map([
   ]
 ]);
 
-// Helper for Supabase REST API requests using service-role authorization
+// Helper for Supabase REST API requests using service-role authorization with retries
 async function supabaseRequest(endpoint, options = {}) {
   const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${endpoint}`;
   const headers = {
@@ -102,14 +109,14 @@ async function supabaseRequest(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     ...options,
     headers
-  });
+  }, { maxRetries: 3, initialDelayMs: 1000 });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Supabase REST error (${response.status}): ${errorText}`);
+    throw new Error(`Supabase REST error (${response.status}): ${sanitizeError(errorText)}`);
   }
 
   const contentType = response.headers.get('content-type') || '';
@@ -330,27 +337,32 @@ async function runImporter() {
       });
     }
 
-    console.log(`Parsed ${observationsToUpsert.length} observation records from CSV (${errors.length} validation issues flagged).`);
+    console.log(`Parsed ${observationsToUpsert.length} observation records from CSV.`);
 
-    // 4. Batch upsert into country_observations (chunk size 200)
-    const CHUNK_SIZE = 200;
-    let totalUpserted = 0;
-
-    for (let i = 0; i < observationsToUpsert.length; i += CHUNK_SIZE) {
-      const chunk = observationsToUpsert.slice(i, i + CHUNK_SIZE);
-      await supabaseRequest('country_observations?on_conflict=country_code,indicator_code,year', {
-        method: 'POST',
-        headers: {
-          'Prefer': 'resolution=merge-duplicates,return=representation'
-        },
-        body: JSON.stringify(chunk)
-      });
-      totalUpserted += chunk.length;
-      process.stdout.write(`\rUpserted ${totalUpserted} / ${observationsToUpsert.length} records...`);
+    // 4. Validate, quarantine corrupted records, and deduplicate before sending
+    const { validObservations, quarantined, stats } = validateAndDeduplicateObservations(observationsToUpsert);
+    if (quarantined.length > 0) {
+      console.warn(`  ⚠ Quarantined ${quarantined.length} malformed records from CSV.`);
+      errors.push(...quarantined.map(q => ({ row: q.row, error: q.reason })));
     }
-    console.log('\n✓ Batch upsert completed successfully.');
+    if (stats.duplicatesResolved > 0) {
+      console.log(`  ℹ Deduplicated ${stats.duplicatesResolved} duplicate records in input.`);
+    }
 
-    // 5. Build Comprehensive Coverage Summary
+    // 5. Batch upsert into country_observations with automatic retry
+    const { totalUpserted, errors: chunkErrors } = await chunkedUpsertObservations(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      validObservations,
+      { chunkSize: 200 }
+    );
+
+    if (chunkErrors.length > 0) {
+      errors.push(...chunkErrors.map(ce => ({ error: ce.error })));
+    }
+    console.log(`\n✓ Upserted ${totalUpserted} records successfully.`);
+
+    // 6. Build Comprehensive Coverage Summary
     const sortedYears = Array.from(observedYears).sort((a, b) => a - b);
     const yearRangeStr = sortedYears.length > 0 ? `${sortedYears[0]}–${sortedYears[sortedYears.length - 1]}` : 'N/A';
     const coverageDetails = [];
@@ -369,7 +381,7 @@ async function runImporter() {
 
     const finalStatus = errors.length > 0 ? (totalUpserted > 0 ? 'partial_failure' : 'failed') : 'success';
 
-    // 6. Update Market Import Audit Log
+    // 7. Update Market Import Audit Log
     await supabaseRequest(`market_import_logs?id=eq.${importLogId}`, {
       method: 'PATCH',
       body: JSON.stringify({
@@ -380,9 +392,12 @@ async function runImporter() {
         countries_count: observedCountries.size,
         indicators_count: observationsByIndicator.size,
         errors: errors.slice(0, 50),
-        summary: summaryText
+        summary: sanitizeError(summaryText)
       })
     });
+
+    // Update operational status on source catalog
+    await updateSourceOperationalStatus(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SOURCE_META.id, finalStatus);
 
     console.log('\n============================================================');
     console.log(`IMPORT EXECUTION FINISHED: Status [${finalStatus.toUpperCase()}]`);
@@ -390,17 +405,18 @@ async function runImporter() {
     console.log('============================================================\n');
 
   } catch (err) {
-    console.error(`\n\x1b[31m[FATAL ERROR] Ingestion failed: ${err.message}\x1b[0m`);
+    console.error(`\n\x1b[31m[FATAL ERROR] Ingestion failed: ${sanitizeError(err.message)}\x1b[0m`);
     try {
       await supabaseRequest(`market_import_logs?id=eq.${importLogId}`, {
         method: 'PATCH',
         body: JSON.stringify({
           completed_at: new Date().toISOString(),
           status: 'failed',
-          errors: [{ message: err.message, stack: err.stack }],
-          summary: `Fatal error during ITU CSV ingestion: ${err.message}`
+          errors: [{ message: sanitizeError(err.message) }],
+          summary: `Fatal error during ITU CSV ingestion: ${sanitizeError(err.message)}`
         })
       });
+      await updateSourceOperationalStatus(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SOURCE_META.id, 'failed');
     } catch (_) {}
     process.exit(1);
   }

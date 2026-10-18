@@ -8,6 +8,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  fetchWithRetry,
+  sanitizeError,
+  validateAndDeduplicateObservations,
+  chunkedUpsertObservations,
+  updateSourceOperationalStatus
+} from './utils/production-importer.mjs';
 
 // Simple .env parser to avoid third-party dependencies
 function loadEnv() {
@@ -87,7 +94,7 @@ const SOURCE_META = {
 
 const dateRange = process.argv[2] || '2015:2024';
 
-// Helper for Supabase REST API requests using service-role authorization
+// Helper for Supabase REST API requests using service-role authorization with retries
 async function supabaseRequest(endpoint, options = {}) {
   const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${endpoint}`;
   const headers = {
@@ -97,14 +104,14 @@ async function supabaseRequest(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     ...options,
     headers
-  });
+  }, { maxRetries: 3, initialDelayMs: 1000 });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Supabase REST error (${response.status}): ${errorText}`);
+    throw new Error(`Supabase REST error (${response.status}): ${sanitizeError(errorText)}`);
   }
 
   const contentType = response.headers.get('content-type') || '';
@@ -243,29 +250,40 @@ async function runImporter() {
           page++;
         }
 
-        // Upsert batch in chunks of 250 rows to keep payloads optimal
-        const CHUNK_SIZE = 250;
-        let indicatorUpsertCount = 0;
-        for (let i = 0; i < observations.length; i += CHUNK_SIZE) {
-          const chunk = observations.slice(i, i + CHUNK_SIZE);
-          await supabaseRequest('country_observations?on_conflict=country_code,indicator_code,year', {
-            method: 'POST',
-            headers: {
-              'Prefer': 'resolution=merge-duplicates'
-            },
-            body: JSON.stringify(chunk)
-          });
-          indicatorUpsertCount += chunk.length;
+        // Validate, quarantine corrupted records, and deduplicate before sending
+        const { validObservations, quarantined, stats } = validateAndDeduplicateObservations(observations);
+        if (quarantined.length > 0) {
+          console.warn(`  ⚠ Quarantined ${quarantined.length} malformed records for ${indicator.code}`);
+          errors.push(...quarantined.map(q => ({ indicator: indicator.code, row: q.row, reason: q.reason })));
+        }
+        if (stats.duplicatesResolved > 0) {
+          console.log(`  ℹ Deduplicated ${stats.duplicatesResolved} repeated records for ${indicator.code}`);
         }
 
-        totalObservationsUpserted += indicatorUpsertCount;
-        successfulIndicators.push(indicator.code);
-        console.log(`  ✓ Successfully upserted ${indicatorUpsertCount} observations for ${indicator.code}`);
+        // Upsert batch in chunks of 250 rows with retry handling
+        const { totalUpserted, errors: chunkErrors } = await chunkedUpsertObservations(
+          SUPABASE_URL,
+          SUPABASE_SERVICE_ROLE_KEY,
+          validObservations,
+          { chunkSize: 250 }
+        );
+
+        if (chunkErrors.length > 0) {
+          errors.push(...chunkErrors.map(ce => ({ indicator: indicator.code, error: ce.error })));
+        }
+
+        totalObservationsUpserted += totalUpserted;
+        if (chunkErrors.length === 0) {
+          successfulIndicators.push(indicator.code);
+          console.log(`  ✓ Successfully upserted ${totalUpserted} observations for ${indicator.code}`);
+        } else {
+          console.warn(`  ⚠ Partially upserted ${totalUpserted} observations for ${indicator.code} with ${chunkErrors.length} chunk failures.`);
+        }
       } catch (indErr) {
-        console.error(`  ✗ Failed indicator ${indicator.code}: ${indErr.message}`);
+        console.error(`  ✗ Failed indicator ${indicator.code}: ${sanitizeError(indErr.message)}`);
         errors.push({
           indicator: indicator.code,
-          message: indErr.message || String(indErr),
+          message: sanitizeError(indErr.message || String(indErr)),
           timestamp: new Date().toISOString()
         });
       }
@@ -294,11 +312,8 @@ async function runImporter() {
       })
     });
 
-    // Update last_checked_at on source catalog
-    await supabaseRequest(`market_data_sources?id=eq.${SOURCE_META.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ last_checked_at: completedAt })
-    });
+    // Update operational status and failure counters on source catalog
+    await updateSourceOperationalStatus(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SOURCE_META.id, finalStatus);
 
     console.log('\n============================================================');
     console.log(`Import Complete! Status: ${finalStatus.toUpperCase()}`);
