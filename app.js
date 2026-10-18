@@ -1700,6 +1700,56 @@ const SOURCED_INDICATOR_CATALOG = [
     sourceUrl: 'https://datahub.itu.int/',
     terms: 'ITU Non-Commercial with Attribution',
     limitations: 'Measures contracted speed tiers among existing fixed-line subscribers, not actual real-world throughput, latency, packet loss, or business IT spending. Does not account for households or small businesses without fixed wireline access.'
+  },
+  {
+    code: 'account.t.d',
+    name: 'Account ownership (% age 15+)',
+    topic: 'Financial Inclusion & Payments',
+    unit: '% of population age 15+',
+    publisher: 'World Bank Global Findex Database',
+    sourceUrl: 'https://databank.worldbank.org/source/global-financial-inclusion',
+    terms: 'CC-BY 4.0',
+    limitations: 'Quantifies population-level access to formal banking and mobile money rails. Account possession does not measure active account usage, average balances, purchasing power, disposable income, or willingness to purchase online subscription software.'
+  },
+  {
+    code: 'g20.any',
+    name: 'Made or received digital payments (% age 15+)',
+    topic: 'Digital Payments & Transaction Behavior',
+    unit: '% of population age 15+',
+    publisher: 'World Bank Global Findex Database',
+    sourceUrl: 'https://databank.worldbank.org/source/global-financial-inclusion',
+    terms: 'CC-BY 4.0',
+    limitations: 'Measures baseline familiarity with digital payment instruments across the national population. Having made or received a digital payment (such as for utilities or remittances) does not validate demand, interest, or willingness to buy a specific software product.'
+  },
+  {
+    code: 'fin2.t.d',
+    name: 'Owns a debit card (% age 15+)',
+    topic: 'Payment Cards & Infrastructure',
+    unit: '% of population age 15+',
+    publisher: 'World Bank Global Findex Database',
+    sourceUrl: 'https://databank.worldbank.org/source/global-financial-inclusion',
+    terms: 'CC-BY 4.0',
+    limitations: 'Measures card issuance penetration. Does not measure international transaction support, online e-commerce activation, card authorization success rates, or consumer willingness to authorize recurring subscription charges.'
+  },
+  {
+    code: 'fin10',
+    name: 'Owns a credit card (% age 15+)',
+    topic: 'Payment Cards & Infrastructure',
+    unit: '% of population age 15+',
+    publisher: 'World Bank Global Findex Database',
+    sourceUrl: 'https://databank.worldbank.org/source/global-financial-inclusion',
+    terms: 'CC-BY 4.0',
+    limitations: 'Refers to formal revolving consumer credit card penetration. Heavily influenced by national banking regulations, underwriting standards, and income distribution. Does not indicate corporate expense card availability or willingness to buy.'
+  },
+  {
+    code: 'g20.made',
+    name: 'Made a digital payment (% age 15+)',
+    topic: 'Digital Payments & Transaction Behavior',
+    unit: '% of population age 15+',
+    publisher: 'World Bank Global Findex Database',
+    sourceUrl: 'https://databank.worldbank.org/source/global-financial-inclusion',
+    terms: 'CC-BY 4.0',
+    limitations: 'Captures the outbound transmission of funds through digital rails. Does not distinguish between high-value transactions and small utility payments, nor does it guarantee customer conversion for new digital services.'
   }
 ];
 

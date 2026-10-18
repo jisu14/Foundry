@@ -127,3 +127,69 @@ curl -X POST "https://your-project.supabase.co/functions/v1/import-itu" \
   --data-binary "@data/itu-connectivity-data.csv"
 ```
 
+---
+
+## 💳 Sourced Market Data Library: World Bank Global Findex Phase
+
+Foundry incorporates the **World Bank Global Financial Inclusion (Global Findex)** database to contextualize national payment infrastructure, banking penetration, card ownership, and digital transaction behavior.
+
+### 1. Official Global Findex Access Method & Coverage
+- **Publisher**: Development Research Group, The World Bank Group (in partnership with Gallup, Inc., and supported by the Bill & Melinda Gates Foundation).
+- **Official Documentation**: [Global Findex Portal](https://www.worldbank.org/en/publication/globalfindex) and [World Bank DataBank](https://databank.worldbank.org/source/global-financial-inclusion).
+- **Access Endpoints**:
+  - **Automated Public API**: World Bank Indicators API V2 (`https://api.worldbank.org/v2/country/all/indicator/{id}?source=28&format=json`). Free, open access under CC-BY 4.0.
+  - **Permitted Bulk Downloads**: Country-level aggregate datasets downloadable via DataBank.
+  - **Microdata Notice**: In accordance with user guidelines, individual-level respondent microdata is excluded. Only verified national aggregate indicators are ingested.
+- **Reference Periods & Triennial Survey Waves**:
+  - Global Findex is collected every three years (2011, 2014, 2017, 2021, and 2024).
+  - Intermediate years without survey collections are preserved strictly as `NULL` without synthetic interpolation.
+- **Target Population & Survey Breakdown**:
+  - Target Population: Civilian, non-institutionalized population aged 15 and older.
+  - Methodology: Nationally representative samples of approximately 1,000 to 1,500 randomly selected adults per economy, surveyed face-to-face or via telephone under the Gallup World Poll.
+
+### 2. Standardized Global Findex Indicators
+- `account.t.d`: **Account ownership (% age 15+)** – Percentage of adults holding an account at a formal financial institution or mobile money provider.
+- `g20.any`: **Made or received digital payments (% age 15+)** – Percentage of adults using mobile money, cards, or phones/internet for payments or deposits.
+- `fin2.t.d`: **Owns a debit card (% age 15+)** – Percentage of adults with a debit card tied to an account.
+- `fin10`: **Owns a credit card (% age 15+)** – Percentage of adults with a formal revolving credit card.
+- `g20.made`: **Made a digital payment (% age 15+)** – Outbound digital transaction activity.
+
+### 3. Terms of Reuse & Legal Notice
+- **License**: Creative Commons Attribution 4.0 International (CC-BY 4.0).
+- **Attribution**: `Source: The World Bank Group, Global Financial Inclusion (Global Findex) Database.`
+- **Permitted Use**: Open for personal, research, educational, and commercial purposes with proper attribution.
+
+### 4. Explicit Payment & Account Research Boundary
+> ⚠️ **CRITICAL BOUNDARY**: Account ownership, card issuance, and digital payment statistics quantify national banking infrastructure and transaction rails. **They do not prove that a customer will buy a product**, nor do they measure price elasticity, disposable income, or willingness to purchase online subscription software. Sourced statistics are strictly separated from heuristic simulation assumptions.
+
+---
+
+## 🛠️ How to Import or Update Global Findex Data
+
+### Option A: Automated API Importer (Recommended)
+Fetches directly from the official World Bank API (source 28), filters for sovereign countries, validates survey years, preserves missing data, and logs to `public.market_import_logs`:
+```bash
+node scripts/import-global-findex.mjs
+```
+
+### Option B: Admin CSV File Importer
+To import a custom or offline CSV file exported from World Bank DataBank (or use the pre-bundled reference dataset at `data/global-findex-data.csv`):
+```bash
+node scripts/import-global-findex.mjs data/global-findex-data.csv
+```
+
+### Option C: Supabase Edge Function
+Trigger the secure Global Findex Edge Function:
+```bash
+# Automated sync from World Bank API:
+curl -X POST "https://your-project.supabase.co/functions/v1/import-global-findex" \
+  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY"
+
+# Or ingest custom CSV:
+curl -X POST "https://your-project.supabase.co/functions/v1/import-global-findex" \
+  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "Content-Type: text/csv" \
+  --data-binary "@data/global-findex-data.csv"
+```
+
+

@@ -959,16 +959,18 @@
         <div class="library-provenance-banner">
           <div class="provenance-col">
             <span class="provenance-title">Verified Publishers:</span>
-            <span class="provenance-val">The World Bank Group (WDI) &amp; International Telecommunication Union (ITU)</span>
+            <span class="provenance-val">The World Bank (WDI &amp; Global Findex) • ITU Telecommunication Union</span>
           </div>
           <div class="provenance-col">
             <span class="provenance-title">Reuse Terms:</span>
-            <span class="provenance-val">CC-BY 4.0 (World Bank) • ITU Non-Commercial with Mandatory Attribution</span>
+            <span class="provenance-val">CC-BY 4.0 (World Bank WDI &amp; Findex) • ITU Non-Commercial with Attribution</span>
           </div>
           <div class="provenance-col">
             <span class="provenance-title">Methodology &amp; Portals:</span>
             <span>
-              <a href="https://databank.worldbank.org/source/world-development-indicators" target="_blank" rel="noopener noreferrer" class="provenance-link">World Bank DataBank ↗</a>
+              <a href="https://databank.worldbank.org/source/world-development-indicators" target="_blank" rel="noopener noreferrer" class="provenance-link">World Bank WDI ↗</a>
+              •
+              <a href="https://databank.worldbank.org/source/global-financial-inclusion" target="_blank" rel="noopener noreferrer" class="provenance-link">Global Findex ↗</a>
               •
               <a href="https://datahub.itu.int/" target="_blank" rel="noopener noreferrer" class="provenance-link">ITU DataHub ↗</a>
             </span>
@@ -979,7 +981,7 @@
         <div class="library-limitation-banner">
           <div class="limitation-badge">RESEARCH BOUNDARY &amp; DISCLAIMER</div>
           <p>
-            Macroeconomic and telecommunications statistics (such as national GDP, household internet access, 4G coverage, and mobile broadband subscriptions) establish baseline market scale and infrastructure readiness. They <strong>do not predict or prove</strong> that a customer will buy a product, nor do they measure price elasticity, individual purchasing intent, or corporate software budgets. Sourced statistics are strictly separated from heuristic simulation assumptions.
+            Macroeconomic, telecommunications, and financial inclusion statistics (such as GDP per capita, internet access, account ownership, and card possession) establish baseline market scale and payment readiness. They <strong>do not predict or prove</strong> that a customer will buy a product, nor do they measure price elasticity, individual purchasing intent, or corporate software budgets. Sourced statistics are strictly separated from heuristic simulation assumptions.
           </p>
         </div>
 
@@ -1012,6 +1014,9 @@
                 <option value="Digital Infrastructure & Connectivity">Digital Infrastructure &amp; Connectivity</option>
                 <option value="Mobile Infrastructure">Mobile Infrastructure</option>
                 <option value="Broadband Infrastructure">Broadband Infrastructure</option>
+                <option value="Financial Inclusion & Payments">Financial Inclusion &amp; Payments</option>
+                <option value="Digital Payments & Transaction Behavior">Digital Payments &amp; Transaction Behavior</option>
+                <option value="Payment Cards & Infrastructure">Payment Cards &amp; Infrastructure</option>
               </select>
             </div>
 
@@ -1019,13 +1024,15 @@
               <label for="filterLibraryYear">Year:</label>
               <select id="filterLibraryYear" class="form-select filter-select">
                 <option value="ALL">All Available Years</option>
-                <option value="2024">2024</option>
+                <option value="2024">2024 (Latest Findex Survey)</option>
                 <option value="2023" selected>2023</option>
                 <option value="2022">2022</option>
-                <option value="2021">2021</option>
+                <option value="2021">2021 (Findex Survey)</option>
                 <option value="2020">2020</option>
                 <option value="2019">2019</option>
                 <option value="2018">2018</option>
+                <option value="2017">2017 (Findex Survey)</option>
+                <option value="2014">2014 (Findex Survey)</option>
               </select>
             </div>
 
