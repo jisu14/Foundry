@@ -664,6 +664,30 @@
         .sort((a, b) => a.name.localeCompare(b.name));
     }
 
+    async getCountryMarketContext(countryCode = 'USA') {
+      if (!this.client) return { data: [], error: new Error('Supabase client not configured') };
+      const cleanIso = this.resolveIso3(countryCode);
+      const { data, error } = await this.client
+        .from('country_observations')
+        .select(`
+          id,
+          country_code,
+          country_name,
+          indicator_code,
+          year,
+          value,
+          unit,
+          source_id,
+          imported_at,
+          metadata,
+          market_indicators (name, topic, limitations, definition)
+        `)
+        .eq('country_code', cleanIso)
+        .order('year', { ascending: false });
+
+      return { data: data || [], error };
+    }
+
     // Helper: ISO-3 Country Code Resolver
     resolveIso3(input) {
       if (!input) return 'USA';
@@ -697,7 +721,19 @@
     }
   }
 
-  // Expose singleton instance on window
-  window.foundrySupabase = new FoundrySupabaseService();
+  // Expose singleton instances on window
+  const serviceInstance = new FoundrySupabaseService();
+  window.foundrySupabase = serviceInstance;
+
+  // Compatibility bridge for Market Data controls
+  window.foundryMarketData = {
+    get url() { return serviceInstance.url; },
+    get anonKey() { return serviceInstance.anonKey; },
+    get isConnected() { return serviceInstance.isConfigured(); },
+    setCredentials: (u, k) => serviceInstance.connect(u, k),
+    clearCredentials: () => serviceInstance.disconnect(),
+    resolveIso3: (c) => serviceInstance.resolveIso3(c),
+    getCountryMarketContext: (c) => serviceInstance.getCountryMarketContext(c)
+  };
 
 })(window);

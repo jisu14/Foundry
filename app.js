@@ -1660,6 +1660,46 @@ const SOURCED_INDICATOR_CATALOG = [
     sourceUrl: 'https://data.worldbank.org/indicator/IT.NET.BBND.P2',
     terms: 'CC-BY 4.0',
     limitations: 'Refers to residential and commercial physical lines, typically shared across multiple household members or business employees. Does not measure bandwidth speed tiers, enterprise fiber penetration, or data cap restrictions.'
+  },
+  {
+    code: 'ITU.ICT.HH.INET',
+    name: 'Households with Internet access (%)',
+    topic: 'Digital Infrastructure & Connectivity',
+    unit: '% of households',
+    publisher: 'International Telecommunication Union (ITU)',
+    sourceUrl: 'https://datahub.itu.int/',
+    terms: 'ITU Non-Commercial with Attribution',
+    limitations: 'Measures domestic household connectivity infrastructure, not individual user activity, broadband bandwidth tier, network latency, or household disposable income. It does not measure customer readiness to purchase digital software or pay for consumer apps.'
+  },
+  {
+    code: 'ITU.ICT.MOB.4G',
+    name: 'Population covered by at least a 4G mobile network (%)',
+    topic: 'Mobile Infrastructure',
+    unit: '% of population',
+    publisher: 'International Telecommunication Union (ITU)',
+    sourceUrl: 'https://datahub.itu.int/',
+    terms: 'ITU Non-Commercial with Attribution',
+    limitations: 'Indicates mobile cellular signal availability across residential geography. Physical signal coverage does not imply smartphone device ownership, active mobile data subscriptions, data bundle affordability, or reliable connection speeds under network congestion.'
+  },
+  {
+    code: 'ITU.ICT.ACT.MBB',
+    name: 'Active mobile-broadband subscriptions (per 100 inhabitants)',
+    topic: 'Mobile Infrastructure',
+    unit: 'subscriptions per 100 inhabitants',
+    publisher: 'International Telecommunication Union (ITU)',
+    sourceUrl: 'https://datahub.itu.int/',
+    terms: 'ITU Non-Commercial with Attribution',
+    limitations: 'Measures subscription volume rather than unique individual human users. Metric can exceed 100 due to enterprise fleet accounts, multi-SIM devices, and machine-to-machine cards. Does not measure data consumption volume, network speed tiers, or consumer software spending.'
+  },
+  {
+    code: 'ITU.ICT.FBB.10M',
+    name: 'Fixed broadband subscriptions >= 10 Mbit/s (% of total fixed broadband)',
+    topic: 'Broadband Infrastructure',
+    unit: '% of fixed broadband subscriptions',
+    publisher: 'International Telecommunication Union (ITU)',
+    sourceUrl: 'https://datahub.itu.int/',
+    terms: 'ITU Non-Commercial with Attribution',
+    limitations: 'Measures contracted speed tiers among existing fixed-line subscribers, not actual real-world throughput, latency, packet loss, or business IT spending. Does not account for households or small businesses without fixed wireline access.'
   }
 ];
 
