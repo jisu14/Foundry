@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foundry - Virtual Startup World</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+
+  <!-- Simulation Disclaimer Top Banner -->
+  <aside class="simulation-banner" role="alert">
+    <div class="banner-content">
+      <span class="banner-tag">SIMULATION MODE</span>
+      <p>All virtual world places, customer personas, purchase events, and reviews are <strong>100% simulated models</strong> for practice and <strong>do not predict real-world sales</strong>.</p>
+    </div>
+  </aside>
+
+  <!-- App Layout: Sidebar + Main Content -->
+  <div class="app-layout">
+    
+    <!-- Mobile Top Header Bar -->
+    <header class="mobile-header">
+      <div class="brand">
+        <div class="brand-icon-lime">✱</div>
+        <span class="brand-text">foundry</span>
+      </div>
+      <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Toggle navigation menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </header>
+
+    <!-- Sidebar Navigation (Exact Match to Reference Screenshot) -->
+    <aside class="foundry-sidebar" id="foundrySidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-icon-lime">✱</div>
+          <span class="brand-text">foundry</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">YOUR STARTUP</div>
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-view="overview">
+            <span class="nav-svg-icon">
+              <!-- Grid / ▦ icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </span>
+            <span class="nav-label">Overview</span>
+          </button>
+
+          <button class="nav-item" data-view="profile">
+            <span class="nav-svg-icon">
+              <!-- Diamond / ◈ icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>
+            </span>
+            <span class="nav-label">Startup profile</span>
+          </button>
+
+          <button class="nav-item" data-view="market">
+            <span class="nav-svg-icon">
+              <!-- Target / ◎ icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </span>
+            <span class="nav-label">Virtual market</span>
+            <span class="sidebar-badge" id="navGroupCount">0</span>
+          </button>
+
+          <button class="nav-item" data-view="launch">
+            <span class="nav-svg-icon">
+              <!-- Arrow northeast / ↗ icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            </span>
+            <span class="nav-label">Launch lab</span>
+          </button>
+
+          <button class="nav-item" data-view="library">
+            <span class="nav-svg-icon">
+              <!-- Book / Database icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </span>
+            <span class="nav-label">Market data library</span>
+            <span class="sidebar-badge" id="navLibraryCount">5</span>
+          </button>
+
+          <button class="nav-item" data-view="history">
+            <span class="nav-svg-icon">
+              <!-- Clock / ◷ icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <span class="nav-label">Simulation history</span>
+            <span class="sidebar-badge" id="navHistoryCount">0</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Sidebar Footer Status & Cloud Sync -->
+      <div class="sidebar-footer">
+        <div class="sidebar-status-box">
+          <div class="status-indicator-row">
+            <span class="dot-lime" id="sidebarDot"></span>
+            <span class="status-name" id="sidebarStartupName">Unchartered Venture</span>
+          </div>
+          <span class="status-sub" id="sidebarCycleDay">Cycle 1 &bull; Day 1</span>
+        </div>
+
+        <!-- Founder Account & Supabase Sync Box -->
+        <div class="sidebar-cloud-box" id="sidebarCloudBox">
+          <div class="cloud-status-header">
+            <span class="cloud-status-dot offline" id="cloudStatusDot"></span>
+            <span class="cloud-status-label" id="cloudStatusLabel">Offline / Local Mode</span>
+            <button class="btn-cloud-icon" id="btnOpenCloudModal" title="Supabase Connection Settings" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+          <div class="cloud-user-actions" id="cloudUserActions">
+            <button class="btn btn-lime-outline btn-xs btn-full" id="btnOpenAuthModal" type="button">
+              Sign In to Save
+            </button>
+          </div>
+        </div>
+
+        <button id="resetWorkspaceBtn" class="btn-sidebar-reset" onclick="handleResetWorld(event)" title="Wipe local storage and reset to empty world">
+          Reset World
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Container -->
+    <main class="main-viewport">
+
+      <!-- ========================================================== -->
+      <!-- VIEW 1: OVERVIEW (THE 2D LIVING MARKET CITY MAP)           -->
+      <!-- ========================================================== -->
+      <section id="view-overview" class="page-view active">
+        
+        <!-- World Command Header -->
+        <div class="world-command-header">
+          <div class="command-left">
+            <div class="world-clock-badge">
+              <span class="clock-icon-svg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              <div>
+                <div class="clock-label">MARKET TIMELINE</div>
+                <div class="clock-val" id="worldClockDay">Cycle 1 &bull; Day 1</div>
+              </div>
+            </div>
+            <div class="world-activity-badge">
+              <span class="dot-indicator" id="worldActivityDot"></span>
+              <span id="worldStatusText">World Idle &bull; Awaiting Setup</span>
+            </div>
+          </div>
+
+          <div class="command-right">
+            <button id="advanceWorldBtn" class="btn btn-lime btn-sm" title="Advance time by 7 days to run simulation cycle">
+              Advance World (+7 Days)
+            </button>
+            <button class="btn btn-outline-cyan btn-sm" data-nav="launch" title="Configure campaign parameters">
+              Deploy Campaign
+            </button>
+          </div>
+        </div>
+
+        <!-- The Illustrated 2D Market City Map -->
+        <div class="market-city-container">
+          
+          <div class="city-canvas-header">
+            <div class="city-title">
+              <h2>Virtual Market City</h2>
+              <span class="city-subtitle">Click on any district landmark to inspect its activity or take founder actions</span>
+            </div>
+            <div class="city-legend">
+              <span class="legend-pill active"><span class="legend-dot active"></span> Activated</span>
+              <span class="legend-pill unchartered"><span class="legend-dot unchartered"></span> Unchartered</span>
+            </div>
+          </div>
+
+          <!-- Structured 2D City Map Canvas with Roads and Landmarks -->
+          <div class="market-city-map-wrapper">
+            <div class="market-city-map" id="marketCityMap">
+            
+            <!-- City Roads & Ground Layout SVG Background -->
+            <svg class="city-roads-svg" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <pattern id="cityGrid" width="36" height="36" patternUnits="userSpaceOnUse">
+                  <path d="M 36 0 L 0 0 0 36" fill="none" stroke="rgba(45, 212, 191, 0.035)" stroke-width="1"/>
+                </pattern>
+              </defs>
+
+              <!-- Base Terrain -->
+              <rect width="1000" height="620" fill="#0b1712"/>
+              <rect width="1000" height="620" fill="url(#cityGrid)"/>
+
+              <!-- Central Plaza Ring -->
+              <circle cx="500" cy="310" r="145" fill="none" stroke="rgba(212, 249, 56, 0.12)" stroke-width="2"/>
+              <circle cx="500" cy="310" r="175" fill="none" stroke="rgba(45, 212, 191, 0.05)" stroke-width="1" stroke-dasharray="6,6"/>
+
+              <!-- Main Horizontal Highway -->
+              <path d="M 40 310 L 960 310" stroke="#162c22" stroke-width="48" stroke-linecap="round"/>
+              <path d="M 40 310 L 960 310" stroke="#d4f938" stroke-width="2" stroke-dasharray="14,14" opacity="0.3"/>
+
+              <!-- Main Vertical Boulevard -->
+              <path d="M 500 40 L 500 580" stroke="#162c22" stroke-width="48" stroke-linecap="round"/>
+              <path d="M 500 40 L 500 580" stroke="#d4f938" stroke-width="2" stroke-dasharray="14,14" opacity="0.3"/>
+
+              <!-- Diagonal Connector Roads to Neighborhoods -->
+              <path d="M 210 150 L 500 310" stroke="#162c22" stroke-width="28" stroke-linecap="round"/>
+              <path d="M 790 150 L 500 310" stroke="#162c22" stroke-width="28" stroke-linecap="round"/>
+              <path d="M 210 470 L 500 310" stroke="#162c22" stroke-width="28" stroke-linecap="round"/>
+              <path d="M 790 470 L 500 310" stroke="#162c22" stroke-width="28" stroke-linecap="round"/>
+
+              <!-- Active Animated Transmission Signal Beam -->
+              <path id="transmissionBeamPath" d="M 790 470 L 500 310 L 790 150" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-dasharray="8,8" class="signal-conduit-beam hidden"/>
+
+              <!-- City Trees and Planter Accents -->
+              <circle cx="340" cy="220" r="10" fill="#1b4332" opacity="0.8"/>
+              <circle cx="365" cy="235" r="13" fill="#2d6a4f" opacity="0.7"/>
+              <circle cx="640" cy="220" r="11" fill="#1b4332" opacity="0.8"/>
+              <circle cx="665" cy="235" r="14" fill="#2d6a4f" opacity="0.7"/>
+              <circle cx="345" cy="390" r="11" fill="#1b4332" opacity="0.8"/>
+              <circle cx="655" cy="390" r="13" fill="#2d6a4f" opacity="0.7"/>
+
+              <!-- Central Plaza Fountain -->
+              <circle cx="500" cy="310" r="22" fill="#11291f" stroke="#2dd4bf" stroke-width="1.5"/>
+              <circle cx="500" cy="310" r="8" fill="#2dd4bf" opacity="0.8"/>
+            </svg>
+
+            <!-- District Landmark 1: Founder Headquarters (North-West Zone) -->
+            <div class="city-landmark landmark-unchartered" id="district-hq" data-district="hq" style="top: 6%; left: 6%;">
+              <div class="landmark-sign" id="signHq">Site Reserved</div>
+              <div class="building-graphic">
+                <svg width="84" height="84" viewBox="0 0 100 100" fill="none" class="district-svg">
+                  <!-- Tower Base -->
+                  <polygon points="50,8 86,28 86,88 14,88 14,28" fill="#122b21" stroke="#2dd4bf" stroke-width="2"/>
+                  <polygon points="50,8 86,28 50,44 14,28" fill="#1a3d30"/>
+                  <!-- Roof Spire & Beacon -->
+                  <line x1="50" y1="8" x2="50" y2="0" stroke="#2dd4bf" stroke-width="2"/>
+                  <circle cx="50" cy="0" r="3" fill="#d4f938"/>
+                  <!-- Office Windows -->
+                  <rect x="26" y="40" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
+                  <rect x="45" y="40" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
+                  <rect x="64" y="40" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
+                  <rect x="26" y="62" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
+                  <rect x="45" y="62" width="10" height="26" fill="#d4f938" opacity="0.8" class="hq-door"/>
+                  <rect x="64" y="62" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
+                </svg>
+              </div>
+              <div class="landmark-meta">
+                <span class="landmark-title" id="titleHq">Founder HQ</span>
+                <span class="landmark-status-pill" id="statusHq">Unchartered</span>
+              </div>
+            </div>
+
+            <!-- District Landmark 2: Customer Communities (North-East Zone) -->
+            <div class="city-landmark landmark-unchartered" id="district-customers" data-district="customers" style="top: 6%; right: 6%;">
+              <div class="landmark-sign" id="signCustomers">Unexplored Territory</div>
+              <div class="building-graphic">
+                <svg width="84" height="84" viewBox="0 0 100 100" fill="none" class="district-svg">
+                  <!-- Neighborhood Houses / Townhouses -->
+                  <polygon points="26,26 48,12 48,64 6,64 6,26" fill="#122b21" stroke="#a7f3d0" stroke-width="1.8"/>
+                  <polygon points="68,18 94,6 94,84 44,84 44,18" fill="#19392c" stroke="#a7f3d0" stroke-width="1.8"/>
+                  <!-- Neighborhood Windows -->
+                  <rect x="14" y="36" width="8" height="10" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
+                  <rect x="28" y="36" width="8" height="10" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
+                  <rect x="54" y="30" width="10" height="12" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
+                  <rect x="74" y="30" width="10" height="12" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
+                  <rect x="54" y="52" width="10" height="12" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
+                  <rect x="74" y="52" width="10" height="12" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
+                  <circle cx="22" cy="74" r="6" fill="#2d6a4f"/>
+                </svg>
+              </div>
+              <div class="landmark-meta">
+                <span class="landmark-title" id="titleCustomers">Customer Communities</span>
+                <span class="landmark-status-pill" id="statusCustomers">0 Groups</span>
+              </div>
+            </div>
+
+            <!-- District Landmark 3: Central Marketplace Plaza (Center Zone) -->
+            <div class="city-landmark landmark-unchartered" id="district-marketplace" data-district="marketplace" style="top: 36%; left: 42%;">
+              <div class="landmark-sign" id="signMarket">Empty Plaza</div>
+              <div class="building-graphic">
+                <svg width="100" height="88" viewBox="0 0 110 90" fill="none" class="district-svg">
+                  <!-- Marketplace Storefront -->
+                  <rect x="14" y="24" width="82" height="62" fill="#163428" stroke="#d4f938" stroke-width="2" rx="4"/>
+                  <!-- Striped Canopy Awning -->
+                  <polygon points="8,24 102,24 94,14 16,14" fill="#d4f938" opacity="0.95"/>
+                  <polygon points="24,24 40,24 36,14 22,14" fill="#0d2119"/>
+                  <polygon points="56,24 72,24 68,14 54,14" fill="#0d2119"/>
+                  <polygon points="88,24 102,24 96,14 86,14" fill="#0d2119"/>
+                  <!-- Store Windows -->
+                  <rect x="22" y="38" width="26" height="34" fill="#2dd4bf" opacity="0.3" class="shop-win"/>
+                  <rect x="62" y="38" width="26" height="34" fill="#2dd4bf" opacity="0.3" class="shop-win"/>
+                  <line x1="55" y1="38" x2="55" y2="86" stroke="#d4f938" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="landmark-meta">
+                <span class="landmark-title">Central Marketplace</span>
+                <span class="landmark-status-pill" id="statusMarket">0 Shoppers</span>
+              </div>
+            </div>
+
+            <!-- District Landmark 4: Feedback Agora (South-West Zone) -->
+            <div class="city-landmark landmark-unchartered" id="district-feedback" data-district="feedback" style="bottom: 6%; left: 8%;">
+              <div class="landmark-sign" id="signFeedback">Silent Agora</div>
+              <div class="building-graphic">
+                <svg width="84" height="84" viewBox="0 0 100 100" fill="none" class="district-svg">
+                  <!-- Forum Amphitheater -->
+                  <ellipse cx="50" cy="74" rx="42" ry="18" fill="#122b21" stroke="#2dd4bf" stroke-width="1.8"/>
+                  <ellipse cx="50" cy="65" rx="30" ry="12" fill="#1a3b2e" stroke="#2dd4bf" stroke-width="1.5"/>
+                  <rect x="42" y="38" width="16" height="24" fill="#2dd4bf" opacity="0.8"/>
+                  <!-- Review Bulletin Sign -->
+                  <path d="M 28 14 L 72 14 C 76 14 80 18 80 22 L 80 34 C 80 38 76 42 72 42 L 56 42 L 48 50 L 48 42 L 28 42 C 24 42 20 38 20 34 L 20 22 C 20 18 24 14 28 14 Z" fill="#d4f938" stroke="#12251d" stroke-width="1.5"/>
+                  <circle cx="36" cy="28" r="3" fill="#08140f"/>
+                  <circle cx="50" cy="28" r="3" fill="#08140f"/>
+                  <circle cx="64" cy="28" r="3" fill="#08140f"/>
+                </svg>
+              </div>
+              <div class="landmark-meta">
+                <span class="landmark-title">Feedback Agora</span>
+                <span class="landmark-status-pill" id="statusFeedback">0 Reviews</span>
+              </div>
+            </div>
+
+            <!-- District Landmark 5: Transmission Towers (South-East Zone) -->
+            <div class="city-landmark landmark-unchartered" id="district-broadcast" data-district="broadcast" style="bottom: 6%; right: 8%;">
+              <div class="landmark-sign" id="signBroadcast">Grid Offline</div>
+              <div class="building-graphic">
+                <svg width="84" height="84" viewBox="0 0 100 100" fill="none" class="district-svg">
+                  <!-- Broadcast Mast with Antenna Dish -->
+                  <line x1="50" y1="8" x2="28" y2="86" stroke="#d4f938" stroke-width="2.2"/>
+                  <line x1="50" y1="8" x2="72" y2="86" stroke="#d4f938" stroke-width="2.2"/>
+                  <line x1="36" y1="40" x2="64" y2="40" stroke="#d4f938" stroke-width="2"/>
+                  <line x1="32" y1="62" x2="68" y2="62" stroke="#d4f938" stroke-width="2"/>
+                  <line x1="26" y1="86" x2="74" y2="86" stroke="#2dd4bf" stroke-width="2.8"/>
+                  <!-- Tip & Arcs -->
+                  <circle cx="50" cy="8" r="4.5" fill="#d4f938" class="beacon-tip"/>
+                  <path d="M 38 6 A 14 14 0 0 0 38 18" stroke="#2dd4bf" stroke-width="2" fill="none" opacity="0.6"/>
+                  <path d="M 62 6 A 14 14 0 0 1 62 18" stroke="#2dd4bf" stroke-width="2" fill="none" opacity="0.6"/>
+                </svg>
+              </div>
+              <div class="landmark-meta">
+                <span class="landmark-title">Transmission Towers</span>
+                <span class="landmark-status-pill" id="statusBroadcast">Offline</span>
+              </div>
+            </div>
+
+            <!-- District Landmark 6: Rival Outposts (Eastern Perimeter) -->
+            <div class="city-landmark landmark-unchartered" id="district-competitors" data-district="competitors" style="top: 45%; right: 3%;">
+              <div class="landmark-sign" id="signCompetitor">Undiscovered</div>
+              <div class="building-graphic">
+                <svg width="78" height="78" viewBox="0 0 90 90" fill="none" class="district-svg">
+                  <!-- Competitor Fort / Watchtower -->
+                  <polygon points="45,8 78,24 78,78 12,78 12,24" fill="#182c23" stroke="#f43f5e" stroke-width="1.8"/>
+                  <rect x="26" y="34" width="38" height="10" fill="#f43f5e" opacity="0.5"/>
+                  <circle cx="45" cy="60" r="11" fill="#0b1712" stroke="#f43f5e" stroke-width="1.5"/>
+                </svg>
+              </div>
+              <div class="landmark-meta">
+                <span class="landmark-title">Rival Outposts</span>
+                <span class="landmark-status-pill" id="statusCompetitor">No Intel</span>
+              </div>
+            </div>
+
+          </div>
+          </div>
+
+        </div>
+
+        <!-- Interactive District Inspector Drawer & World Activity Chronicle -->
+        <div class="world-subpanels">
+          
+          <!-- Column 1: District Inspector -->
+          <div class="city-panel inspector-panel" id="districtInspectorCard">
+            <div class="panel-header">
+              <div class="panel-title-group">
+                <span class="panel-icon-svg" id="inspIconSvg">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                </span>
+                <div>
+                  <h3 id="inspTitle">Founder Headquarters</h3>
+                  <span class="panel-tag" id="inspBadge">District Inspector</span>
+                </div>
+              </div>
+              <button class="btn-close" id="closeInspectorBtn" title="Close inspector">✕</button>
+            </div>
+
+            <div class="panel-body" id="inspBody">
+              <!-- Dynamically populated based on clicked district -->
+            </div>
+
+            <div class="panel-actions" id="inspActions">
+              <!-- Dynamic actions for this district -->
+            </div>
+          </div>
+
+          <!-- Column 2: World Activity Chronicle -->
+          <div class="city-panel chronicle-panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">World Activity Timeline</h3>
+                <p class="panel-desc">Sequence of simulated events as time advances in your market.</p>
+              </div>
+              <button class="btn-text" id="clearChronicleBtn">Clear Log</button>
+            </div>
+
+            <div class="chronicle-stream" id="chronicleTimeline">
+              <div class="chronicle-empty" id="chronicleEmpty">
+                <span class="empty-icon-svg">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </span>
+                <p><strong>The world is quiet.</strong><br>Configure your startup profile and customer groups, then advance time to watch simulated market events unfold.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ========================================================== -->
+      <!-- VIEW 2: STARTUP PROFILE                                    -->
+      <!-- ========================================================== -->
+      <section id="view-profile" class="page-view">
+        <div class="view-header">
+          <div>
+            <h2>Startup Profile</h2>
+            <p class="view-desc">Configure your technology startup. Saving your profile activates the Founder HQ district on the World Map.</p>
+          </div>
+          <button class="btn btn-outline-cyan btn-sm" data-nav="overview">Return to World Map</button>
+        </div>
+
+        <div class="city-panel config-panel">
+          <form id="profileForm" onsubmit="return false;">
+            
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="profName">Startup / Product Name <span class="required">*</span></label>
+                <input type="text" id="profName" placeholder="Enter your startup name (e.g. AeroData, LegalSync)" required>
+                <span class="field-hint">The distinct name of your venture.</span>
+              </div>
+
+              <div class="form-group flex-1">
+                <label for="profType">Product Type <span class="required">*</span></label>
+                <select id="profType" required>
+                  <option value="" disabled selected>Select product type...</option>
+                  <option value="B2B SaaS / Business Software">B2B SaaS / Business Software</option>
+                  <option value="B2C Mobile App">B2C Mobile App</option>
+                  <option value="Developer Tool / Infrastructure">Developer Tool / Infrastructure</option>
+                  <option value="Marketplace / Platform">Marketplace / Platform</option>
+                  <option value="E-Commerce / Direct-to-Consumer">E-Commerce / Direct-to-Consumer</option>
+                  <option value="EdTech / Learning Tool">EdTech / Learning Tool</option>
+                  <option value="FinTech / Financial Software">FinTech / Financial Software</option>
+                  <option value="Other">Other Software / Tech Product</option>
+                </select>
+                <span class="field-hint">Architectural model of your offering.</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="profDesc">Product Description & Value Pitch <span class="required">*</span></label>
+              <textarea id="profDesc" rows="3" placeholder="Explain what problem your product solves, who it is for, and how it helps them." required></textarea>
+              <span class="field-hint">The core value proposition of your product.</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="profStage">Startup Stage <span class="required">*</span></label>
+                <select id="profStage" required>
+                  <option value="Idea / Concept Phase">Idea / Concept Phase</option>
+                  <option value="Prototype / Functional MVP" selected>Prototype / Functional MVP</option>
+                  <option value="Early Traction / Beta Users">Early Traction / Beta Users</option>
+                  <option value="Growth & Scaling Phase">Growth & Scaling Phase</option>
+                </select>
+                <span class="field-hint">Current maturity stage of your startup.</span>
+              </div>
+
+              <div class="form-group flex-1">
+                <label for="profCountry">Target Country / Primary Market <span class="required">*</span></label>
+                <input type="text" id="profCountry" placeholder="e.g. United States, Global Market, India, Europe" required>
+                <span class="field-hint">Initial target market geography.</span>
+              </div>
+            </div>
+
+            <div class="form-actions mt-4">
+              <button type="submit" id="saveProfileBtn" class="btn btn-lime">
+                Save Startup Profile
+              </button>
+              <button type="button" class="btn btn-secondary" data-nav="overview">
+                View in World Map
+              </button>
+              <span id="profileSaveNotice" class="save-status-msg hidden">✓ Profile saved to this browser!</span>
+            </div>
+
+          </form>
+        </div>
+      </section>
+
+
+      <!-- ========================================================== -->
+      <!-- VIEW 3: VIRTUAL MARKET                                     -->
+      <!-- ========================================================== -->
+      <section id="view-market" class="page-view">
+        <div class="view-header">
+          <div>
+            <h2>Virtual Market & Customer Groups</h2>
+            <p class="view-desc">Define custom customer groups and competitor intel. These populate the Customer Communities and Rival Outposts on your map.</p>
+          </div>
+          <button class="btn btn-outline-cyan btn-sm" data-nav="overview">Return to World Map</button>
+        </div>
+
+        <div class="grid-2col">
+          
+          <!-- Column 1: Add Custom Customer Group -->
+          <div class="city-panel config-panel">
+            <h3 class="panel-title">Create Custom Customer Group</h3>
+            <p class="panel-desc mb-4">Define distinct buyer tribes. Each group activates a customer district on the World Map.</p>
+
+            <form id="customerGroupForm" onsubmit="return false;">
+              
+              <div class="form-group">
+                <label for="groupName">Group Name / Persona Title <span class="required">*</span></label>
+                <input type="text" id="groupName" placeholder="e.g. Cloud Architects, Boutique Law Firms, Indie Hackers" required>
+              </div>
+
+              <div class="form-group">
+                <label for="groupDesc">Primary Pain Point & Need <span class="required">*</span></label>
+                <textarea id="groupDesc" rows="2" placeholder="Describe their main workflow bottleneck or why they need your product." required></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="groupBudget">Budget Level & Price Tolerance <span class="required">*</span></label>
+                <select id="groupBudget" required>
+                  <option value="low">Budget-Conscious / Low ($0 – $10/mo tolerance)</option>
+                  <option value="medium" selected>Moderate Budget ($10 – $35/mo tolerance)</option>
+                  <option value="high">Enterprise / High Budget ($35 – $90/mo tolerance)</option>
+                </select>
+                <span class="field-hint">Determines when simulated customers push back against price.</span>
+              </div>
+
+              <div class="form-group">
+                <label for="groupChannel">Primary Discovery Channel <span class="required">*</span></label>
+                <select id="groupChannel" required>
+                  <option value="social" selected>Viral Social Media Ads (TikTok, Instagram, YouTube)</option>
+                  <option value="search">Search Engine Ads (Google Ads intent search)</option>
+                  <option value="community">Specialized Tech Communities (Product Hunt, Reddit, Forums)</option>
+                  <option value="outreach">Direct Outreach & Professional Networks</option>
+                </select>
+                <span class="field-hint">Where this audience spends time and discovers tools.</span>
+              </div>
+
+              <div class="form-actions mt-3">
+                <button type="submit" id="addGroupBtn" class="btn btn-lime">
+                  Add Customer Group
+                </button>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Column 2: Customer Groups List & Competitors -->
+          <div class="stack-col">
+            
+            <div class="city-panel">
+              <div class="panel-header">
+                <h3 class="panel-title">Your Customer Groups</h3>
+                <span class="badge-count" id="groupListCount">0 Groups</span>
+              </div>
+
+              <div id="emptyGroupsNotice" class="empty-state">
+                <div class="empty-icon-svg">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h4>No Customer Groups Created Yet</h4>
+                <p>Define your first audience segment using the form on the left to activate the Customer Communities district on the World Map.</p>
+              </div>
+
+              <div id="customerGroupsList" class="groups-list hidden">
+                <!-- Dynamically populated customer group cards -->
+              </div>
+            </div>
+
+            <!-- Competitor & Market Notes -->
+            <div class="city-panel">
+              <h3 class="panel-title">Competitor & Market Notes</h3>
+              <p class="panel-desc mb-3">Record alternative tools to populate the Rival Outposts on the World Map.</p>
+              
+              <div class="form-group">
+                <textarea id="marketCompetitorNotes" rows="3" placeholder="List existing rival tools or how customers currently solve this problem manually..."></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" id="saveMarketNotesBtn" class="btn btn-outline-cyan btn-sm">
+                  Save Market Notes
+                </button>
+                <span id="marketNotesNotice" class="save-status-msg hidden">✓ Saved</span>
+              </div>
+            </div>
+
+        </div>
+
+        <!-- Sourced Market Data Library (Supabase Postgres) -->
+        <div class="city-panel mt-4" id="sourcedMarketDataPanel">
+          <div class="panel-header">
+            <div>
+              <div class="market-data-tag-row">
+                <span class="panel-tag">OFFICIAL MARKET DATA LIBRARY</span>
+                <span id="marketBackendBadge" class="backend-badge awaiting">Awaiting Supabase Connection</span>
+              </div>
+              <h3 class="panel-title">Sourced Macro Indicators (World Bank WDI)</h3>
+              <p class="panel-desc">Real-world statistical baseline for your target market. Sourced from official World Bank APIs with methodology and limitation bounds.</p>
+            </div>
+            <button type="button" id="toggleBackendConfigBtn" class="btn btn-outline-cyan btn-xs">
+              Configure Supabase
+            </button>
+          </div>
+
+          <!-- Supabase Connection Config Drawer -->
+          <div id="backendConfigDrawer" class="backend-config-drawer hidden">
+            <h4 style="font-size: 0.84rem; color: #fff; font-weight: 700;">Supabase Project Connection</h4>
+            <p class="field-hint">Connect your Supabase project URL and anon public key to read live sourced observations. Never enter your service-role key in browser code.</p>
+            <div class="config-form-row">
+              <div class="form-group flex-1" style="margin-bottom: 0;">
+                <label for="cfgSupabaseUrl" style="font-size: 0.74rem;">Supabase Project URL</label>
+                <input type="text" id="cfgSupabaseUrl" placeholder="https://xyzcompany.supabase.co" style="font-size: 0.8rem; padding: 6px 10px;">
+              </div>
+              <div class="form-group flex-1" style="margin-bottom: 0;">
+                <label for="cfgSupabaseAnonKey" style="font-size: 0.74rem;">Supabase Anon Key (Public)</label>
+                <input type="text" id="cfgSupabaseAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="font-size: 0.8rem; padding: 6px 10px;">
+              </div>
+            </div>
+            <div class="form-actions" style="margin-top: 6px; display: flex; gap: 8px;">
+              <button type="button" id="saveSupabaseConfigBtn" class="btn btn-lime btn-xs">Connect Backend</button>
+              <button type="button" id="clearSupabaseConfigBtn" class="btn btn-danger-outline btn-xs">Disconnect</button>
+              <span id="supabaseConfigStatus" class="save-status-msg hidden">✓ Connected</span>
+            </div>
+          </div>
+
+          <!-- Macro Context Limitations Banner -->
+          <div class="market-context-banner">
+            <span class="context-icon-svg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </span>
+            <div>
+              <p><strong>Boundary Clarification:</strong> Country-level statistics provide macro market context (population scale, digital infrastructure readiness, economic environment). They <em>do not</em> measure personal disposable income, individual tech adoption, or customer willingness to pay for this specific product, and <em>do not</em> constitute a sales forecast.</p>
+            </div>
+          </div>
+
+          <!-- Country Indicator Cards Grid -->
+          <div id="sourcedIndicatorsGrid" class="sourced-indicators-grid">
+            <!-- Dynamically populated or rendered with catalog definitions -->
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ========================================================== -->
+      <!-- VIEW 4: LAUNCH LAB (SIMULATION ENGINE)                     -->
+      <!-- ========================================================== -->
+      <section id="view-launch" class="page-view">
+        <div class="view-header">
+          <div>
+            <h2>Launch Lab</h2>
+            <p class="view-desc">Design a test campaign using your custom customer groups, set pricing, and run a simulated launch.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline-cyan btn-sm" data-nav="overview">Return to World Map</button>
+            <div id="simLabStatusBadge" class="status-badge badge-idle">Ready to Simulate</div>
+          </div>
+        </div>
+
+        <div class="workspace-grid">
+          
+          <!-- Campaign Setup Form -->
+          <div class="city-panel config-panel">
+            <h3 class="panel-title mb-2">Campaign Setup</h3>
+            <p class="panel-desc mb-4">Choose target audience, price, channel, and budget for this simulation run.</p>
+
+            <form id="launchForm" onsubmit="return false;">
+              
+              <div class="form-group">
+                <label for="campaignTargetGroup">Target Customer Group <span class="required">*</span></label>
+                <select id="campaignTargetGroup" required>
+                  <!-- Populated from custom customer groups -->
+                </select>
+                <div id="noGroupWarning" class="field-warning hidden">
+                  <span class="warning-tag">Notice:</span> No customer groups found. <button type="button" class="link-btn" data-nav="market">Create a customer group</button> first before running a simulation.
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="label-with-val">
+                  <label for="campaignPrice">Subscription Price / Unit</label>
+                  <span id="campaignPriceDisplay" class="value-badge-lime">$10 / mo</span>
+                </div>
+                <input type="range" id="campaignPrice" min="0" max="80" step="1" value="10">
+                <div class="range-labels">
+                  <span>Free ($0)</span>
+                  <span>$20</span>
+                  <span>$40</span>
+                  <span>$60</span>
+                  <span>$80</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="campaignChannel">Marketing / Acquisition Channel <span class="required">*</span></label>
+                <select id="campaignChannel" required>
+                  <option value="social" selected>Viral Social Ads (TikTok, Instagram, YouTube)</option>
+                  <option value="search">Search Engine Ads (Google Ads intent search)</option>
+                  <option value="community">Specialized Tech Communities (Product Hunt, Reddit, Indie Hackers)</option>
+                  <option value="outreach">Direct Outreach & Professional Cold Emails</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <div class="label-with-val">
+                  <label for="campaignBudget">Simulated Test Ad Budget</label>
+                  <span id="campaignBudgetDisplay" class="value-badge-lime">$300</span>
+                </div>
+                <input type="range" id="campaignBudget" min="50" max="2000" step="50" value="300">
+                <div class="range-labels">
+                  <span>$50</span>
+                  <span>$500</span>
+                  <span>$1,000</span>
+                  <span>$1,500</span>
+                  <span>$2,000</span>
+                </div>
+              </div>
+
+              <div class="form-actions mt-4">
+                <button type="button" id="executeSimulationBtn" class="btn btn-lime btn-lg">
+                  Run Simulated Launch
+                </button>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Simulation Output Dashboard -->
+          <div class="city-panel results-panel">
+            
+            <div class="panel-header mb-3">
+              <h3 class="panel-title">Simulated Market Outcomes</h3>
+              <div class="action-tag-group">
+                <button class="btn btn-outline-cyan btn-xs" data-nav="overview">View in World Map</button>
+                <span class="simulated-pill">Simulated Model</span>
+              </div>
+            </div>
+
+            <!-- Empty State Before Any Launch -->
+            <div id="launchEmptyState" class="empty-state">
+              <div class="empty-icon-svg">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+              </div>
+              <h4>No Launch Simulated Yet</h4>
+              <p>Configure campaign settings on the left, then click <strong>"Run Simulated Launch"</strong> to see simulated outcomes in the world.</p>
+            </div>
+
+            <!-- Simulation Results Container -->
+            <div id="launchResultsArea" class="results-container hidden">
+              
+              <!-- Key Metrics -->
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-label">Simulated Reach (Impressions)</div>
+                  <div class="metric-val" id="resImpressions">0</div>
+                  <div class="metric-sub" id="resClicks">0 clicks</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="metric-label">Simulated Installs / Signups</div>
+                  <div class="metric-val text-cyan" id="resInstalls">0</div>
+                  <div class="metric-sub" id="resConversion">0% conversion</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="metric-label">Paying Customers (Simulated)</div>
+                  <div class="metric-val text-lime" id="resPaidUsers">0</div>
+                  <div class="metric-sub" id="resPaidRate">0% of installs paid</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="metric-label">Simulated Financial Outcome</div>
+                  <div class="metric-val" id="resNetProfit">$0</div>
+                  <div class="metric-sub" id="resRevenueBreakdown">Rev: $0 | Budget: $0</div>
+                </div>
+              </div>
+
+              <!-- Funnel & Drop-off Breakdown -->
+              <div class="panel-section">
+                <h4 class="section-title">
+                  <span>Simulated Funnel & Drop-off Breakdown</span>
+                  <span class="simulated-pill">Theoretical Funnel</span>
+                </h4>
+                
+                <div class="funnel-container">
+                  <div class="funnel-row">
+                    <div class="funnel-info">
+                      <span class="funnel-stage">1. Ad Impressions</span>
+                      <span class="funnel-count" id="barImpCount">0</span>
+                    </div>
+                    <div class="funnel-bar-bg">
+                      <div class="funnel-bar-fill" id="barImpFill" style="width: 100%;"></div>
+                    </div>
+                  </div>
+
+                  <div class="funnel-row">
+                    <div class="funnel-info">
+                      <span class="funnel-stage">2. Landing Page Clicks</span>
+                      <span class="funnel-count" id="barClickCount">0</span>
+                    </div>
+                    <div class="funnel-bar-bg">
+                      <div class="funnel-bar-fill" id="barClickFill" style="width: 0%;"></div>
+                    </div>
+                    <div class="dropoff-text" id="dropClickText">Drop-off: -0%</div>
+                  </div>
+
+                  <div class="funnel-row">
+                    <div class="funnel-info">
+                      <span class="funnel-stage">3. App Installs / Trials</span>
+                      <span class="funnel-count" id="barInstallCount">0</span>
+                    </div>
+                    <div class="funnel-bar-bg">
+                      <div class="funnel-bar-fill" id="barInstallFill" style="width: 0%;"></div>
+                    </div>
+                    <div class="dropoff-text" id="dropInstallText">Drop-off: -0%</div>
+                  </div>
+
+                  <div class="funnel-row">
+                    <div class="funnel-info">
+                      <span class="funnel-stage">4. Paid Conversions</span>
+                      <span class="funnel-count" id="barPaidCount">0</span>
+                    </div>
+                    <div class="funnel-bar-bg">
+                      <div class="funnel-bar-fill" id="barPaidFill" style="width: 0%;"></div>
+                    </div>
+                    <div class="dropoff-text" id="dropPaidText">Drop-off: -0%</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Customer Feedback & Reviews -->
+              <div class="panel-section">
+                <div class="reviews-header">
+                  <h4 class="section-title">
+                    <span>Simulated Customer Reviews</span>
+                    <span class="simulated-pill">Simulated Profiles</span>
+                  </h4>
+                  <div class="rating-summary">
+                    <span class="stars" id="resStars">★★★★☆</span>
+                    <strong id="resAvgRating">4.0 / 5.0</strong>
+                  </div>
+                </div>
+
+                <div class="reviews-list" id="resReviewsList">
+                  <!-- Populated from simulation engine -->
+                </div>
+              </div>
+
+              <!-- Assumptions Card -->
+              <div class="assumptions-card">
+                <div class="assumptions-header">
+                  <span class="assumptions-icon-svg">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  </span>
+                  <div>
+                    <h5>Simulation Assumptions & Model Boundaries</h5>
+                    <p class="assumptions-desc">What this simulation models vs. what it cannot predict:</p>
+                  </div>
+                </div>
+                <ul class="assumptions-list">
+                  <li><strong>Price Sensitivity Curve:</strong> Conversions decrease non-linearly as unit price exceeds the target group's declared budget tolerance.</li>
+                  <li><strong>Channel Relevance:</strong> Ad impressions and click-through rates scale based on whether the chosen channel matches the audience's primary discovery habit.</li>
+                  <li><strong>What It Does NOT Prove:</strong> This model assumes immediate visibility without organic churn or viral decay. It does <em>not</em> validate real consumer willingness to buy, does <em>not</em> forecast actual commercial revenue, and cannot substitute for speaking directly with real human customers.</li>
+                </ul>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ========================================================== -->
+      <!-- VIEW 5: SIMULATION HISTORY                                 -->
+      <!-- ========================================================== -->
+      <section id="view-history" class="page-view">
+        <div class="view-header">
+          <div>
+            <h2>Simulation History</h2>
+            <p class="view-desc">Compare past simulated launch tests side-by-side to observe how pricing and channel adjustments affected your virtual outcomes.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline-cyan btn-sm" data-nav="overview">Return to World Map</button>
+            <button id="clearHistoryBtn" class="btn btn-outline-cyan btn-sm">Clear History</button>
+          </div>
+        </div>
+
+        <div class="city-panel">
+          <div id="historyEmptyNotice" class="empty-state">
+            <div class="empty-icon-svg">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <h4>No Simulation History Found</h4>
+            <p>You haven't run any simulated launches yet. Set up a campaign in the <strong>Launch Lab</strong> or click <em>Advance World</em> to create your first record.</p>
+            <button class="btn btn-lime btn-sm mt-3" data-nav="launch">Open Launch Lab →</button>
+          </div>
+
+          <div id="historyTableContainer" class="history-table-wrapper hidden">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Run</th>
+                  <th>Startup</th>
+                  <th>Target Group</th>
+                  <th>Price</th>
+                  <th>Channel</th>
+                  <th>Budget</th>
+                  <th>Installs</th>
+                  <th>Paid Users</th>
+                  <th>Net Profit (Sim)</th>
+                  <th>Evidence</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <!-- Populated dynamically from localStorage & Supabase -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================== -->
+      <!-- VIEW: MARKET DATA LIBRARY                                  -->
+      <!-- ========================================================== -->
+      <section id="view-library" class="page-view">
+        <div class="view-header">
+          <div>
+            <h2>Market Data Library</h2>
+            <p class="view-desc">Verified macroeconomic and digital infrastructure observations from international statistical agencies. Sourced for contextual research.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline-cyan btn-sm" id="btnRefreshLibrary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh Data
+            </button>
+            <button class="btn btn-outline-cyan btn-sm" data-nav="overview">Return to World Map</button>
+          </div>
+        </div>
+
+        <!-- Provenance & Methodology Banner -->
+        <div class="library-provenance-banner">
+          <div class="provenance-col">
+            <span class="provenance-title">Primary Publisher:</span>
+            <span class="provenance-val">The World Bank Group (World Development Indicators)</span>
+          </div>
+          <div class="provenance-col">
+            <span class="provenance-title">Reuse License:</span>
+            <span class="provenance-val">Creative Commons Attribution 4.0 International (CC-BY 4.0)</span>
+          </div>
+          <div class="provenance-col">
+            <span class="provenance-title">Methodology & Source:</span>
+            <a href="https://databank.worldbank.org/source/world-development-indicators" target="_blank" rel="noopener noreferrer" class="provenance-link">
+              World Bank DataBank Documentation ↗
+            </a>
+          </div>
+        </div>
+
+        <!-- Explicit Limitation Callout -->
+        <div class="library-limitation-banner">
+          <div class="limitation-badge">RESEARCH BOUNDARY &amp; DISCLAIMER</div>
+          <p>
+            Macroeconomic indicators (such as national GDP per capita and baseline internet penetration) establish background market scale and infrastructure readiness. They <strong>do not predict</strong> individual willingness to buy, price elasticity, software adoption, or corporate IT budgets.
+          </p>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="city-panel library-filter-panel">
+          <div class="library-filters-row">
+            <div class="filter-group">
+              <label for="filterLibraryCountry">Country:</label>
+              <select id="filterLibraryCountry" class="form-select filter-select">
+                <option value="ALL">All Sovereign Countries</option>
+                <option value="USA" selected>United States (USA)</option>
+                <option value="GBR">United Kingdom (GBR)</option>
+                <option value="DEU">Germany (DEU)</option>
+                <option value="IND">India (IND)</option>
+                <option value="KEN">Kenya (KEN)</option>
+                <option value="FRA">France (FRA)</option>
+                <option value="CAN">Canada (CAN)</option>
+                <option value="JPN">Japan (JPN)</option>
+                <option value="SGP">Singapore (SGP)</option>
+                <option value="BRA">Brazil (BRA)</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filterLibraryTopic">Topic:</label>
+              <select id="filterLibraryTopic" class="form-select filter-select">
+                <option value="ALL">All Indicator Topics</option>
+                <option value="Demographics & Market Size">Demographics &amp; Market Size</option>
+                <option value="Economic Context">Economic Context</option>
+                <option value="Digital Infrastructure & Connectivity">Digital Infrastructure &amp; Connectivity</option>
+                <option value="Mobile Infrastructure">Mobile Infrastructure</option>
+                <option value="Broadband Infrastructure">Broadband Infrastructure</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filterLibraryYear">Year:</label>
+              <select id="filterLibraryYear" class="form-select filter-select">
+                <option value="ALL">All Available Years</option>
+                <option value="2024">2024</option>
+                <option value="2023" selected>2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+                <option value="2020">2020</option>
+                <option value="2019">2019</option>
+                <option value="2018">2018</option>
+              </select>
+            </div>
+
+            <div class="filter-group filter-search-group">
+              <label for="filterLibrarySearch">Search:</label>
+              <input type="text" id="filterLibrarySearch" class="form-input filter-search-input" placeholder="Search indicator or code...">
+            </div>
+          </div>
+
+          <div class="library-filter-status" id="libraryFilterStatus">
+            Showing observations for selected filters. Missing values are preserved as unavailable.
+          </div>
+        </div>
+
+        <!-- Indicators Grid -->
+        <div class="library-cards-grid" id="libraryCardsContainer">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: FOUNDER AUTHENTICATION (SIGN UP & SIGN IN)           -->
+  <!-- ========================================================== -->
+  <div id="authModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <div class="brand-icon-lime">✱</div>
+          <h3>Founder Studio Cloud Account</h3>
+        </div>
+        <button class="modal-close-btn" id="btnCloseAuthModal" type="button">✕</button>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="tabSignInBtn" type="button">Sign In</button>
+        <button class="auth-tab-btn" id="tabSignUpBtn" type="button">Create Account</button>
+      </div>
+
+      <div id="authNotice" class="auth-notice hidden"></div>
+
+      <form id="authForm" class="auth-form">
+        <div class="form-group">
+          <label for="authEmail">Founder Email</label>
+          <input type="email" id="authEmail" class="form-input" placeholder="founder@venture.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" class="form-input" placeholder="••••••••••••" required minlength="6" autocomplete="current-password">
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="btn btn-lime btn-full mt-2">
+          Sign In to Workspace
+        </button>
+      </form>
+
+      <div class="modal-footer-note">
+        <span>Need to configure your database keys?</span>
+        <button type="button" class="btn-text-link" id="btnSwitchToCloudConfig">Supabase Settings →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: SUPABASE CONNECTION CONFIGURATION                    -->
+  <!-- ========================================================== -->
+  <div id="cloudConfigModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="icon-gear-lime">⚙</span>
+          <h3>Supabase Connection Settings</h3>
+        </div>
+        <button class="modal-close-btn" id="btnCloseCloudModal" type="button">✕</button>
+      </div>
+
+      <div class="cloud-security-alert">
+        <strong style="color: var(--lime);">Client Security Notice:</strong>
+        Enter only your <strong>Project URL</strong> and <strong>Publishable (Anon) Key</strong>. Never enter your service-role key or importer secret in the browser.
+      </div>
+
+      <form id="cloudConfigForm" class="auth-form">
+        <div class="form-group">
+          <label for="cfgModalUrl">Supabase Project URL</label>
+          <input type="url" id="cfgModalUrl" class="form-input" placeholder="https://xyzcompany.supabase.co" required>
+        </div>
+
+        <div class="form-group">
+          <label for="cfgModalKey">Supabase Publishable (Anon) Key</label>
+          <input type="text" id="cfgModalKey" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+        </div>
+
+        <div id="cfgModalNotice" class="auth-notice hidden"></div>
+
+        <div class="modal-actions-row">
+          <button type="submit" class="btn btn-lime">Save &amp; Connect</button>
+          <button type="button" id="btnDisconnectCloud" class="btn btn-danger-outline">Disconnect</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: SIMULATION AUDIT EVIDENCE INSPECTOR                  -->
+  <!-- ========================================================== -->
+  <div id="evidenceModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-header">
+        <div>
+          <div class="evidence-tag-row">
+            <span class="evidence-badge-lime" id="evidRunNumber">Run Evidence</span>
+            <span class="evidence-timestamp" id="evidTimestamp">Recorded</span>
+          </div>
+          <h3 id="evidTitle">Model Evidence &amp; Assumptions Audit</h3>
+        </div>
+        <button class="modal-close-btn" id="btnCloseEvidenceModal" type="button">✕</button>
+      </div>
+
+      <div class="evidence-modal-body">
+        
+        <!-- Section 1: Grounding Macro Indicators -->
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">
+            <span class="evidence-icon-svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </span>
+            Contextual Macroeconomic &amp; Infrastructure Indicators
+          </h4>
+          <p class="evidence-section-desc">Real-world baseline indicators for the target market applied as background context.</p>
+          <div id="evidIndicatorsList" class="evidence-grid-2">
+            <!-- Dynamic indicators list -->
+          </div>
+        </div>
+
+        <!-- Section 2: Founder Model Hypotheses & Parameters -->
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">
+            <span class="evidence-icon-svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </span>
+            Founder Hypotheses &amp; Simulation Assumptions
+          </h4>
+          <div id="evidAssumptionsList" class="evidence-assumptions-table">
+            <!-- Dynamic assumptions list -->
+          </div>
+        </div>
+
+        <!-- Section 3: Calculated Outcomes Summary -->
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">
+            <span class="evidence-icon-svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            </span>
+            Simulated Outcomes (Explicitly Simulated)
+          </h4>
+          <div id="evidOutcomesMetrics" class="evidence-metrics-row">
+            <!-- Dynamic outcomes breakdown -->
+          </div>
+        </div>
+
+        <!-- Section 4: Boundary Disclaimer -->
+        <div class="evidence-disclaimer-box">
+          <strong>Educational Model Disclaimer:</strong>
+          All customer decisions, conversion drop-offs, and financial results are simulated outputs generated by Foundry's market simulation model for founder practice. Country-level macro indicators provide general national context; they do not represent surveyed buyers or guarantee commercial performance.
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase JS Client & Application Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabaseClient.js"></script>
+  <script src="app.js?v=3"></script>
+</body>
+</html>

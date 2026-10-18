@@ -1,0 +1,703 @@
+/**
+ * Foundry: Virtual Startup World - Supabase Client & Backend Integration
+ * Browser-side client using ONLY the publishable (anon) API key.
+ * Respects strict Row Level Security (RLS) policies.
+ * Never includes service-role keys or importer secrets.
+ */
+
+(function (window) {
+  'use strict';
+
+  // Storage keys for browser config
+  const KEY_URL = 'vsw_supabase_url';
+  const KEY_ANON = 'vsw_supabase_anon_key';
+
+  class FoundrySupabaseService {
+    constructor() {
+      this.client = null;
+      this.url = '';
+      this.anonKey = '';
+      this.currentUser = null;
+      this.currentWorkspace = null;
+      this.authStateListeners = [];
+
+      this.init();
+    }
+
+    init() {
+      // 1. Try environment/window presets or localStorage
+      const savedUrl = window.FOUNDRY_SUPABASE_URL || localStorage.getItem(KEY_URL) || '';
+      const savedAnon = window.FOUNDRY_SUPABASE_ANON_KEY || localStorage.getItem(KEY_ANON) || '';
+
+      if (savedUrl && savedAnon) {
+        this.connect(savedUrl, savedAnon);
+      }
+    }
+
+    connect(url, anonKey) {
+      if (!url || !anonKey) return false;
+      this.url = url.trim().replace(/\/$/, '');
+      this.anonKey = anonKey.trim();
+
+      // Guard: Ensure user did not accidentally supply a service_role key
+      if (this.anonKey.includes('service_role') || this.anonKey.toLowerCase().includes('secret')) {
+        console.warn('[SECURITY WARNING] Detected service-role or secret key. Only publishable anon keys may be used in the browser.');
+      }
+
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          this.client = window.supabase.createClient(this.url, this.anonKey, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: true
+            }
+          });
+
+          localStorage.setItem(KEY_URL, this.url);
+          localStorage.setItem(KEY_ANON, this.anonKey);
+
+          // Setup auth state listener
+          this.client.auth.onAuthStateChange(async (event, session) => {
+            this.currentUser = session ? session.user : null;
+            if (this.currentUser) {
+              await this.ensureWorkspace();
+            } else {
+              this.currentWorkspace = null;
+            }
+            this.notifyAuthListeners(event, session);
+          });
+
+          // Check initial session
+          this.client.auth.getSession().then(({ data }) => {
+            if (data && data.session) {
+              this.currentUser = data.session.user;
+              this.ensureWorkspace();
+            }
+          });
+
+          return true;
+        } else {
+          console.warn('[FoundrySupabase] Supabase JS SDK not loaded yet.');
+          return false;
+        }
+      } catch (err) {
+        console.error('[FoundrySupabase] Error creating Supabase client:', err);
+        return false;
+      }
+    }
+
+    disconnect() {
+      this.client = null;
+      this.url = '';
+      this.anonKey = '';
+      this.currentUser = null;
+      this.currentWorkspace = null;
+      localStorage.removeItem(KEY_URL);
+      localStorage.removeItem(KEY_ANON);
+      this.notifyAuthListeners('SIGNED_OUT', null);
+    }
+
+    isConfigured() {
+      return Boolean(this.client && this.url && this.anonKey);
+    }
+
+    isAuthenticated() {
+      return Boolean(this.currentUser && this.client);
+    }
+
+    getUser() {
+      return this.currentUser;
+    }
+
+    onAuthStateChange(listener) {
+      if (typeof listener === 'function') {
+        this.authStateListeners.push(listener);
+      }
+    }
+
+    notifyAuthListeners(event, session) {
+      for (const listener of this.authStateListeners) {
+        try {
+          listener(event, session);
+        } catch (e) {
+          console.error('[FoundrySupabase] Auth listener error:', e);
+        }
+      }
+    }
+
+    /* -------------------------------------------------------------
+       AUTH ACTIONS (SIGN UP, SIGN IN, SIGN OUT)
+       ------------------------------------------------------------- */
+    async signUp(email, password) {
+      if (!this.client) throw new Error('Supabase client not configured.');
+      const { data, error } = await this.client.auth.signUp({
+        email: email.trim(),
+        password: password
+      });
+      if (error) throw error;
+      if (data && data.user) {
+        this.currentUser = data.user;
+        await this.ensureWorkspace();
+      }
+      return data;
+    }
+
+    async signIn(email, password) {
+      if (!this.client) throw new Error('Supabase client not configured.');
+      const { data, error } = await this.client.auth.signInWithPassword({
+        email: email.trim(),
+        password: password
+      });
+      if (error) throw error;
+      if (data && data.user) {
+        this.currentUser = data.user;
+        await this.ensureWorkspace();
+      }
+      return data;
+    }
+
+    async signOut() {
+      if (!this.client) return;
+      const { error } = await this.client.auth.signOut();
+      this.currentUser = null;
+      this.currentWorkspace = null;
+      if (error) throw error;
+    }
+
+    /* -------------------------------------------------------------
+       FOUNDER WORKSPACE CONTAINER
+       ------------------------------------------------------------- */
+    async ensureWorkspace() {
+      if (!this.client || !this.currentUser) return null;
+      try {
+        const { data, error } = await this.client
+          .from('founder_workspaces')
+          .select('*')
+          .eq('user_id', this.currentUser.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          this.currentWorkspace = data;
+          return data;
+        }
+
+        // Create initial workspace for founder
+        const { data: newWs, error: insertErr } = await this.client
+          .from('founder_workspaces')
+          .insert({
+            user_id: this.currentUser.id,
+            name: `${this.currentUser.email.split('@')[0]}'s Venture Studio`
+          })
+          .select()
+          .single();
+
+        if (insertErr) throw insertErr;
+        this.currentWorkspace = newWs;
+        return newWs;
+      } catch (err) {
+        console.error('[FoundrySupabase] ensureWorkspace error:', err);
+        return null;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       FOUNDER DATA SYNC (BACKEND-PERSISTED)
+       ------------------------------------------------------------- */
+
+    // 1. Startup Profile
+    async saveStartupProfile(profile) {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const payload = {
+        workspace_id: ws.id,
+        user_id: this.currentUser.id,
+        name: profile.name || 'Unchartered Venture',
+        product_type: profile.type || '',
+        description: profile.desc || '',
+        stage: profile.stage || 'Prototype / Functional MVP',
+        target_country_name: profile.country || '',
+        target_country_code: this.resolveIso3(profile.country || 'USA'),
+        updated_at: new Date().toISOString()
+      };
+
+      // Check existing startup row
+      const { data: existing } = await this.client
+        .from('founder_startups')
+        .select('id')
+        .eq('workspace_id', ws.id)
+        .maybeSingle();
+
+      if (existing) {
+        const { data, error } = await this.client
+          .from('founder_startups')
+          .update(payload)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await this.client
+          .from('founder_startups')
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    }
+
+    async loadStartupProfile() {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const { data, error } = await this.client
+        .from('founder_startups')
+        .select('*')
+        .eq('workspace_id', ws.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      return {
+        name: data.name || '',
+        type: data.product_type || '',
+        desc: data.description || '',
+        stage: data.stage || 'Prototype / Functional MVP',
+        country: data.target_country_name || ''
+      };
+    }
+
+    // 2. Customer Groups
+    async saveCustomerGroups(groups) {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      // Delete old groups for this workspace and replace
+      await this.client
+        .from('founder_customer_groups')
+        .delete()
+        .eq('workspace_id', ws.id);
+
+      if (!groups || groups.length === 0) return [];
+
+      const rows = groups.map(g => ({
+        workspace_id: ws.id,
+        user_id: this.currentUser.id,
+        name: g.name,
+        description: g.desc || '',
+        budget_tier: ['low', 'medium', 'high'].includes(g.budget) ? g.budget : 'medium',
+        primary_channel: g.channel || 'social',
+        stated_assumptions: g.assumptions || `Stated channel preference: ${g.channel}, Budget: ${g.budget}`
+      }));
+
+      const { data, error } = await this.client
+        .from('founder_customer_groups')
+        .insert(rows)
+        .select();
+
+      if (error) throw error;
+      return data;
+    }
+
+    async loadCustomerGroups() {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const { data, error } = await this.client
+        .from('founder_customer_groups')
+        .select('*')
+        .eq('workspace_id', ws.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map(row => ({
+        id: row.id,
+        name: row.name,
+        desc: row.description,
+        budget: row.budget_tier,
+        channel: row.primary_channel,
+        assumptions: row.stated_assumptions
+      }));
+    }
+
+    // 3. Competitor Notes
+    async saveCompetitorNotes(notes) {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const payload = {
+        workspace_id: ws.id,
+        user_id: this.currentUser.id,
+        notes: notes || '',
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: existing } = await this.client
+        .from('founder_competitor_notes')
+        .select('id')
+        .eq('workspace_id', ws.id)
+        .maybeSingle();
+
+      if (existing) {
+        const { data, error } = await this.client
+          .from('founder_competitor_notes')
+          .update(payload)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await this.client
+          .from('founder_competitor_notes')
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    }
+
+    async loadCompetitorNotes() {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const { data, error } = await this.client
+        .from('founder_competitor_notes')
+        .select('notes')
+        .eq('workspace_id', ws.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data ? data.notes : '';
+    }
+
+    // 4. Active Campaign
+    async saveCampaign(campaign) {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const payload = {
+        workspace_id: ws.id,
+        user_id: this.currentUser.id,
+        name: 'Launch Experiment',
+        channel: campaign.channel || 'social',
+        price: campaign.price || 0,
+        budget: campaign.budget || 0,
+        status: 'active',
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: existing } = await this.client
+        .from('founder_campaigns')
+        .select('id')
+        .eq('workspace_id', ws.id)
+        .maybeSingle();
+
+      if (existing) {
+        const { data, error } = await this.client
+          .from('founder_campaigns')
+          .update(payload)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await this.client
+          .from('founder_campaigns')
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    }
+
+    async loadCampaign() {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const { data, error } = await this.client
+        .from('founder_campaigns')
+        .select('*')
+        .eq('workspace_id', ws.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      return {
+        price: Number(data.price),
+        channel: data.channel,
+        budget: Number(data.budget)
+      };
+    }
+
+    // 5. Save Simulation Run with Audit Evidence & Events
+    async recordSimulationRun({ run, events, evidenceList }) {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      // 1. Insert simulation run
+      const runPayload = {
+        workspace_id: ws.id,
+        user_id: this.currentUser.id,
+        run_number: run.runNumber || 1,
+        startup_name: run.appName || 'Your Startup',
+        customer_group_name: run.targetGroupName || 'Target Group',
+        channel: run.channel || 'social',
+        price: run.price || 0,
+        budget: run.budget || 0,
+        simulated_impressions: run.impressions || 0,
+        simulated_clicks: run.clicks || 0,
+        simulated_installs: run.installs || 0,
+        simulated_paid_users: run.paidUsers || 0,
+        simulated_revenue: run.revenue || 0,
+        simulated_net_profit: run.netProfit || 0,
+        simulated_avg_rating: Math.min(5.0, Math.max(1.0, run.avgRating || 3.0)),
+        simulated_reviews: run.reviews || [],
+        model_version: 'v1.0-wdi-grounded'
+      };
+
+      const { data: insertedRun, error: runErr } = await this.client
+        .from('founder_simulation_runs')
+        .insert(runPayload)
+        .select()
+        .single();
+
+      if (runErr) throw runErr;
+      const simRunId = insertedRun.id;
+
+      // 2. Insert simulation evidence
+      if (evidenceList && evidenceList.length > 0) {
+        const evidenceRows = evidenceList.map(ev => ({
+          simulation_run_id: simRunId,
+          workspace_id: ws.id,
+          user_id: this.currentUser.id,
+          indicator_code: ev.indicator_code || null,
+          indicator_name: ev.indicator_name,
+          indicator_value: ev.indicator_value !== undefined ? ev.indicator_value : null,
+          indicator_unit: ev.indicator_unit || '',
+          reference_year: ev.reference_year || null,
+          country_code: ev.country_code || null,
+          assumption_type: ev.assumption_type || 'macro_market_context',
+          assumption_key: ev.assumption_key,
+          assumption_value: String(ev.assumption_value),
+          formula_applied: ev.formula_applied || null,
+          disclaimer: 'Simulated educational model output. Background macroeconomic indicators provide national context, not microeconomic purchasing intent or sales guarantees.'
+        }));
+
+        await this.client
+          .from('simulation_evidence')
+          .insert(evidenceRows);
+      }
+
+      // 3. Insert simulation events
+      if (events && events.length > 0) {
+        const eventRows = events.map((ev, idx) => ({
+          simulation_run_id: simRunId,
+          workspace_id: ws.id,
+          user_id: this.currentUser.id,
+          step_day: idx + 1,
+          district: ev.district || 'marketplace',
+          event_type: ev.event_type || 'simulation_step',
+          title: ev.title || 'Market Activity',
+          description: ev.body || ev.description || '',
+          metrics_delta: ev.metrics || {}
+        }));
+
+        await this.client
+          .from('founder_simulation_events')
+          .insert(eventRows);
+      }
+
+      return insertedRun;
+    }
+
+    // 6. Load History with Evidence
+    async loadSimulationHistory() {
+      if (!this.isAuthenticated()) return [];
+      const ws = await this.ensureWorkspace();
+      if (!ws) return [];
+
+      const { data: runs, error } = await this.client
+        .from('founder_simulation_runs')
+        .select(`
+          *,
+          simulation_evidence (*)
+        `)
+        .eq('workspace_id', ws.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      if (!runs) return [];
+
+      return runs.map(r => ({
+        id: r.id,
+        runNumber: r.run_number,
+        timestamp: new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        dateStr: new Date(r.created_at).toLocaleDateString(),
+        appName: r.startup_name,
+        targetGroupName: r.customer_group_name,
+        channel: r.channel,
+        price: Number(r.price),
+        budget: Number(r.budget),
+        impressions: r.simulated_impressions,
+        clicks: r.simulated_clicks,
+        installs: r.simulated_installs,
+        paidUsers: r.simulated_paid_users,
+        revenue: Number(r.simulated_revenue),
+        netProfit: Number(r.simulated_net_profit),
+        avgRating: Number(r.simulated_avg_rating),
+        reviews: r.simulated_reviews || [],
+        evidence: r.simulation_evidence || []
+      }));
+    }
+
+    /* -------------------------------------------------------------
+       MARKET DATA LIBRARY (PUBLIC READ VIA RLS)
+       ------------------------------------------------------------- */
+    async getMarketSources() {
+      if (!this.client) return [];
+      const { data, error } = await this.client
+        .from('market_data_sources')
+        .select('*');
+      if (error) {
+        console.warn('[FoundrySupabase] getMarketSources:', error.message);
+        return [];
+      }
+      return data || [];
+    }
+
+    async getMarketIndicators() {
+      if (!this.client) return [];
+      const { data, error } = await this.client
+        .from('market_indicators')
+        .select('*');
+      if (error) {
+        console.warn('[FoundrySupabase] getMarketIndicators:', error.message);
+        return [];
+      }
+      return data || [];
+    }
+
+    async getCountryObservations({ countryCode, topic, year, limit = 200 } = {}) {
+      if (!this.client) return [];
+
+      let query = this.client
+        .from('country_observations')
+        .select(`
+          id,
+          country_code,
+          country_name,
+          indicator_code,
+          year,
+          value,
+          unit,
+          imported_at,
+          metadata,
+          market_indicators (name, topic, limitations, definition)
+        `)
+        .order('year', { ascending: false })
+        .limit(limit);
+
+      if (countryCode && countryCode !== 'ALL') {
+        query = query.eq('country_code', countryCode.toUpperCase());
+      }
+
+      if (year && year !== 'ALL') {
+        query = query.eq('year', parseInt(year, 10));
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.warn('[FoundrySupabase] getCountryObservations:', error.message);
+        return [];
+      }
+
+      if (!data) return [];
+
+      if (topic && topic !== 'ALL') {
+        return data.filter(row => row.market_indicators && row.market_indicators.topic === topic);
+      }
+
+      return data;
+    }
+
+    async getAvailableCountries() {
+      if (!this.client) return [];
+      const { data, error } = await this.client
+        .from('country_observations')
+        .select('country_code, country_name')
+        .limit(1000);
+
+      if (error || !data) return [];
+
+      const map = new Map();
+      for (const row of data) {
+        if (!map.has(row.country_code)) {
+          map.set(row.country_code, row.country_name || row.country_code);
+        }
+      }
+
+      return Array.from(map.entries())
+        .map(([code, name]) => ({ code, name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // Helper: ISO-3 Country Code Resolver
+    resolveIso3(input) {
+      if (!input) return 'USA';
+      const clean = input.trim().toUpperCase();
+      if (clean.length === 3) return clean;
+
+      const mapping = {
+        'UNITED STATES': 'USA',
+        'US': 'USA',
+        'USA': 'USA',
+        'UNITED KINGDOM': 'GBR',
+        'UK': 'GBR',
+        'GBR': 'GBR',
+        'GERMANY': 'DEU',
+        'DEUTSCHLAND': 'DEU',
+        'DEU': 'DEU',
+        'INDIA': 'IND',
+        'IND': 'IND',
+        'KENYA': 'KEN',
+        'KEN': 'KEN',
+        'FRANCE': 'FRA',
+        'CANADA': 'CAN',
+        'BRAZIL': 'BRA',
+        'JAPAN': 'JPN',
+        'SINGAPORE': 'SGP',
+        'NIGERIA': 'NGA',
+        'AUSTRALIA': 'AUS'
+      };
+
+      return mapping[clean] || 'USA';
+    }
+  }
+
+  // Expose singleton instance on window
+  window.foundrySupabase = new FoundrySupabaseService();
+
+})(window);
