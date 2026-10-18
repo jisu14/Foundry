@@ -992,7 +992,11 @@
         'Payment Cards & Infrastructure': 'Fintech & Payment Processing',
         'E-Commerce & Digital Economy': 'Consumer E-Commerce & Retail',
         'Digital Trade & Services': 'Cross-Border Digital Services & IT Export',
-        'Enterprise ICT Adoption': 'Enterprise B2B Software & Cloud Adoption'
+        'Enterprise ICT Adoption': 'Enterprise B2B Software & Cloud Adoption',
+        'Mobile Apps & Software Ecosystem': 'Mobile Applications & Operating Systems',
+        'Fintech & Mobile Banking Apps': 'Fintech & Mobile Banking Applications',
+        'Digital Health & Wellness Apps': 'Digital Health & Telemedicine Applications',
+        'Entertainment & Video Apps': 'Digital Media & Streaming Applications'
       };
 
       indicatorsMap.forEach(ind => {

@@ -307,6 +307,56 @@ The Coverage page highlights major venture sectors that currently have **0 recor
 - **If your focus is ClimateTech / Energy**: Prioritize **IRENA Renewable Energy Statistics** for national clean grid transition context.
 - **If your focus is HealthTech / BioTech**: Prioritize **WHO Global Health Observatory** for health expenditure and clinical infrastructure context.
 
+---
+
+## 📱 Industry Data Pack #1: Mobile Apps (Digital Economy & Consumer App Ecosystem)
+
+Foundry incorporates its first vertical industry data pack: **Mobile Apps**, evaluating smartphone app installation rates, permission/privacy scrutiny, and sector-specific category engagement (fintech banking, digital health, and streaming entertainment).
+
+### 1. Source Classification & Legal Redistribution Analysis
+
+Our research separates sources into three strict tiers:
+
+| Tier | Source / Publisher | Indicators Covered | Official Access Method | Terms of Use & Redistribution | Action in Foundry |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Tier 1: Permitted Open Data** | **Eurostat (European Commission)** | App installation, app permission config, mobile banking apps, digital health apps, video streaming apps | Eurostat SDMX REST API & Bulk Download Facility (`isoc_sk_app_i`, `isoc_ci_ac_i`) | **Commission Decision 2011/833/EU**: Free reuse for commercial & non-commercial purposes with attribution | **Fully Automated Importer Built & Live in Catalog** |
+| **Tier 1: Permitted Open Data** | **ITU (UN ICT Agency)** | Mobile broadband subscriptions, 4G/5G population coverage | ITU DataHub API & Permitted Admin Ingest | ITU Non-Commercial with Attribution | Integrated in Foundry Core Telecom Rail |
+| **Tier 2: Paid Commercial Intelligence** | **Sensor Tower, data.ai (Sensor Tower), Appfigures** | Store-level download estimates, in-app purchase revenue, active device counts, category charts | Enterprise REST APIs (`api.sensortower.com`, `api.appfigures.com`) requiring licensed Bearer token | **Strictly Proprietary**: Redistribution prohibited without explicit OEM/Enterprise redistribution rider ($30k–$75k+/yr). Raw redistribution violates terms. | **Documented Admin Ingestion Path Provided (`--paid-license`)**; Zero Scraping |
+| **Tier 3: Unavailable / Restricted** | **Apple App Store & Google Play Developer Consoles** | First-party app telemetry, conversion funnel, crashes | Private developer OAuth; aggregated country macro telemetry is not published | Apple Developer Agreement & Google Play ToS forbid scraping or redistributing store catalog data | **Recorded as Unavailable**; Store scraping strictly forbidden |
+
+### 2. What Must Be Provided to Ingest Commercial Store Intelligence (Sensor Tower / data.ai / Appfigures)
+
+Because commercial intelligence vendors do not grant open redistribution rights, Foundry **does not scrape, copy gated benchmark PDFs, or invent synthetic download figures**. To ingest commercial store estimates for your venture:
+1. **Commercial License Key**: A paid subscription Bearer token or API key with export permissions.
+2. **Standardized CSV Export**: Export your licensed country report from Sensor Tower / data.ai / Appfigures containing columns: `country_code, indicator_code, year, value, unit`.
+3. **Execution Command**:
+   ```bash
+   node scripts/import-mobile-apps.mjs --file=/path/to/licensed-app-telemetry.csv --paid-license="SensorTower Enterprise Order #12345"
+   ```
+   Or invoke the Supabase Edge Function:
+   ```bash
+   curl -i -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/import-mobile-apps" \
+     -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+     -H "Content-Type: text/csv" \
+     --data-binary @data/my-licensed-downloads.csv
+   ```
+
+### 3. Eurostat Mobile App Indicators Added to Foundry Catalog
+
+| Indicator Code | Name | Topic / Domain | Unit | Publisher & Methodology |
+| :--- | :--- | :--- | :--- | :--- |
+| `EUROSTAT.APP.INSTALL` | Individuals who installed apps on a mobile device | Mobile Apps & Software Ecosystem | % of individuals (16–74) | Eurostat `isoc_sk_app_i` (CINSAPP1). Harmonized annual household ICT surveys across Europe. |
+| `EUROSTAT.APP.CONFIG` | Individuals who managed or restricted app permissions | Mobile Apps & Software Ecosystem | % of individuals (16–74) | Eurostat `isoc_sk_app_i` (CCONF1). Measures consumer privacy vigilance and permission scrutiny. |
+| `EUROSTAT.APP.BANK` | Individuals using internet or mobile banking apps | Fintech & Mobile Banking Apps | % of individuals (16–74) | Eurostat `isoc_ci_ac_i` (I_BANK). Measures active financial app utilization. |
+| `EUROSTAT.APP.HEALTH` | Individuals using health or fitness apps/devices | Digital Health & Wellness Apps | % of individuals (16–74) | Eurostat `isoc_ci_ac_i` (I_HEAL). Measures health monitoring app and wearable adoption. |
+| `EUROSTAT.APP.STREAM` | Individuals using video-on-demand streaming apps | Entertainment & Video Apps | % of individuals (16–74) | Eurostat `isoc_ci_ac_i` (I_IUSTVV). Measures digital entertainment app engagement. |
+
+### 4. Critical Research Boundary: Macro App Usage vs. Startup Purchase Intent
+
+> [!CAUTION]
+> **Macro app usage is not purchase intent**: Sourced statistics showing that 85% of citizens in a country install mobile apps or that 60% use mobile banking apps demonstrate technical feasibility, ecosystem maturity, and smartphone penetration. They **do not prove** that any customer will download, keep, or pay for a new startup's app. Conversion rates, willingness to pay, and churn in Foundry's Launch Lab remain simulated hypotheses grounded in venture design, not historical facts.
+
+
 
 
 

@@ -1808,6 +1808,56 @@ const SOURCED_INDICATOR_CATALOG = [
     sourceUrl: 'https://unctadstat.unctad.org/',
     terms: 'CC-BY 3.0 IGO',
     limitations: 'Measures general consumer e-commerce participation across all commercial sectors (retail, groceries, transport). Past online shopping activity does not prove customer interest or demand for a specific startup\'s offering.'
+  },
+  {
+    code: 'EUROSTAT.APP.INSTALL',
+    name: 'Individuals who installed apps on a mobile device (% of individuals age 16–74)',
+    topic: 'Mobile Apps & Software Ecosystem',
+    unit: '% of individuals (age 16–74)',
+    publisher: 'Eurostat (European Commission)',
+    sourceUrl: 'https://ec.europa.eu/eurostat/databrowser/view/isoc_sk_app_i/',
+    terms: 'Commission Decision 2011/833/EU (Open Data with Attribution)',
+    limitations: 'Measures population-level smartphone app installation activity (Eurostat isoc_sk_app_i, CINSAPP1). Indicates digital mobile literacy and consumer readiness to install native applications; does not indicate download volume for a specific application, in-app spending, or purchase intent for a particular startup.'
+  },
+  {
+    code: 'EUROSTAT.APP.CONFIG',
+    name: 'Individuals who managed or restricted mobile app permissions (% of individuals age 16–74)',
+    topic: 'Mobile Apps & Software Ecosystem',
+    unit: '% of individuals (age 16–74)',
+    publisher: 'Eurostat (European Commission)',
+    sourceUrl: 'https://ec.europa.eu/eurostat/databrowser/view/isoc_sk_app_i/',
+    terms: 'Commission Decision 2011/833/EU (Open Data with Attribution)',
+    limitations: 'Measures user privacy sophistication and app permission scrutiny (Eurostat isoc_sk_app_i, CCONF1). Reflects user vigilance regarding camera, location, and data permissions; does not measure app engagement frequency or monetization conversion.'
+  },
+  {
+    code: 'EUROSTAT.APP.BANK',
+    name: 'Individuals using internet or mobile banking apps (% of individuals age 16–74)',
+    topic: 'Fintech & Mobile Banking Apps',
+    unit: '% of individuals (age 16–74)',
+    publisher: 'Eurostat (European Commission)',
+    sourceUrl: 'https://ec.europa.eu/eurostat/databrowser/view/isoc_ci_ac_i/',
+    terms: 'Commission Decision 2011/833/EU (Open Data with Attribution)',
+    limitations: 'Measures internet and mobile app banking usage for electronic account management (Eurostat isoc_ci_ac_i, I_BANK). Reflects general digital financial transaction habits, not consumer willingness to pay for premium fintech software or subscribe to a new financial startup.'
+  },
+  {
+    code: 'EUROSTAT.APP.HEALTH',
+    name: 'Individuals using health or fitness monitoring apps/devices (% of individuals age 16–74)',
+    topic: 'Digital Health & Wellness Apps',
+    unit: '% of individuals (age 16–74)',
+    publisher: 'Eurostat (European Commission)',
+    sourceUrl: 'https://ec.europa.eu/eurostat/databrowser/view/isoc_ci_ac_i/',
+    terms: 'Commission Decision 2011/833/EU (Open Data with Attribution)',
+    limitations: 'Measures adoption of personal digital health tracking tools, fitness wearables, and medical apps (Eurostat isoc_ci_ac_i, I_HEAL). Indicates wellness market familiarity; does not guarantee subscription conversion, reimbursement eligibility, or willingness to pay for digital therapeutics.'
+  },
+  {
+    code: 'EUROSTAT.APP.STREAM',
+    name: 'Individuals using video-on-demand or video streaming apps (% of individuals age 16–74)',
+    topic: 'Entertainment & Video Apps',
+    unit: '% of individuals (age 16–74)',
+    publisher: 'Eurostat (European Commission)',
+    sourceUrl: 'https://ec.europa.eu/eurostat/databrowser/view/isoc_ci_ac_i/',
+    terms: 'Commission Decision 2011/833/EU (Open Data with Attribution)',
+    limitations: 'Measures consumer engagement with digital entertainment and video streaming services via mobile apps and connected TV (Eurostat isoc_ci_ac_i, I_IUSTVV). Reflects leisure bandwidth utilization; does not measure enterprise video adoption or willingness to purchase specialized creator software.'
   }
 ];
 
@@ -2389,6 +2439,20 @@ function buildCatalogFallbackCoverage() {
       recordsCount: 0,
       countriesCoveredCount: 0,
       latestLog: null
+    },
+    {
+      id: 'eurostat',
+      name: 'Eurostat Digital Economy & Society (Mobile Applications)',
+      publisher: 'European Commission (Eurostat)',
+      sourceUrl: 'https://ec.europa.eu/eurostat/web/digital-economy-and-society',
+      methodologyUrl: 'https://ec.europa.eu/eurostat/cache/metadata/en/isoc_i_esms.htm',
+      reuseTerms: 'European Commission Decision 2011/833/EU (Open Data with Attribution)',
+      lastImportedAt: null,
+      importStatus: 'pending',
+      importSucceeded: false,
+      recordsCount: 0,
+      countriesCoveredCount: 0,
+      latestLog: null
     }
   ];
 
@@ -2411,7 +2475,12 @@ function buildCatalogFallbackCoverage() {
     'UNCTAD.ECOMM.DDS.SHR': 'unctadstat',
     'UNCTAD.ECOMM.ENT.RCV': 'unctadstat',
     'UNCTAD.ECOMM.ENT.WEB': 'unctadstat',
-    'UNCTAD.ECOMM.IND.BUY': 'unctadstat'
+    'UNCTAD.ECOMM.IND.BUY': 'unctadstat',
+    'EUROSTAT.APP.INSTALL': 'eurostat',
+    'EUROSTAT.APP.CONFIG': 'eurostat',
+    'EUROSTAT.APP.BANK': 'eurostat',
+    'EUROSTAT.APP.HEALTH': 'eurostat',
+    'EUROSTAT.APP.STREAM': 'eurostat'
   };
 
   const indicatorsList = SOURCED_INDICATOR_CATALOG.map(ind => ({
@@ -2443,7 +2512,11 @@ function buildCatalogFallbackCoverage() {
     'Payment Cards & Infrastructure': 'Fintech & Payment Processing',
     'E-Commerce & Digital Economy': 'Consumer E-Commerce & Retail',
     'Digital Trade & Services': 'Cross-Border Digital Services & IT Export',
-    'Enterprise ICT Adoption': 'Enterprise B2B Software & Cloud Adoption'
+    'Enterprise ICT Adoption': 'Enterprise B2B Software & Cloud Adoption',
+    'Mobile Apps & Software Ecosystem': 'Mobile Applications & Operating Systems',
+    'Fintech & Mobile Banking Apps': 'Fintech & Mobile Banking Applications',
+    'Digital Health & Wellness Apps': 'Digital Health & Telemedicine Applications',
+    'Entertainment & Video Apps': 'Digital Media & Streaming Applications'
   };
 
   const topicMap = new Map();
@@ -2514,7 +2587,7 @@ function buildCatalogFallbackCoverage() {
   ];
 
   return {
-    sourcesCount: 4,
+    sourcesCount: 5,
     indicatorsCount: indicatorsList.length,
     economiesCoveredCount: 0,
     allCoveredCountries: [],
@@ -2598,8 +2671,8 @@ function updateCoverageKPIs(data) {
   const kpiMissing = document.getElementById('kpiMissingGaps');
   const navBadge = document.getElementById('navCoverageCount');
 
-  if (kpiSources) kpiSources.textContent = `${data.sourcesCount || 4} / 4`;
-  if (kpiIndicators) kpiIndicators.textContent = String(data.indicatorsCount || 19);
+  if (kpiSources) kpiSources.textContent = `${data.sourcesCount || 5} / 5`;
+  if (kpiIndicators) kpiIndicators.textContent = String(data.indicatorsCount || 24);
   if (kpiEconomies) kpiEconomies.textContent = data.economiesCoveredCount > 0 ? String(data.economiesCoveredCount) : '0';
   if (kpiYears) kpiYears.textContent = data.yearsSpanStr || 'N/A';
   if (kpiReported) kpiReported.textContent = (data.totalReportedObs || 0).toLocaleString();
@@ -2779,7 +2852,8 @@ function renderIndicatorCoverageTable() {
     world_bank: 'World Bank',
     itu_datahub: 'ITU DataHub',
     global_findex: 'Global Findex',
-    unctadstat: 'UNCTADstat'
+    unctadstat: 'UNCTADstat',
+    eurostat: 'Eurostat'
   };
 
   tbody.innerHTML = filtered.map(ind => {

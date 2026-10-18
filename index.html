@@ -84,7 +84,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </span>
             <span class="nav-label">Market data library</span>
-            <span class="sidebar-badge" id="navLibraryCount">19</span>
+            <span class="sidebar-badge" id="navLibraryCount">24</span>
           </button>
 
           <button class="nav-item" data-view="coverage">
@@ -968,11 +968,11 @@
         <div class="library-provenance-banner">
           <div class="provenance-col">
             <span class="provenance-title">Verified Publishers:</span>
-            <span class="provenance-val">The World Bank (WDI &amp; Global Findex) • ITU • UN Trade and Development (UNCTAD)</span>
+            <span class="provenance-val">The World Bank (WDI &amp; Global Findex) • ITU • UN Trade and Development (UNCTAD) • Eurostat</span>
           </div>
           <div class="provenance-col">
             <span class="provenance-title">Reuse Terms:</span>
-            <span class="provenance-val">CC-BY 4.0 (World Bank) • ITU Non-Commercial • CC-BY 3.0 IGO (UNCTAD)</span>
+            <span class="provenance-val">CC-BY 4.0 (World Bank) • ITU Non-Commercial • CC-BY 3.0 IGO (UNCTAD) • Decision 2011/833/EU (Eurostat)</span>
           </div>
           <div class="provenance-col">
             <span class="provenance-title">Methodology &amp; Portals:</span>
@@ -984,6 +984,8 @@
               <a href="https://datahub.itu.int/" target="_blank" rel="noopener noreferrer" class="provenance-link">ITU DataHub ↗</a>
               •
               <a href="https://unctadstat.unctad.org/" target="_blank" rel="noopener noreferrer" class="provenance-link">UNCTADstat ↗</a>
+              •
+              <a href="https://ec.europa.eu/eurostat/web/digital-economy-and-society" target="_blank" rel="noopener noreferrer" class="provenance-link">Eurostat ↗</a>
             </span>
           </div>
         </div>
@@ -992,7 +994,7 @@
         <div class="library-limitation-banner">
           <div class="limitation-badge">RESEARCH BOUNDARY &amp; DISCLAIMER</div>
           <p>
-            Macroeconomic, telecommunications, financial inclusion, and e-commerce statistics (such as GDP per capita, internet access, card ownership, and online shopping rates) establish baseline market scale, payment readiness, and digital adoption. They <strong>do not predict or prove</strong> that a customer will buy a product, nor do they measure price elasticity, individual purchasing intent, or corporate software budgets. Sourced statistics are strictly separated from heuristic simulation assumptions.
+            Macroeconomic, telecommunications, financial inclusion, e-commerce, and mobile app usage statistics (such as GDP per capita, internet access, card ownership, online shopping, and mobile app installation rates) establish baseline market scale, payment readiness, and digital adoption. They <strong>do not predict or prove</strong> that a customer will buy a product, nor do they measure price elasticity, individual purchasing intent, or corporate software budgets. Sourced statistics are strictly separated from heuristic simulation assumptions.
           </p>
         </div>
 
@@ -1031,6 +1033,10 @@
                 <option value="E-Commerce & Digital Economy">E-Commerce &amp; Digital Economy</option>
                 <option value="Digital Trade & Services">Digital Trade &amp; Services</option>
                 <option value="Enterprise ICT Adoption">Enterprise ICT Adoption</option>
+                <option value="Mobile Apps & Software Ecosystem">Mobile Apps &amp; Software Ecosystem</option>
+                <option value="Fintech & Mobile Banking Apps">Fintech &amp; Mobile Banking Apps</option>
+                <option value="Digital Health & Wellness Apps">Digital Health &amp; Wellness Apps</option>
+                <option value="Entertainment & Video Apps">Entertainment &amp; Video Apps</option>
               </select>
             </div>
 
@@ -1100,14 +1106,14 @@
         <!-- Coverage KPI Stats Bar -->
         <div class="coverage-stats-bar">
           <div class="coverage-kpi-card">
-            <div class="coverage-kpi-num" id="kpiVerifiedSources">4 / 4</div>
+            <div class="coverage-kpi-num" id="kpiVerifiedSources">5 / 5</div>
             <div class="coverage-kpi-label">Verified Sources</div>
-            <div class="coverage-kpi-sub">WDI, ITU, Findex, UNCTAD</div>
+            <div class="coverage-kpi-sub">WDI, ITU, Findex, UNCTAD, Eurostat</div>
           </div>
           <div class="coverage-kpi-card">
-            <div class="coverage-kpi-num" id="kpiCatalogIndicators">19</div>
+            <div class="coverage-kpi-num" id="kpiCatalogIndicators">24</div>
             <div class="coverage-kpi-label">Catalog Indicators</div>
-            <div class="coverage-kpi-sub">Across 11 distinct topics</div>
+            <div class="coverage-kpi-sub">Across 15 distinct topics</div>
           </div>
           <div class="coverage-kpi-card">
             <div class="coverage-kpi-num" id="kpiEconomiesCovered">--</div>
@@ -1201,18 +1207,19 @@
             <div class="coverage-filter-item">
               <label for="filterCovSource">Source:</label>
               <select id="filterCovSource" class="form-select filter-select">
-                <option value="ALL">All Sources (4)</option>
+                <option value="ALL">All Sources (5)</option>
                 <option value="world_bank">World Bank WDI</option>
                 <option value="itu_datahub">ITU DataHub</option>
                 <option value="global_findex">Global Findex</option>
                 <option value="unctadstat">UNCTADstat</option>
+                <option value="eurostat">Eurostat (Mobile Apps)</option>
               </select>
             </div>
 
             <div class="coverage-filter-item">
               <label for="filterCovTopic">Topic:</label>
               <select id="filterCovTopic" class="form-select filter-select">
-                <option value="ALL">All Topics (11)</option>
+                <option value="ALL">All Topics (15)</option>
                 <option value="Demographics & Market Size">Demographics &amp; Market Size</option>
                 <option value="Economic Context">Economic Context</option>
                 <option value="Digital Infrastructure & Connectivity">Digital Infrastructure &amp; Connectivity</option>
@@ -1224,6 +1231,10 @@
                 <option value="E-Commerce & Digital Economy">E-Commerce &amp; Digital Economy</option>
                 <option value="Digital Trade & Services">Digital Trade &amp; Services</option>
                 <option value="Enterprise ICT Adoption">Enterprise ICT Adoption</option>
+                <option value="Mobile Apps & Software Ecosystem">Mobile Apps &amp; Software Ecosystem</option>
+                <option value="Fintech & Mobile Banking Apps">Fintech &amp; Mobile Banking Apps</option>
+                <option value="Digital Health & Wellness Apps">Digital Health &amp; Wellness Apps</option>
+                <option value="Entertainment & Video Apps">Entertainment &amp; Video Apps</option>
               </select>
             </div>
 
@@ -1279,6 +1290,7 @@
               </div>
               <p class="gap-card-desc">While macroeconomic and telecom indicators cover 150+ economies, enterprise and fintech metrics have stark regional gaps:</p>
               <ul class="gap-bullets-list" id="countryGapsList">
+                <li><strong>Mobile Apps Data Pack (Eurostat):</strong> Official open statistics cover EU-27 and European partner states (e.g. DEU, FRA, NLD, SWE, ESP). Non-European economies (e.g. USA, IND, KEN, BRA) have preserved NULLs because global download and store spending metrics require commercial paid licenses (Sensor Tower / data.ai / Appfigures).</li>
                 <li><strong>Enterprise ICT Adoption (UNCTAD):</strong> Primarily surveyed across European and high-income OECD economies. Developing and African nations lack harmonized enterprise website and e-order survey data.</li>
                 <li><strong>Fixed Broadband &gt;= 10 Mbps (ITU):</strong> Several developing island nations and lower-income economies report zero speed-tier breakdowns.</li>
                 <li><strong>Zero Imputed Values:</strong> Foundry retains empty values as missing. No proxy numbers are hallucinated or copied between neighboring states.</li>
@@ -1295,6 +1307,7 @@
               <ul class="gap-bullets-list" id="yearGapsList">
                 <li><strong>Global Findex Triennial Cycle:</strong> Surveyed only in 2011, 2014, 2017, 2021, and 2024. Intermediate years (e.g. 2018–2020, 2022–2023) have <em>zero survey records</em>.</li>
                 <li><strong>UNCTAD E-Commerce Surveys:</strong> Enterprise survey frequencies vary between 1 and 3 years depending on national statistical offices.</li>
+                <li><strong>Eurostat Digital Economy Cadence:</strong> Surveyed annually or biennially with harmonized questionnaires across European national statistical offices.</li>
                 <li><strong>Lagged Reporting:</strong> Official vetted statistics have a 12-to-24 month publication lag. 2025/2026 data is currently uncollected by international bodies.</li>
               </ul>
             </div>
@@ -1305,7 +1318,7 @@
                 <span class="gap-badge gap-badge-accent">Roadmap</span>
                 <h4>Uncovered Startup Sectors</h4>
               </div>
-              <p class="gap-card-desc">Foundry currently covers Fintech, Telecoms, and Consumer E-Commerce. Major venture sectors with <strong>zero records</strong> in the backend:</p>
+              <p class="gap-card-desc">Foundry currently covers Fintech, Telecoms, Consumer E-Commerce, and Mobile Apps (Eurostat). Major venture sectors with <strong>zero records</strong> in the backend:</p>
               <div class="candidate-datasets-list" id="candidateDatasetsContainer">
                 <!-- Dynamically populated from missingIndustryDomains -->
               </div>
