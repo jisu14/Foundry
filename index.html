@@ -84,7 +84,16 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </span>
             <span class="nav-label">Market data library</span>
-            <span class="sidebar-badge" id="navLibraryCount">5</span>
+            <span class="sidebar-badge" id="navLibraryCount">19</span>
+          </button>
+
+          <button class="nav-item" data-view="coverage">
+            <span class="nav-svg-icon">
+              <!-- Radar / Matrix Coverage icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-6"/></svg>
+            </span>
+            <span class="nav-label">Data coverage</span>
+            <span class="sidebar-badge" id="navCoverageCount">Live</span>
           </button>
 
           <button class="nav-item" data-view="history">
@@ -1058,6 +1067,255 @@
         </div>
       </section>
 
+      <!-- ========================================================== -->
+      <!-- VIEW: MARKET DATA COVERAGE & INGESTION AUDIT               -->
+      <!-- ========================================================== -->
+      <section id="view-coverage" class="page-view">
+        <div class="view-header">
+          <div>
+            <h2>Market Data Coverage &amp; Ingestion Audit</h2>
+            <p class="view-desc">Live backend coverage analysis, reference periods, source health logs, and domain gap detection. Sourced statistics only.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-lime btn-sm" id="btnRefreshCoverage">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh Audit
+            </button>
+            <button class="btn btn-outline-cyan btn-sm" data-nav="library">Open Library</button>
+            <button class="btn btn-outline-cyan btn-sm" data-nav="overview">Return to World Map</button>
+          </div>
+        </div>
+
+        <!-- Live Connection State Banner -->
+        <div id="coverageConnectionBanner" class="coverage-status-banner">
+          <div class="banner-status-left">
+            <span class="coverage-pulse-dot" id="coveragePulseDot"></span>
+            <span id="coverageBannerStatusText">Connecting to Supabase backend to audit live market records...</span>
+          </div>
+          <div class="banner-status-right" id="coverageBannerRightMeta">
+            <span class="live-tag">LIVE BACKEND AUDIT</span>
+          </div>
+        </div>
+
+        <!-- Coverage KPI Stats Bar -->
+        <div class="coverage-stats-bar">
+          <div class="coverage-kpi-card">
+            <div class="coverage-kpi-num" id="kpiVerifiedSources">4 / 4</div>
+            <div class="coverage-kpi-label">Verified Sources</div>
+            <div class="coverage-kpi-sub">WDI, ITU, Findex, UNCTAD</div>
+          </div>
+          <div class="coverage-kpi-card">
+            <div class="coverage-kpi-num" id="kpiCatalogIndicators">19</div>
+            <div class="coverage-kpi-label">Catalog Indicators</div>
+            <div class="coverage-kpi-sub">Across 11 distinct topics</div>
+          </div>
+          <div class="coverage-kpi-card">
+            <div class="coverage-kpi-num" id="kpiEconomiesCovered">--</div>
+            <div class="coverage-kpi-label">Economies with Data</div>
+            <div class="coverage-kpi-sub" id="kpiEconomiesSub">Live reported nations</div>
+          </div>
+          <div class="coverage-kpi-card">
+            <div class="coverage-kpi-num" id="kpiYearsSpan">--</div>
+            <div class="coverage-kpi-label">Reference Period Span</div>
+            <div class="coverage-kpi-sub" id="kpiYearsSub">Earliest – Latest year</div>
+          </div>
+          <div class="coverage-kpi-card">
+            <div class="coverage-kpi-num" id="kpiReportedObs">--</div>
+            <div class="coverage-kpi-label">Live Observations</div>
+            <div class="coverage-kpi-sub" id="kpiTotalObsSub">Reported non-null values</div>
+          </div>
+          <div class="coverage-kpi-card">
+            <div class="coverage-kpi-num" id="kpiMissingGaps">--</div>
+            <div class="coverage-kpi-label">Missing Gaps Preserved</div>
+            <div class="coverage-kpi-sub">Explicit NULLs retained</div>
+          </div>
+        </div>
+
+        <!-- Section 1: Data Source Health & Ingestion Audit -->
+        <div class="city-panel coverage-section-panel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="coverage-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </span>
+                Data Source Ingestion Health, Cadence &amp; Legal Terms
+              </h3>
+              <p class="coverage-section-desc">Audit timestamps of when each official data source was last imported, latest execution status, license attribution, and methodology portals.</p>
+            </div>
+          </div>
+          <div id="coverageSourcesGrid" class="source-health-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Section 2: Topic & Industry Coverage Matrix -->
+        <div class="city-panel coverage-section-panel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="coverage-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </span>
+                Topic &amp; Industry Domain Coverage Matrix
+              </h3>
+              <p class="coverage-section-desc">Which international publishers and indicators cover each startup sector, macro domain, and payment rail.</p>
+            </div>
+          </div>
+          <div class="coverage-table-responsive">
+            <table class="coverage-matrix-table" id="coverageTopicsTable">
+              <thead>
+                <tr>
+                  <th>Topic</th>
+                  <th>Startup / Industry Domain</th>
+                  <th>Sources</th>
+                  <th>Indicators</th>
+                  <th>Countries with Data</th>
+                  <th>Reference Years</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="coverageTopicsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 3: Indicator-Level Country Coverage & Reference Year Span -->
+        <div class="city-panel coverage-section-panel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="coverage-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </span>
+                Indicator Country Coverage &amp; Reference Year Span
+              </h3>
+              <p class="coverage-section-desc">Live inventory of which countries have reported data, earliest &amp; latest reference years, and preserved gaps for each indicator.</p>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="coverage-filters-bar">
+            <div class="coverage-filter-item">
+              <label for="filterCovSource">Source:</label>
+              <select id="filterCovSource" class="form-select filter-select">
+                <option value="ALL">All Sources (4)</option>
+                <option value="world_bank">World Bank WDI</option>
+                <option value="itu_datahub">ITU DataHub</option>
+                <option value="global_findex">Global Findex</option>
+                <option value="unctadstat">UNCTADstat</option>
+              </select>
+            </div>
+
+            <div class="coverage-filter-item">
+              <label for="filterCovTopic">Topic:</label>
+              <select id="filterCovTopic" class="form-select filter-select">
+                <option value="ALL">All Topics (11)</option>
+                <option value="Demographics & Market Size">Demographics &amp; Market Size</option>
+                <option value="Economic Context">Economic Context</option>
+                <option value="Digital Infrastructure & Connectivity">Digital Infrastructure &amp; Connectivity</option>
+                <option value="Mobile Infrastructure">Mobile Infrastructure</option>
+                <option value="Broadband Infrastructure">Broadband Infrastructure</option>
+                <option value="Financial Inclusion & Payments">Financial Inclusion &amp; Payments</option>
+                <option value="Digital Payments & Transaction Behavior">Digital Payments &amp; Transaction Behavior</option>
+                <option value="Payment Cards & Infrastructure">Payment Cards &amp; Infrastructure</option>
+                <option value="E-Commerce & Digital Economy">E-Commerce &amp; Digital Economy</option>
+                <option value="Digital Trade & Services">Digital Trade &amp; Services</option>
+                <option value="Enterprise ICT Adoption">Enterprise ICT Adoption</option>
+              </select>
+            </div>
+
+            <div class="coverage-filter-item coverage-search-flex">
+              <label for="filterCovSearch">Search:</label>
+              <input type="text" id="filterCovSearch" class="form-input filter-search-input" placeholder="Search indicator, code, unit, or country...">
+            </div>
+          </div>
+
+          <div class="coverage-table-responsive">
+            <table class="coverage-matrix-table" id="coverageIndicatorsTable">
+              <thead>
+                <tr>
+                  <th>Indicator Name &amp; Code</th>
+                  <th>Source</th>
+                  <th>Unit</th>
+                  <th>Countries with Data</th>
+                  <th>Earliest Year</th>
+                  <th>Latest Year</th>
+                  <th>Reported Obs</th>
+                  <th>Preserved NULLs</th>
+                  <th>Country Breakdown</th>
+                </tr>
+              </thead>
+              <tbody id="coverageIndicatorsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 4: Identified Coverage Gaps & Next Industry Dataset Roadmap -->
+        <div class="city-panel coverage-section-panel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="coverage-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+                Identified Coverage Gaps &amp; Next Industry Dataset Roadmap
+              </h3>
+              <p class="coverage-section-desc">Actionable diagnosis of missing country, temporal cadence, and unrepresented industry domains to guide the next data-source integration.</p>
+            </div>
+          </div>
+
+          <div class="gap-analysis-grid">
+            
+            <!-- Gap 1: Country Coverage Gaps -->
+            <div class="gap-card">
+              <div class="gap-card-header">
+                <span class="gap-badge gap-badge-warning">Geographic Gaps</span>
+                <h4>Country Coverage Disparities</h4>
+              </div>
+              <p class="gap-card-desc">While macroeconomic and telecom indicators cover 150+ economies, enterprise and fintech metrics have stark regional gaps:</p>
+              <ul class="gap-bullets-list" id="countryGapsList">
+                <li><strong>Enterprise ICT Adoption (UNCTAD):</strong> Primarily surveyed across European and high-income OECD economies. Developing and African nations lack harmonized enterprise website and e-order survey data.</li>
+                <li><strong>Fixed Broadband &gt;= 10 Mbps (ITU):</strong> Several developing island nations and lower-income economies report zero speed-tier breakdowns.</li>
+                <li><strong>Zero Imputed Values:</strong> Foundry retains empty values as missing. No proxy numbers are hallucinated or copied between neighboring states.</li>
+              </ul>
+            </div>
+
+            <!-- Gap 2: Temporal / Year Cadence Gaps -->
+            <div class="gap-card">
+              <div class="gap-card-header">
+                <span class="gap-badge gap-badge-info">Temporal Gaps</span>
+                <h4>Reference Year Intervals</h4>
+              </div>
+              <p class="gap-card-desc">Different international agencies collect and publish data on non-annual cadences:</p>
+              <ul class="gap-bullets-list" id="yearGapsList">
+                <li><strong>Global Findex Triennial Cycle:</strong> Surveyed only in 2011, 2014, 2017, 2021, and 2024. Intermediate years (e.g. 2018–2020, 2022–2023) have <em>zero survey records</em>.</li>
+                <li><strong>UNCTAD E-Commerce Surveys:</strong> Enterprise survey frequencies vary between 1 and 3 years depending on national statistical offices.</li>
+                <li><strong>Lagged Reporting:</strong> Official vetted statistics have a 12-to-24 month publication lag. 2025/2026 data is currently uncollected by international bodies.</li>
+              </ul>
+            </div>
+
+            <!-- Gap 3: Uncovered Industry Domains & Candidates -->
+            <div class="gap-card gap-card-accent">
+              <div class="gap-card-header">
+                <span class="gap-badge gap-badge-accent">Roadmap</span>
+                <h4>Uncovered Startup Sectors</h4>
+              </div>
+              <p class="gap-card-desc">Foundry currently covers Fintech, Telecoms, and Consumer E-Commerce. Major venture sectors with <strong>zero records</strong> in the backend:</p>
+              <div class="candidate-datasets-list" id="candidateDatasetsContainer">
+                <!-- Dynamically populated from missingIndustryDomains -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
     </main>
 
   </div>
@@ -1212,9 +1470,133 @@
     </div>
   </div>
 
+  <!-- ========================================================== -->
+  <!-- MODAL: INDICATOR COVERAGE COUNTRY & YEAR DRILLDOWN         -->
+  <!-- ========================================================== -->
+  <div id="coverageDetailModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-header">
+        <div>
+          <div class="evidence-tag-row">
+            <span class="evidence-badge-lime" id="covModalCode">INDICATOR</span>
+            <span class="evidence-timestamp" id="covModalSource">Source</span>
+          </div>
+          <h3 id="covModalTitle">Indicator Coverage Breakdown</h3>
+        </div>
+        <button class="modal-close-btn" id="btnCloseCoverageModal" type="button">✕</button>
+      </div>
+
+      <div class="coverage-modal-body">
+        <div class="coverage-modal-meta-grid">
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Topic:</span>
+            <strong id="covModalTopic">--</strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Unit:</span>
+            <strong id="covModalUnit">--</strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Total Countries with Data:</span>
+            <strong id="covModalCountriesCount" class="text-lime">0</strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Reference Period Span:</span>
+            <strong id="covModalYearSpan" class="text-cyan">--</strong>
+          </div>
+        </div>
+
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">Official Definition</h4>
+          <p class="coverage-modal-text" id="covModalDef">--</p>
+        </div>
+
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">Methodology Limitations ("What this cannot tell us")</h4>
+          <p class="coverage-modal-text text-amber" id="covModalLimits">--</p>
+        </div>
+
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">Covered Sovereign Economies (Live Country Observations)</h4>
+          <div class="coverage-table-responsive max-h-350">
+            <table class="coverage-matrix-table">
+              <thead>
+                <tr>
+                  <th>Country Code</th>
+                  <th>Country Name</th>
+                  <th>Earliest Year</th>
+                  <th>Latest Year</th>
+                  <th>Reported Years</th>
+                  <th>Sample / Latest Value</th>
+                </tr>
+              </thead>
+              <tbody id="covModalCountryTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-footer-actions">
+          <a href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline-cyan btn-sm" id="covModalPortalLink">Open Official Data Portal ↗</a>
+          <button class="btn btn-lime btn-sm" id="btnFilterLibraryToIndicator" type="button">View in Market Data Library →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: SOURCE INGESTION AUDIT LOG DETAIL                   -->
+  <!-- ========================================================== -->
+  <div id="sourceLogModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-header">
+        <div>
+          <div class="evidence-tag-row">
+            <span class="evidence-badge-lime" id="logModalSourceId">SOURCE</span>
+            <span class="evidence-timestamp" id="logModalTimestamp">Timestamp</span>
+          </div>
+          <h3 id="logModalTitle">Source Ingestion Audit Log</h3>
+        </div>
+        <button class="modal-close-btn" id="btnCloseSourceLogModal" type="button">✕</button>
+      </div>
+
+      <div class="coverage-modal-body">
+        <div class="coverage-modal-meta-grid">
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Execution Status:</span>
+            <strong id="logModalStatus">--</strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Records Ingested:</span>
+            <strong id="logModalRecords" class="text-lime">0</strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Countries Ingested:</span>
+            <strong id="logModalCountries">0</strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Indicators Ingested:</span>
+            <strong id="logModalIndicators">0</strong>
+          </div>
+        </div>
+
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">Audit Summary &amp; Coverage Statistics</h4>
+          <pre class="log-modal-pre" id="logModalSummary">No log recorded yet.</pre>
+        </div>
+
+        <div class="evidence-section" id="logModalErrorsSection">
+          <h4 class="evidence-section-title text-danger">Errors &amp; Exceptions</h4>
+          <pre class="log-modal-pre text-danger" id="logModalErrors">None</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Supabase JS Client & Application Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabaseClient.js"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

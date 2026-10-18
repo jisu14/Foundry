@@ -719,6 +719,383 @@
 
       return mapping[clean] || 'USA';
     }
+
+    /* -------------------------------------------------------------
+       MARKET DATA COVERAGE & INGESTION AUDIT
+       ------------------------------------------------------------- */
+    async getMarketDataCoverage() {
+      if (!this.client) {
+        return {
+          connected: false,
+          sources: [],
+          indicators: [],
+          observations: [],
+          importLogs: [],
+          summary: null
+        };
+      }
+
+      try {
+        // 1. Fetch sources
+        const { data: sources, error: errSources } = await this.client
+          .from('market_data_sources')
+          .select('*')
+          .order('id');
+
+        if (errSources) {
+          console.warn('[FoundrySupabase] getMarketDataCoverage: errSources', errSources);
+        }
+
+        // 2. Fetch indicators
+        const { data: indicators, error: errIndicators } = await this.client
+          .from('market_indicators')
+          .select('*')
+          .order('topic');
+
+        if (errIndicators) {
+          console.warn('[FoundrySupabase] getMarketDataCoverage: errIndicators', errIndicators);
+        }
+
+        // 3. Fetch import logs (latest per source)
+        let importLogs = [];
+        try {
+          const { data: logs, error: errLogs } = await this.client
+            .from('market_import_logs')
+            .select('*')
+            .order('started_at', { ascending: false })
+            .limit(100);
+          if (!errLogs && logs) importLogs = logs;
+        } catch (e) {
+          console.warn('[FoundrySupabase] getMarketDataCoverage: errLogs', e);
+        }
+
+        // 4. Fetch all observations in chunks
+        let observations = [];
+        let page = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        while (hasMore && page < 10) {
+          const { data: chunk, error: errChunk } = await this.client
+            .from('country_observations')
+            .select('id, country_code, country_name, indicator_code, year, value, unit, source_id, imported_at')
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+          if (errChunk || !chunk || chunk.length === 0) {
+            hasMore = false;
+          } else {
+            observations = observations.concat(chunk);
+            if (chunk.length < pageSize) {
+              hasMore = false;
+            } else {
+              page++;
+            }
+          }
+        }
+
+        const summary = this.computeCoverageMetrics(sources || [], indicators || [], observations, importLogs);
+
+        return {
+          connected: true,
+          sources: sources || [],
+          indicators: indicators || [],
+          observations,
+          importLogs,
+          summary
+        };
+      } catch (err) {
+        console.error('[FoundrySupabase] getMarketDataCoverage error:', err);
+        return {
+          connected: false,
+          error: err.message,
+          sources: [],
+          indicators: [],
+          observations: [],
+          importLogs: [],
+          summary: null
+        };
+      }
+    }
+
+    computeCoverageMetrics(sources, indicators, observations, importLogs) {
+      // Benchmark focus economies for gap analysis
+      const benchmarkCountries = [
+        { code: 'USA', name: 'United States' },
+        { code: 'GBR', name: 'United Kingdom' },
+        { code: 'DEU', name: 'Germany' },
+        { code: 'FRA', name: 'France' },
+        { code: 'CAN', name: 'Canada' },
+        { code: 'JPN', name: 'Japan' },
+        { code: 'SGP', name: 'Singapore' },
+        { code: 'IND', name: 'India' },
+        { code: 'KEN', name: 'Kenya' },
+        { code: 'BRA', name: 'Brazil' },
+        { code: 'NGA', name: 'Nigeria' },
+        { code: 'AUS', name: 'Australia' }
+      ];
+
+      // 1. Process sources
+      const sourcesMap = new Map();
+      sources.forEach(src => {
+        const srcLogs = importLogs.filter(l => l.source_id === src.id);
+        const latestLog = srcLogs.length > 0 ? srcLogs[0] : null;
+
+        const srcObs = observations.filter(o => o.source_id === src.id);
+        const reportedObs = srcObs.filter(o => o.value !== null && o.value !== undefined);
+        const uniqueCountries = new Set(reportedObs.map(o => o.country_code));
+
+        let lastImportedAt = null;
+        let importStatus = 'no_records';
+        let importSucceeded = false;
+        let recordsCount = srcObs.length;
+
+        if (latestLog) {
+          lastImportedAt = latestLog.completed_at || latestLog.started_at;
+          importStatus = latestLog.status;
+          importSucceeded = latestLog.status === 'success';
+          recordsCount = latestLog.records_imported || srcObs.length;
+        } else if (srcObs.length > 0) {
+          const timestamps = srcObs.map(o => new Date(o.imported_at).getTime()).filter(t => !isNaN(t));
+          if (timestamps.length > 0) {
+            lastImportedAt = new Date(Math.max(...timestamps)).toISOString();
+          } else {
+            lastImportedAt = src.last_checked_at;
+          }
+          importStatus = 'success';
+          importSucceeded = true;
+        } else {
+          lastImportedAt = src.last_checked_at;
+          importStatus = 'pending';
+          importSucceeded = false;
+        }
+
+        sourcesMap.set(src.id, {
+          id: src.id,
+          name: src.name,
+          publisher: src.publisher,
+          sourceUrl: src.source_url,
+          methodologyUrl: src.methodology_url,
+          reuseTerms: src.reuse_terms,
+          lastCheckedAt: src.last_checked_at,
+          lastImportedAt,
+          importStatus,
+          importSucceeded,
+          recordsCount,
+          countriesCoveredCount: uniqueCountries.size,
+          latestLog
+        });
+      });
+
+      // 2. Process indicators
+      const indicatorsMap = new Map();
+      const allReportedYears = new Set();
+      const allCoveredCountries = new Map();
+      let totalReportedObs = 0;
+      let totalMissingObs = 0;
+
+      indicators.forEach(ind => {
+        const indObs = observations.filter(o => o.indicator_code === ind.id);
+        
+        const countryMap = new Map();
+        indObs.forEach(o => {
+          if (!countryMap.has(o.country_code)) {
+            countryMap.set(o.country_code, {
+              code: o.country_code,
+              name: o.country_name || o.country_code,
+              observations: [],
+              reportedYears: [],
+              missingYears: [],
+              earliestYear: null,
+              latestYear: null,
+              hasReportedData: false,
+              latestValue: null,
+              latestUnit: o.unit || ind.unit
+            });
+          }
+          const cData = countryMap.get(o.country_code);
+          cData.observations.push(o);
+
+          if (o.value !== null && o.value !== undefined) {
+            cData.reportedYears.push(o.year);
+            cData.hasReportedData = true;
+            allReportedYears.add(o.year);
+            totalReportedObs++;
+            if (!allCoveredCountries.has(o.country_code)) {
+              allCoveredCountries.set(o.country_code, o.country_name || o.country_code);
+            }
+          } else {
+            cData.missingYears.push(o.year);
+            totalMissingObs++;
+          }
+        });
+
+        const coveredCountriesList = [];
+        const missingCountriesList = [];
+
+        countryMap.forEach(c => {
+          if (c.reportedYears.length > 0) {
+            c.reportedYears.sort((a, b) => a - b);
+            c.earliestYear = c.reportedYears[0];
+            c.latestYear = c.reportedYears[c.reportedYears.length - 1];
+            const latestObs = c.observations
+              .filter(o => o.value !== null && o.value !== undefined)
+              .sort((a, b) => b.year - a.year)[0];
+            if (latestObs) c.latestValue = latestObs.value;
+            coveredCountriesList.push(c);
+          } else {
+            missingCountriesList.push(c);
+          }
+        });
+
+        coveredCountriesList.sort((a, b) => a.name.localeCompare(b.name));
+
+        const indReportedYears = indObs.filter(o => o.value !== null && o.value !== undefined).map(o => o.year);
+        const indEarliestYear = indReportedYears.length > 0 ? Math.min(...indReportedYears) : null;
+        const indLatestYear = indReportedYears.length > 0 ? Math.max(...indReportedYears) : null;
+
+        const benchmarkGaps = benchmarkCountries.filter(b => {
+          const entry = countryMap.get(b.code);
+          return !entry || !entry.hasReportedData;
+        });
+
+        indicatorsMap.set(ind.id, {
+          id: ind.id,
+          code: ind.id,
+          name: ind.name,
+          topic: ind.topic,
+          unit: ind.unit,
+          sourceId: ind.source_id,
+          limitations: ind.limitations,
+          definition: ind.definition,
+          coveredCountries: coveredCountriesList,
+          missingCountriesInObs: missingCountriesList,
+          benchmarkGaps,
+          countriesCoveredCount: coveredCountriesList.length,
+          earliestYear: indEarliestYear,
+          latestYear: indLatestYear,
+          reportedCount: indReportedYears.length,
+          missingCount: indObs.length - indReportedYears.length,
+          totalCount: indObs.length
+        });
+      });
+
+      // 3. Process topics & industries
+      const topicMap = new Map();
+      const industryDomainMapping = {
+        'Demographics & Market Size': 'Macroeconomic & Demographics',
+        'Economic Context': 'Macroeconomic & Demographics',
+        'Digital Infrastructure & Connectivity': 'Telecommunications & Network Infrastructure',
+        'Mobile Infrastructure': 'Telecommunications & Mobile Apps',
+        'Broadband Infrastructure': 'Telecommunications & Network Infrastructure',
+        'Financial Inclusion & Payments': 'Fintech & Banking Rails',
+        'Digital Payments & Transaction Behavior': 'Fintech & Digital Payments',
+        'Payment Cards & Infrastructure': 'Fintech & Payment Processing',
+        'E-Commerce & Digital Economy': 'Consumer E-Commerce & Retail',
+        'Digital Trade & Services': 'Cross-Border Digital Services & IT Export',
+        'Enterprise ICT Adoption': 'Enterprise B2B Software & Cloud Adoption'
+      };
+
+      indicatorsMap.forEach(ind => {
+        if (!topicMap.has(ind.topic)) {
+          topicMap.set(ind.topic, {
+            topic: ind.topic,
+            industryDomain: industryDomainMapping[ind.topic] || ind.topic,
+            sources: new Set(),
+            indicators: [],
+            countries: new Set(),
+            minYear: null,
+            maxYear: null,
+            totalReported: 0
+          });
+        }
+        const t = topicMap.get(ind.topic);
+        t.sources.add(ind.sourceId);
+        t.indicators.push(ind);
+        ind.coveredCountries.forEach(c => t.countries.add(c.code));
+        if (ind.earliestYear) {
+          t.minYear = t.minYear === null ? ind.earliestYear : Math.min(t.minYear, ind.earliestYear);
+        }
+        if (ind.latestYear) {
+          t.maxYear = t.maxYear === null ? ind.latestYear : Math.max(t.maxYear, ind.latestYear);
+        }
+        t.totalReported += ind.reportedCount;
+      });
+
+      const topicsList = Array.from(topicMap.values()).map(t => ({
+        ...t,
+        sources: Array.from(t.sources),
+        countriesCount: t.countries.size
+      }));
+
+      // 4. Missing Industry Domains (Uncovered sectors with zero records)
+      const missingIndustryDomains = [
+        {
+          domain: 'Healthcare, MedTech & Digital Health',
+          status: 'Zero records in backend',
+          reason: 'No national healthcare expenditure, hospital bed density, or health worker indicators currently integrated.',
+          candidateDataset: 'WHO Global Health Observatory (GHO) / World Bank Health Systems',
+          targetStartups: 'HealthTech, Telemedicine, Medical Devices, Wellness apps',
+          apiAvailability: 'Official WHO OData API & World Bank Health API (Open Access)',
+          license: 'CC-BY-NC-SA 3.0 IGO / Open Access'
+        },
+        {
+          domain: 'CleanTech, Renewable Energy & Climate Transition',
+          status: 'Zero records in backend',
+          reason: 'No renewable electricity share, carbon intensity, or clean grid penetration datasets.',
+          candidateDataset: 'International Energy Agency (IEA) / IRENA Renewable Energy Statistics',
+          targetStartups: 'ClimateTech, Carbon Accounting, Renewable Energy, ESG reporting',
+          apiAvailability: 'IRENA Open Data Portal & Ember Open Climate API',
+          license: 'Open Access / Creative Commons Attribution'
+        },
+        {
+          domain: 'Enterprise Cloud Computing & AI Adoption',
+          status: 'Zero records in backend',
+          reason: 'Current UNCTAD indicators cover basic web/order presence; missing enterprise cloud tier, big data, and generative AI adoption.',
+          candidateDataset: 'Eurostat ICT Usage in Enterprises (Cloud & AI Module) / OECD ICT Access',
+          targetStartups: 'B2B SaaS, Developer Tools, Cloud Security, AI infrastructure',
+          apiAvailability: 'Eurostat SDMX REST API & OECD.Stat API',
+          license: 'Open Data with Attribution (Eurostat Reuse Decision)'
+        },
+        {
+          domain: 'Venture Capital, Startup Investment & Tech Ecosystems',
+          status: 'Zero records in backend',
+          reason: 'No funding rounds, venture capital investment volumes, or tech ecosystem valuation indicators.',
+          candidateDataset: 'OECD Venture Capital Investments / Dealroom Open Tech Ecosystems',
+          targetStartups: 'Early-stage founders evaluating regional VC capital availability & investor density',
+          apiAvailability: 'OECD REST Data API / Dealroom Community Datasets',
+          license: 'OECD Open Data / Permitted Attribution'
+        },
+        {
+          domain: 'Agriculture, AgriTech & Food Supply Systems',
+          status: 'Zero records in backend',
+          reason: 'No crop yield, precision agriculture technology, or agricultural trade data.',
+          candidateDataset: 'UN FAO (FAOSTAT) Food and Agricultural Data',
+          targetStartups: 'AgriTech, Supply Chain, Food Security, Commodity Trading',
+          apiAvailability: 'FAOSTAT REST API & CSV Bulk Downloads',
+          license: 'CC-BY-NC-SA 3.0 IGO'
+        }
+      ];
+
+      const sortedYears = Array.from(allReportedYears).sort((a, b) => a - b);
+
+      return {
+        sourcesCount: sources.length,
+        indicatorsCount: indicators.length,
+        economiesCoveredCount: allCoveredCountries.size,
+        allCoveredCountries: Array.from(allCoveredCountries.entries()).map(([code, name]) => ({ code, name })),
+        earliestYear: sortedYears.length > 0 ? sortedYears[0] : null,
+        latestYear: sortedYears.length > 0 ? sortedYears[sortedYears.length - 1] : null,
+        yearsSpanStr: sortedYears.length > 0 ? `${sortedYears[0]}–${sortedYears[sortedYears.length - 1]}` : 'N/A',
+        totalReportedObs,
+        totalMissingObs,
+        totalObservations: observations.length,
+        sourcesList: Array.from(sourcesMap.values()),
+        indicatorsList: Array.from(indicatorsMap.values()),
+        topicsList,
+        missingIndustryDomains,
+        benchmarkCountries
+      };
+    }
   }
 
   // Expose singleton instances on window
@@ -733,7 +1110,8 @@
     setCredentials: (u, k) => serviceInstance.connect(u, k),
     clearCredentials: () => serviceInstance.disconnect(),
     resolveIso3: (c) => serviceInstance.resolveIso3(c),
-    getCountryMarketContext: (c) => serviceInstance.getCountryMarketContext(c)
+    getCountryMarketContext: (c) => serviceInstance.getCountryMarketContext(c),
+    getMarketDataCoverage: () => serviceInstance.getMarketDataCoverage()
   };
 
 })(window);

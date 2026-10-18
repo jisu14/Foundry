@@ -256,5 +256,57 @@ curl -X POST "https://your-project.supabase.co/functions/v1/import-unctad" \
   --data-binary "@data/unctad-digital-economy-data.csv"
 ```
 
+---
+
+## 🧭 Market Data Coverage & Ingestion Audit Page
+
+Foundry includes a dedicated **Market Data Coverage & Ingestion Audit** page accessible directly via the sidebar navigation (`Data coverage` / `#coverage`).
+
+### 1. Key Coverage Capabilities
+
+- **Country Coverage per Indicator**: Displays exactly which sovereign economies have verified non-null records for each of Foundry's 19 indicators.
+- **Temporal Span (Earliest & Latest Reference Years)**: Reports the historical span globally and per country pair (e.g. 2014–2024 for World Bank Global Findex, 2020–2023 for ITU, 2015–2023 for UNCTADstat).
+- **Topic & Startup Industry Domain Matrix**: Maps all 11 topics and 4 data sources to venture sectors (Fintech & Banking Rails, Telecommunications, Consumer E-Commerce, Enterprise B2B SaaS, Macroeconomics).
+- **Live Ingestion Health Audit**: Audits `public.market_import_logs` to show when each source was last imported, its execution status (`success`, `partial_failure`, `failed`, `running`), imported row counts, and detailed audit summaries.
+- **Strict Data Integrity (Zero Synthetic Data)**: Gaps and unconducted surveys are explicitly shown as missing (`NULL`). No synthetic data is generated or imputed.
+- **Interactive Drill-Down Modals**:
+  - **Indicator Coverage Breakdown Modal**: Inspect all covered economies, earliest/latest years, sample values, official definitions, and methodology boundaries.
+  - **Source Ingestion Audit Log Modal**: View live backend execution summaries, row counts, and exception logs.
+
+---
+
+## 🎯 How to Use the Coverage Page to Choose Your Next Industry Dataset
+
+The **Identified Coverage Gaps & Next Industry Dataset Roadmap** panel (Section 4) is specifically designed to help founders and data engineers decide which dataset to ingest next based on empirical backend gaps:
+
+### Step 1: Identify What Is Already Covered
+- **Fintech & Payments**: World Bank Global Findex covers account ownership, debit/credit cards, and digital payment participation.
+- **Telecommunications & Mobile**: ITU DataHub covers 4G mobile coverage, household internet penetration, and broadband speed tiers.
+- **Consumer E-Commerce & Web Presence**: UNCTADstat covers B2C e-commerce readiness, online shopper share, and basic enterprise websites.
+- **Macroeconomics**: World Bank WDI covers GDP per capita and population scale.
+
+### Step 2: Examine the Identified Industry Gaps
+The Coverage page highlights major venture sectors that currently have **0 records** in the backend:
+1. **Healthcare & MedTech / Life Sciences**: Zero health expenditure, hospital bed density, or physician density data.
+2. **CleanTech, Renewable Energy & Climate Transition**: Zero clean energy adoption, carbon intensity, or renewable grid share.
+3. **Enterprise Cloud Software & AI Adoption**: UNCTAD only measures basic homepage/ordering presence; missing cloud tier usage, big data, and generative AI adoption.
+4. **Venture Capital & Tech Ecosystem Investment**: Zero startup funding rounds, deal volume, or investor density data.
+5. **Agriculture, FoodTech & AgriBusiness**: Zero crop yield, agricultural trade, or food security metrics.
+
+### Step 3: Evaluate Candidate Datasets by Legal Terms & Ingestion Feasibility
+| Uncovered Sector | Recommended Candidate Dataset | Official Provider | API & Access Method | Licensing Terms |
+| :--- | :--- | :--- | :--- | :--- |
+| **Enterprise Cloud & AI** | **Eurostat ICT Usage in Enterprises** (Cloud Services, AI & Big Data) | Eurostat / European Commission | SDMX REST API & Bulk TSV | Open Data with Attribution |
+| **Healthcare & MedTech** | **Global Health Observatory (GHO)** | World Health Organization (WHO) | Athena OData API / GHO REST | CC-BY-NC-SA 3.0 IGO / Open Access |
+| **CleanTech & Energy** | **Renewable Energy Statistics / Global Energy Review** | International Energy Agency (IEA) & IRENA | IRENA Open Data & Ember API | Open Access with Attribution |
+| **Venture Capital** | **OECD Venture Capital Investments / Dealroom** | OECD Directorate for Science, Tech & Industry | OECD.Stat SDMX API & CSV Downloads | OECD Open Data |
+| **AgriTech & Food** | **FAOSTAT Agricultural Production & Trade** | UN Food and Agriculture Organization (FAO) | FAOSTAT REST API & CSV Bulk | CC-BY-NC-SA 3.0 IGO |
+
+### Step 4: Decision Rule for Your Next Dataset
+- **If your focus is B2B Software / Enterprise Startups**: Prioritize **Eurostat Enterprise Cloud Computing & AI** to observe real commercial enterprise cloud buying habits.
+- **If your focus is ClimateTech / Energy**: Prioritize **IRENA Renewable Energy Statistics** for national clean grid transition context.
+- **If your focus is HealthTech / BioTech**: Prioritize **WHO Global Health Observatory** for health expenditure and clinical infrastructure context.
+
+
 
 

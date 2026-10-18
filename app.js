@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initLaunchLab();
   initHistoryView();
   initLibraryView();
+  initCoverageView();
   initSupabaseAuthAndModals();
   renderAllViews();
 });
@@ -92,13 +93,18 @@ function initNavigation() {
     resetBtn.addEventListener('click', handleResetWorld);
   }
 
-  // Handle URL hash on load
-  const hash = window.location.hash.replace('#', '');
-  if (['overview', 'profile', 'market', 'launch', 'history', 'library'].includes(hash)) {
-    navigateToView(hash);
-  } else {
-    navigateToView('overview');
-  }
+  // Handle URL hash on load & on hashchange
+  const handleHashRouting = () => {
+    const hash = window.location.hash.replace('#', '');
+    if (['overview', 'profile', 'market', 'launch', 'history', 'library', 'coverage'].includes(hash)) {
+      navigateToView(hash);
+    } else {
+      navigateToView('overview');
+    }
+  };
+
+  window.addEventListener('hashchange', handleHashRouting);
+  handleHashRouting();
 }
 
 function navigateToView(viewId) {
@@ -134,6 +140,8 @@ function navigateToView(viewId) {
     populateTargetGroupDropdown();
   } else if (viewId === 'library') {
     renderLibraryView();
+  } else if (viewId === 'coverage') {
+    renderCoverageView();
   }
 }
 
@@ -1907,6 +1915,7 @@ function renderAllViews() {
   renderHistoryTable();
   renderSourcedMarketData();
   renderLibraryView();
+  renderCoverageView();
   updateCloudStatusUI();
   updateBadges();
 }
@@ -2284,12 +2293,710 @@ async function renderLibraryView() {
 }
 
 /* ==========================================================
+   14. MARKET DATA COVERAGE & INGESTION AUDIT
+   ========================================================== */
+let coverageCache = null;
+
+function initCoverageView() {
+  const refreshBtn = document.getElementById('btnRefreshCoverage');
+  const srcSelect = document.getElementById('filterCovSource');
+  const topicSelect = document.getElementById('filterCovTopic');
+  const searchInput = document.getElementById('filterCovSearch');
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      coverageCache = null;
+      renderCoverageView();
+    });
+  }
+
+  if (srcSelect) srcSelect.addEventListener('change', renderIndicatorCoverageTable);
+  if (topicSelect) topicSelect.addEventListener('change', renderIndicatorCoverageTable);
+  if (searchInput) searchInput.addEventListener('input', renderIndicatorCoverageTable);
+
+  const btnFilterLib = document.getElementById('btnFilterLibraryToIndicator');
+  if (btnFilterLib) {
+    btnFilterLib.addEventListener('click', () => {
+      const modal = document.getElementById('coverageDetailModal');
+      if (modal) modal.classList.add('hidden');
+      const topic = btnFilterLib.dataset.targetTopic;
+      navigateToView('library');
+      if (topic) {
+        const libTopicSelect = document.getElementById('filterLibraryTopic');
+        if (libTopicSelect) {
+          libTopicSelect.value = topic;
+          renderLibraryView();
+        }
+      }
+    });
+  }
+}
+
+function buildCatalogFallbackCoverage() {
+  const sources = [
+    {
+      id: 'world_bank',
+      name: 'World Development Indicators (WDI)',
+      publisher: 'The World Bank Group',
+      sourceUrl: 'https://data.worldbank.org/',
+      methodologyUrl: 'https://databank.worldbank.org/source/world-development-indicators',
+      reuseTerms: 'Creative Commons Attribution 4.0 International (CC-BY 4.0)',
+      lastImportedAt: null,
+      importStatus: 'pending',
+      importSucceeded: false,
+      recordsCount: 0,
+      countriesCoveredCount: 0,
+      latestLog: null
+    },
+    {
+      id: 'itu_datahub',
+      name: 'World Telecommunication/ICT Indicators',
+      publisher: 'International Telecommunication Union (ITU)',
+      sourceUrl: 'https://datahub.itu.int/',
+      methodologyUrl: 'https://www.itu.int/en/ITU-D/Statistics/Pages/stat/default.aspx',
+      reuseTerms: 'ITU Non-Commercial Use with Attribution',
+      lastImportedAt: null,
+      importStatus: 'pending',
+      importSucceeded: false,
+      recordsCount: 0,
+      countriesCoveredCount: 0,
+      latestLog: null
+    },
+    {
+      id: 'global_findex',
+      name: 'Global Financial Inclusion Database (Global Findex)',
+      publisher: 'The World Bank Development Research Group',
+      sourceUrl: 'https://databank.worldbank.org/source/global-financial-inclusion',
+      methodologyUrl: 'https://www.worldbank.org/en/publication/globalfindex/methodology',
+      reuseTerms: 'Creative Commons Attribution 4.0 International (CC-BY 4.0)',
+      lastImportedAt: null,
+      importStatus: 'pending',
+      importSucceeded: false,
+      recordsCount: 0,
+      countriesCoveredCount: 0,
+      latestLog: null
+    },
+    {
+      id: 'unctadstat',
+      name: 'UNCTADstat Information Economy & E-Commerce',
+      publisher: 'United Nations Trade and Development (UNCTAD)',
+      sourceUrl: 'https://unctadstat.unctad.org/',
+      methodologyUrl: 'https://unctadstat.unctad.org/EN/Methodology.html',
+      reuseTerms: 'Creative Commons Attribution 3.0 IGO (CC-BY 3.0 IGO)',
+      lastImportedAt: null,
+      importStatus: 'pending',
+      importSucceeded: false,
+      recordsCount: 0,
+      countriesCoveredCount: 0,
+      latestLog: null
+    }
+  ];
+
+  const sourceMap = {
+    'SP.POP.TOTL': 'world_bank',
+    'NY.GDP.PCAP.CD': 'world_bank',
+    'IT.NET.USER.ZS': 'world_bank',
+    'IT.CEL.SETS.P2': 'world_bank',
+    'IT.NET.BBND.P2': 'world_bank',
+    'ITU.ICT.HH.INET': 'itu_datahub',
+    'ITU.ICT.MOB.4G': 'itu_datahub',
+    'ITU.ICT.ACT.MBB': 'itu_datahub',
+    'ITU.ICT.FBB.10M': 'itu_datahub',
+    'account.t.d': 'global_findex',
+    'g20.any': 'global_findex',
+    'fin2.t.d': 'global_findex',
+    'fin10': 'global_findex',
+    'g20.made': 'global_findex',
+    'UNCTAD.ECOMM.B2C.IDX': 'unctadstat',
+    'UNCTAD.ECOMM.DDS.SHR': 'unctadstat',
+    'UNCTAD.ECOMM.ENT.RCV': 'unctadstat',
+    'UNCTAD.ECOMM.ENT.WEB': 'unctadstat',
+    'UNCTAD.ECOMM.IND.BUY': 'unctadstat'
+  };
+
+  const indicatorsList = SOURCED_INDICATOR_CATALOG.map(ind => ({
+    id: ind.code,
+    code: ind.code,
+    name: ind.name,
+    topic: ind.topic,
+    unit: ind.unit,
+    sourceId: sourceMap[ind.code] || 'world_bank',
+    limitations: ind.limitations,
+    definition: ind.name,
+    coveredCountries: [],
+    countriesCoveredCount: 0,
+    earliestYear: null,
+    latestYear: null,
+    reportedCount: 0,
+    missingCount: 0,
+    totalCount: 0
+  }));
+
+  const industryDomainMapping = {
+    'Demographics & Market Size': 'Macroeconomic & Demographics',
+    'Economic Context': 'Macroeconomic & Demographics',
+    'Digital Infrastructure & Connectivity': 'Telecommunications & Network Infrastructure',
+    'Mobile Infrastructure': 'Telecommunications & Mobile Apps',
+    'Broadband Infrastructure': 'Telecommunications & Network Infrastructure',
+    'Financial Inclusion & Payments': 'Fintech & Banking Rails',
+    'Digital Payments & Transaction Behavior': 'Fintech & Digital Payments',
+    'Payment Cards & Infrastructure': 'Fintech & Payment Processing',
+    'E-Commerce & Digital Economy': 'Consumer E-Commerce & Retail',
+    'Digital Trade & Services': 'Cross-Border Digital Services & IT Export',
+    'Enterprise ICT Adoption': 'Enterprise B2B Software & Cloud Adoption'
+  };
+
+  const topicMap = new Map();
+  indicatorsList.forEach(ind => {
+    if (!topicMap.has(ind.topic)) {
+      topicMap.set(ind.topic, {
+        topic: ind.topic,
+        industryDomain: industryDomainMapping[ind.topic] || ind.topic,
+        sources: [ind.sourceId],
+        indicators: [],
+        countriesCount: 0,
+        minYear: null,
+        maxYear: null,
+        totalReported: 0
+      });
+    }
+    const t = topicMap.get(ind.topic);
+    if (!t.sources.includes(ind.sourceId)) t.sources.push(ind.sourceId);
+    t.indicators.push(ind);
+  });
+
+  const missingIndustryDomains = [
+    {
+      domain: 'Healthcare, MedTech & Digital Health',
+      status: 'Zero records in backend',
+      reason: 'No national healthcare expenditure, hospital bed density, or health worker indicators currently integrated.',
+      candidateDataset: 'WHO Global Health Observatory (GHO) / World Bank Health Systems',
+      targetStartups: 'HealthTech, Telemedicine, Medical Devices, Wellness apps',
+      apiAvailability: 'Official WHO OData API & World Bank Health API (Open Access)',
+      license: 'CC-BY-NC-SA 3.0 IGO / Open Access'
+    },
+    {
+      domain: 'CleanTech, Renewable Energy & Climate Transition',
+      status: 'Zero records in backend',
+      reason: 'No renewable electricity share, carbon intensity, or clean grid penetration datasets.',
+      candidateDataset: 'International Energy Agency (IEA) / IRENA Renewable Energy Statistics',
+      targetStartups: 'ClimateTech, Carbon Accounting, Renewable Energy, ESG reporting',
+      apiAvailability: 'IRENA Open Data Portal & Ember Open Climate API',
+      license: 'Open Access / Creative Commons Attribution'
+    },
+    {
+      domain: 'Enterprise Cloud Computing & AI Adoption',
+      status: 'Zero records in backend',
+      reason: 'Current UNCTAD indicators cover basic web/order presence; missing enterprise cloud tier, big data, and generative AI adoption.',
+      candidateDataset: 'Eurostat ICT Usage in Enterprises (Cloud & AI Module) / OECD ICT Access',
+      targetStartups: 'B2B SaaS, Developer Tools, Cloud Security, AI infrastructure',
+      apiAvailability: 'Eurostat SDMX REST API & OECD.Stat API',
+      license: 'Open Data with Attribution (Eurostat Reuse Decision)'
+    },
+    {
+      domain: 'Venture Capital, Startup Investment & Tech Ecosystems',
+      status: 'Zero records in backend',
+      reason: 'No funding rounds, venture capital investment volumes, or tech ecosystem valuation indicators.',
+      candidateDataset: 'OECD Venture Capital Investments / Dealroom Open Tech Ecosystems',
+      targetStartups: 'Early-stage founders evaluating regional VC capital availability & investor density',
+      apiAvailability: 'OECD REST Data API / Dealroom Community Datasets',
+      license: 'OECD Open Data / Permitted Attribution'
+    },
+    {
+      domain: 'Agriculture, AgriTech & Food Supply Systems',
+      status: 'Zero records in backend',
+      reason: 'No crop yield, precision agriculture technology, or agricultural trade data.',
+      candidateDataset: 'UN FAO (FAOSTAT) Food and Agricultural Data',
+      targetStartups: 'AgriTech, Supply Chain, Food Security, Commodity Trading',
+      apiAvailability: 'FAOSTAT REST API & CSV Bulk Downloads',
+      license: 'CC-BY-NC-SA 3.0 IGO'
+    }
+  ];
+
+  return {
+    sourcesCount: 4,
+    indicatorsCount: indicatorsList.length,
+    economiesCoveredCount: 0,
+    allCoveredCountries: [],
+    earliestYear: null,
+    latestYear: null,
+    yearsSpanStr: 'Connect DB',
+    totalReportedObs: 0,
+    totalMissingObs: 0,
+    totalObservations: 0,
+    sourcesList: sources,
+    indicatorsList,
+    topicsList: Array.from(topicMap.values()),
+    missingIndustryDomains
+  };
+}
+
+async function renderCoverageView() {
+  const viewElem = document.getElementById('view-coverage');
+  if (!viewElem) return;
+
+  const client = window.foundrySupabase;
+  const isConnected = client && client.isConfigured();
+
+  const pulseDot = document.getElementById('coveragePulseDot');
+  const bannerText = document.getElementById('coverageBannerStatusText');
+  const bannerMeta = document.getElementById('coverageBannerRightMeta');
+
+  if (pulseDot) {
+    pulseDot.className = isConnected ? 'coverage-pulse-dot' : 'coverage-pulse-dot offline';
+  }
+  if (bannerText) {
+    bannerText.innerHTML = isConnected
+      ? `<strong>Live Connected:</strong> Auditing verified country observations, reference periods, and import audit logs directly from Supabase backend.`
+      : `<strong>Supabase Connection Awaiting:</strong> Displaying registered catalog schema. Connect Supabase with your publishable key in Cloud Settings to run a live backend audit.`;
+  }
+  if (bannerMeta) {
+    bannerMeta.innerHTML = isConnected
+      ? `<span class="live-tag">LIVE BACKEND AUDIT</span>`
+      : `<span class="live-tag" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);">AWAITING DB SYNC</span>`;
+  }
+
+  let coverageData = coverageCache;
+  if (!coverageData && isConnected) {
+    try {
+      const res = await client.getMarketDataCoverage();
+      if (res && res.connected && res.summary) {
+        coverageData = res.summary;
+        coverageCache = coverageData;
+      }
+    } catch (e) {
+      console.warn('Error loading market data coverage:', e);
+    }
+  }
+
+  if (!coverageData) {
+    coverageData = buildCatalogFallbackCoverage();
+  }
+
+  // 1. Update KPI bar
+  updateCoverageKPIs(coverageData);
+
+  // 2. Render Source Health Cards
+  renderSourceHealthGrid(coverageData.sourcesList);
+
+  // 3. Render Topics & Industry Domain Matrix
+  renderTopicMatrixTable(coverageData.topicsList);
+
+  // 4. Render Indicator Country × Year Table
+  renderIndicatorCoverageTable();
+
+  // 5. Render Identified Gaps & Advisor
+  renderGapAnalysis(coverageData);
+}
+
+function updateCoverageKPIs(data) {
+  const kpiSources = document.getElementById('kpiVerifiedSources');
+  const kpiIndicators = document.getElementById('kpiCatalogIndicators');
+  const kpiEconomies = document.getElementById('kpiEconomiesCovered');
+  const kpiYears = document.getElementById('kpiYearsSpan');
+  const kpiReported = document.getElementById('kpiReportedObs');
+  const kpiMissing = document.getElementById('kpiMissingGaps');
+  const navBadge = document.getElementById('navCoverageCount');
+
+  if (kpiSources) kpiSources.textContent = `${data.sourcesCount || 4} / 4`;
+  if (kpiIndicators) kpiIndicators.textContent = String(data.indicatorsCount || 19);
+  if (kpiEconomies) kpiEconomies.textContent = data.economiesCoveredCount > 0 ? String(data.economiesCoveredCount) : '0';
+  if (kpiYears) kpiYears.textContent = data.yearsSpanStr || 'N/A';
+  if (kpiReported) kpiReported.textContent = (data.totalReportedObs || 0).toLocaleString();
+  if (kpiMissing) kpiMissing.textContent = (data.totalMissingObs || 0).toLocaleString();
+  if (navBadge) {
+    navBadge.textContent = data.economiesCoveredCount > 0 ? `${data.economiesCoveredCount} Nations` : 'Catalog';
+  }
+}
+
+function renderSourceHealthGrid(sources) {
+  const container = document.getElementById('coverageSourcesGrid');
+  if (!container) return;
+
+  if (!sources || sources.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No data sources registered.</p></div>';
+    return;
+  }
+
+  container.innerHTML = sources.map(src => {
+    let statusPillHtml = '';
+    if (src.importSucceeded || src.importStatus === 'success') {
+      statusPillHtml = `<span class="health-pill success">✓ Succeeded</span>`;
+    } else if (src.importStatus === 'running') {
+      statusPillHtml = `<span class="health-pill running">⏳ Ingesting</span>`;
+    } else if (src.importStatus === 'partial_failure') {
+      statusPillHtml = `<span class="health-pill partial">⚠ Partial Ingest</span>`;
+    } else if (src.importStatus === 'failed') {
+      statusPillHtml = `<span class="health-pill failed">✕ Ingest Failed</span>`;
+    } else {
+      statusPillHtml = `<span class="health-pill awaiting">● Catalog Ready</span>`;
+    }
+
+    let formattedDate = 'Awaiting Ingestion';
+    if (src.lastImportedAt) {
+      try {
+        const d = new Date(src.lastImportedAt);
+        formattedDate = d.toLocaleString(undefined, {
+          month: 'short', day: 'numeric', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      } catch (_) {
+        formattedDate = String(src.lastImportedAt);
+      }
+    }
+
+    return `
+      <div class="source-health-card">
+        <div class="source-health-header">
+          <div>
+            <h4 class="source-card-title">${escapeHtml(src.name)}</h4>
+            <div class="source-card-publisher">${escapeHtml(src.publisher)}</div>
+          </div>
+          ${statusPillHtml}
+        </div>
+
+        <div class="source-health-metrics">
+          <div class="source-metric-box">
+            <span class="source-metric-label">Last Ingested</span>
+            <span class="source-metric-val">${formattedDate}</span>
+          </div>
+          <div class="source-metric-box">
+            <span class="source-metric-label">Live Observations</span>
+            <span class="source-metric-val" style="color: var(--lime);">${(src.recordsCount || 0).toLocaleString()}</span>
+          </div>
+          <div class="source-metric-box">
+            <span class="source-metric-label">Covered Economies</span>
+            <span class="source-metric-val" style="color: var(--cyan);">${src.countriesCoveredCount || 0} nations</span>
+          </div>
+          <div class="source-metric-box">
+            <span class="source-metric-label">Source ID</span>
+            <span class="source-metric-val" style="font-size: 0.74rem; color: #94a3b8;">${escapeHtml(src.id)}</span>
+          </div>
+        </div>
+
+        <div class="source-health-terms">
+          <strong>Reuse License:</strong> ${escapeHtml(src.reuseTerms)}
+        </div>
+
+        <div class="source-health-footer">
+          <a href="${escapeHtml(src.methodologyUrl || src.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="source-portal-link">
+            Methodology &amp; Portal ↗
+          </a>
+          <button class="btn-view-log" type="button" onclick="window.openSourceLogModal('${escapeHtml(src.id)}')">
+            Ingest Audit Log ↗
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTopicMatrixTable(topics) {
+  const tbody = document.getElementById('coverageTopicsTableBody');
+  if (!tbody) return;
+
+  if (!topics || topics.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No topics recorded.</td></tr>';
+    return;
+  }
+
+  const sourceLabels = {
+    world_bank: 'World Bank WDI',
+    itu_datahub: 'ITU DataHub',
+    global_findex: 'Global Findex',
+    unctadstat: 'UNCTADstat'
+  };
+
+  tbody.innerHTML = topics.map(t => {
+    const yearSpanStr = (t.minYear && t.maxYear) ? `${t.minYear}–${t.maxYear}` : 'Awaiting sync';
+    const sourceBadges = t.sources.map(s => `
+      <span class="badge" style="font-size: 0.68rem; background: #07150f; border: 1px solid rgba(45, 212, 191, 0.3); color: var(--cyan); margin-right: 4px; padding: 2px 6px; border-radius: 3px;">
+        ${escapeHtml(sourceLabels[s] || s)}
+      </span>
+    `).join('');
+
+    return `
+      <tr>
+        <td><strong>${escapeHtml(t.topic)}</strong></td>
+        <td><span style="color: var(--lime); font-weight: 600;">${escapeHtml(t.industryDomain)}</span></td>
+        <td>${sourceBadges}</td>
+        <td><strong style="font-family: var(--font-mono);">${t.indicators.length}</strong> indicator${t.indicators.length > 1 ? 's' : ''}</td>
+        <td>
+          <span class="country-count-badge">${t.countriesCount || 0}</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);"> economies</span>
+        </td>
+        <td><span class="year-span-badge">${yearSpanStr}</span></td>
+        <td>
+          <button class="btn btn-outline-cyan btn-sm" type="button" style="padding: 2px 8px; font-size: 0.72rem;" onclick="filterCoverageToTopic('${escapeHtml(t.topic)}')">
+            View Indicators →
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.filterCoverageToTopic = function(topicName) {
+  const topicSelect = document.getElementById('filterCovTopic');
+  if (topicSelect) {
+    topicSelect.value = topicName;
+    renderIndicatorCoverageTable();
+    const indSection = document.getElementById('coverageIndicatorsTable');
+    if (indSection) indSection.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
+function renderIndicatorCoverageTable() {
+  const tbody = document.getElementById('coverageIndicatorsTableBody');
+  if (!tbody) return;
+
+  const data = coverageCache || buildCatalogFallbackCoverage();
+  const indicators = data.indicatorsList || [];
+
+  const srcFilter = document.getElementById('filterCovSource')?.value || 'ALL';
+  const topicFilter = document.getElementById('filterCovTopic')?.value || 'ALL';
+  const query = (document.getElementById('filterCovSearch')?.value || '').trim().toLowerCase();
+
+  const filtered = indicators.filter(ind => {
+    if (srcFilter !== 'ALL' && ind.sourceId !== srcFilter) return false;
+    if (topicFilter !== 'ALL' && ind.topic !== topicFilter) return false;
+    if (query) {
+      const matchName = ind.name.toLowerCase().includes(query);
+      const matchCode = ind.code.toLowerCase().includes(query);
+      const matchUnit = (ind.unit || '').toLowerCase().includes(query);
+      const matchTopic = (ind.topic || '').toLowerCase().includes(query);
+      if (!matchName && !matchCode && !matchUnit && !matchTopic) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 24px;">No indicators match the selected filters.</td></tr>`;
+    return;
+  }
+
+  const sourceLabels = {
+    world_bank: 'World Bank',
+    itu_datahub: 'ITU DataHub',
+    global_findex: 'Global Findex',
+    unctadstat: 'UNCTADstat'
+  };
+
+  tbody.innerHTML = filtered.map(ind => {
+    const earliestStr = ind.earliestYear ? String(ind.earliestYear) : '--';
+    const latestStr = ind.latestYear ? String(ind.latestYear) : '--';
+    const countriesCount = ind.countriesCoveredCount || 0;
+
+    return `
+      <tr>
+        <td style="max-width: 280px;">
+          <div style="font-weight: 700; color: #ffffff; line-height: 1.35; margin-bottom: 2px;">${escapeHtml(ind.name)}</div>
+          <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-dim);">${escapeHtml(ind.code)}</div>
+        </td>
+        <td>
+          <span style="font-size: 0.72rem; color: var(--cyan); background: rgba(45, 212, 191, 0.08); padding: 2px 6px; border-radius: 3px; border: 1px solid rgba(45, 212, 191, 0.25); white-space: nowrap;">
+            ${escapeHtml(sourceLabels[ind.sourceId] || ind.sourceId)}
+          </span>
+        </td>
+        <td style="font-size: 0.74rem; color: #cbd5e1;">${escapeHtml(ind.unit || '')}</td>
+        <td>
+          <strong class="country-count-badge">${countriesCount}</strong>
+          <span style="font-size: 0.72rem; color: var(--text-dim);"> nations</span>
+        </td>
+        <td style="font-family: var(--font-mono); color: var(--cyan);">${earliestStr}</td>
+        <td style="font-family: var(--font-mono); color: var(--lime); font-weight: 700;">${latestStr}</td>
+        <td style="font-family: var(--font-mono); color: var(--lime);">${ind.reportedCount || 0}</td>
+        <td style="font-family: var(--font-mono); color: #94a3b8;">${ind.missingCount || 0}</td>
+        <td>
+          <button class="btn-inspect-cov" type="button" onclick="window.openCoverageDetailModal('${escapeHtml(ind.code)}')">
+            Inspect ${countriesCount} Countries ↗
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderGapAnalysis(data) {
+  const candidateContainer = document.getElementById('candidateDatasetsContainer');
+  if (!candidateContainer) return;
+
+  const missingDomains = data.missingIndustryDomains || [];
+
+  candidateContainer.innerHTML = missingDomains.map(d => `
+    <div class="candidate-dataset-card">
+      <div class="candidate-dataset-domain">
+        <span>${escapeHtml(d.domain)}</span>
+        <span class="candidate-status-tag">0 Records</span>
+      </div>
+      <div class="candidate-dataset-name">
+        Recommended Next Dataset: <strong>${escapeHtml(d.candidateDataset)}</strong>
+      </div>
+      <div class="candidate-dataset-meta">
+        <strong>Target Startups:</strong> ${escapeHtml(d.targetStartups)}<br>
+        <strong>API / Ingestion:</strong> ${escapeHtml(d.apiAvailability)}<br>
+        <strong>Reuse Terms:</strong> ${escapeHtml(d.license)}
+      </div>
+    </div>
+  `).join('');
+}
+
+window.openCoverageDetailModal = function(indicatorCode) {
+  const modal = document.getElementById('coverageDetailModal');
+  if (!modal) return;
+
+  const data = coverageCache || buildCatalogFallbackCoverage();
+  const ind = (data.indicatorsList || []).find(i => i.code === indicatorCode)
+    || SOURCED_INDICATOR_CATALOG.find(i => i.code === indicatorCode);
+
+  if (!ind) return;
+
+  document.getElementById('covModalCode').textContent = ind.code;
+  document.getElementById('covModalSource').textContent = ind.publisher || ind.sourceId;
+  document.getElementById('covModalTitle').textContent = ind.name;
+  document.getElementById('covModalTopic').textContent = ind.topic;
+  document.getElementById('covModalUnit').textContent = ind.unit || 'Standard Unit';
+  document.getElementById('covModalDef').textContent = ind.definition || ind.name;
+  document.getElementById('covModalLimits').textContent = ind.limitations || 'No specific limitations noted.';
+
+  const yearSpanStr = (ind.earliestYear && ind.latestYear)
+    ? `${ind.earliestYear}–${ind.latestYear}`
+    : 'No observations recorded';
+  document.getElementById('covModalYearSpan').textContent = yearSpanStr;
+  document.getElementById('covModalCountriesCount').textContent = `${ind.countriesCoveredCount || (ind.coveredCountries ? ind.coveredCountries.length : 0)} sovereign nations`;
+
+  const portalLink = document.getElementById('covModalPortalLink');
+  if (portalLink) portalLink.href = ind.sourceUrl || '#';
+
+  const filterBtn = document.getElementById('btnFilterLibraryToIndicator');
+  if (filterBtn) filterBtn.dataset.targetTopic = ind.topic;
+
+  // Render country observations table
+  const tbody = document.getElementById('covModalCountryTableBody');
+  if (tbody) {
+    const countries = ind.coveredCountries || [];
+    if (countries.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 18px;">
+            No live reported country observations stored in the backend for this indicator. Run backend ingest scripts to store data.
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = countries.map(c => {
+        let valDisplay = 'NULL';
+        if (c.latestValue !== null && c.latestValue !== undefined) {
+          let num = Number(c.latestValue).toLocaleString(undefined, { maximumFractionDigits: 1 });
+          if (ind.unit === 'current US$') num = '$' + num;
+          valDisplay = `<strong>${num}</strong> <span style="font-size: 0.7rem; color: var(--text-dim);">${escapeHtml(ind.unit || '')}</span>`;
+        }
+
+        const yearsListStr = (c.reportedYears && c.reportedYears.length > 0)
+          ? c.reportedYears.join(', ')
+          : '--';
+
+        return `
+          <tr>
+            <td><strong style="font-family: var(--font-mono); color: var(--cyan);">${escapeHtml(c.code)}</strong></td>
+            <td>${escapeHtml(c.name)}</td>
+            <td style="font-family: var(--font-mono);">${c.earliestYear || '--'}</td>
+            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--lime);">${c.latestYear || '--'}</td>
+            <td style="font-size: 0.74rem; color: #94a3b8;">${escapeHtml(yearsListStr)}</td>
+            <td>${valDisplay}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+
+  modal.classList.remove('hidden');
+};
+
+window.openSourceLogModal = function(sourceId) {
+  const modal = document.getElementById('sourceLogModal');
+  if (!modal) return;
+
+  const data = coverageCache || buildCatalogFallbackCoverage();
+  const src = (data.sourcesList || []).find(s => s.id === sourceId);
+
+  if (!src) return;
+
+  document.getElementById('logModalSourceId').textContent = src.name || src.id;
+  document.getElementById('logModalTitle').textContent = `${src.name} Ingestion Audit`;
+
+  let formattedDate = 'Awaiting Ingestion Execution';
+  if (src.lastImportedAt) {
+    try {
+      formattedDate = new Date(src.lastImportedAt).toLocaleString();
+    } catch (_) {
+      formattedDate = String(src.lastImportedAt);
+    }
+  }
+  document.getElementById('logModalTimestamp').textContent = formattedDate;
+
+  const statusElem = document.getElementById('logModalStatus');
+  if (statusElem) {
+    if (src.importSucceeded || src.importStatus === 'success') {
+      statusElem.textContent = 'Success (200 OK)';
+      statusElem.className = 'text-lime';
+    } else if (src.importStatus === 'partial_failure') {
+      statusElem.textContent = 'Partial Failure';
+      statusElem.className = 'text-amber';
+    } else if (src.importStatus === 'failed') {
+      statusElem.textContent = 'Failed';
+      statusElem.className = 'text-danger';
+    } else if (src.importStatus === 'running') {
+      statusElem.textContent = 'Running';
+      statusElem.className = 'text-cyan';
+    } else {
+      statusElem.textContent = 'No Ingestion Logged';
+      statusElem.className = '';
+    }
+  }
+
+  document.getElementById('logModalRecords').textContent = (src.recordsCount || 0).toLocaleString();
+  document.getElementById('logModalCountries').textContent = `${src.countriesCoveredCount || 0} nations`;
+
+  const indCount = (data.indicatorsList || []).filter(i => i.sourceId === src.id).length;
+  document.getElementById('logModalIndicators').textContent = `${indCount} indicators`;
+
+  const summaryElem = document.getElementById('logModalSummary');
+  if (summaryElem) {
+    if (src.latestLog && src.latestLog.summary) {
+      summaryElem.textContent = src.latestLog.summary;
+    } else if (src.recordsCount > 0) {
+      summaryElem.textContent = `Source [${src.id}] has ${src.recordsCount} live observations stored in public.country_observations across ${src.countriesCoveredCount} economies.\nIngestion execution verified. All missing values preserved as NULLs.`;
+    } else {
+      summaryElem.textContent = `No automated import logs found in public.market_import_logs for [${src.id}]. Run the backend Edge Function or import script (e.g. node scripts/import-${src.id}.mjs) to execute live ingestion.`;
+    }
+  }
+
+  const errorsSection = document.getElementById('logModalErrorsSection');
+  const errorsElem = document.getElementById('logModalErrors');
+  if (errorsElem) {
+    if (src.latestLog && src.latestLog.errors && src.latestLog.errors.length > 0) {
+      if (errorsSection) errorsSection.classList.remove('hidden');
+      errorsElem.textContent = JSON.stringify(src.latestLog.errors, null, 2);
+    } else {
+      if (errorsSection) errorsSection.classList.remove('hidden');
+      errorsElem.textContent = 'None. Clean zero-error execution.';
+      errorsElem.className = 'log-modal-pre text-lime';
+    }
+  }
+
+  modal.classList.remove('hidden');
+};
+
+/* ==========================================================
    13. SUPABASE AUTH & MODALS INTEGRATION
    ========================================================== */
 function initSupabaseAuthAndModals() {
   const authModal = document.getElementById('authModal');
   const cloudModal = document.getElementById('cloudConfigModal');
   const evidenceModal = document.getElementById('evidenceModal');
+  const coverageModal = document.getElementById('coverageDetailModal');
+  const sourceLogModal = document.getElementById('sourceLogModal');
 
   // Trigger buttons
   const btnOpenAuth = document.getElementById('btnOpenAuthModal');
@@ -2297,6 +3004,8 @@ function initSupabaseAuthAndModals() {
   const btnOpenCloud = document.getElementById('btnOpenCloudModal');
   const btnCloseCloud = document.getElementById('btnCloseCloudModal');
   const btnCloseEvidence = document.getElementById('btnCloseEvidenceModal');
+  const btnCloseCoverage = document.getElementById('btnCloseCoverageModal');
+  const btnCloseSourceLog = document.getElementById('btnCloseSourceLogModal');
   const btnSwitchConfig = document.getElementById('btnSwitchToCloudConfig');
 
   if (btnOpenAuth) {
@@ -2333,6 +3042,18 @@ function initSupabaseAuthAndModals() {
     });
   }
 
+  if (btnCloseCoverage) {
+    btnCloseCoverage.addEventListener('click', () => {
+      if (coverageModal) coverageModal.classList.add('hidden');
+    });
+  }
+
+  if (btnCloseSourceLog) {
+    btnCloseSourceLog.addEventListener('click', () => {
+      if (sourceLogModal) sourceLogModal.classList.add('hidden');
+    });
+  }
+
   if (btnSwitchConfig) {
     btnSwitchConfig.addEventListener('click', () => {
       if (authModal) authModal.classList.add('hidden');
@@ -2341,7 +3062,7 @@ function initSupabaseAuthAndModals() {
   }
 
   // Close modals on backdrop click
-  [authModal, cloudModal, evidenceModal].forEach(m => {
+  [authModal, cloudModal, evidenceModal, coverageModal, sourceLogModal].forEach(m => {
     if (m) {
       m.addEventListener('click', (e) => {
         if (e.target === m) m.classList.add('hidden');
