@@ -192,4 +192,69 @@ curl -X POST "https://your-project.supabase.co/functions/v1/import-global-findex
   --data-binary "@data/global-findex-data.csv"
 ```
 
+---
+
+## 🛍️ Sourced Market Data Library: UNCTADstat (Digital Economy & E-Commerce) Phase
+
+Foundry integrates official statistics from the **United Nations Conference on Trade and Development (UNCTADstat Data Hub)** to evaluate national e-commerce readiness, enterprise web presence, digital ordering adoption, and cross-border digitally deliverable services trade.
+
+### 1. Official UNCTADstat Access Method & Coverage
+- **Publisher**: United Nations Conference on Trade and Development (UN Trade and Development - UNCTAD), Division on Technology and Logistics.
+- **Official Documentation**: [UNCTAD Data Hub](https://unctadstat.unctad.org/) and [UNCTAD Digital Economy Theme](https://unctadstat.unctad.org/EN/DataCentre.html).
+- **Access Architecture**:
+  - UNCTADstat publishes comprehensive multi-dimensional data cubes via the UNCTADstat Data Centre, supporting customized table design and bulk CSV/SDMX exports.
+  - While UN-wide SDMX web services support cross-agency harmonization, direct unauthenticated scraping of portal tables is avoided in adherence to institutional guidelines.
+  - Foundry provides an admin-only backend CSV importer (`scripts/import-unctad.mjs`), a secure Supabase Edge Function (`supabase/functions/import-unctad/index.ts`), and an authoritative pre-bundled reference dataset (`data/unctad-digital-economy-data.csv`).
+- **Country & Year Coverage**: Covers sovereign nations across annual reporting periods (2020–2023+). Intermediate or unconducted enterprise surveys are preserved as `NULL` without synthetic inflation.
+- **Methodology Standards**: Developed under the *Partnership on Measuring ICT for Development* and the *UNCTAD Manual for the Production of Statistics on the Digital Economy*. Data is gathered harmoniously from National Statistical Offices (NSOs) and Eurostat.
+
+### 2. Standardized UNCTAD Indicators
+- `UNCTAD.ECOMM.B2C.IDX`: **UNCTAD B2C E-commerce Index (0–100)** – Composite index measuring preparedness for online shopping (arithmetic average of account ownership, internet use, server security, and postal reliability).
+- `UNCTAD.ECOMM.DDS.SHR`: **Share of digitally deliverable services in total services exports (%)** – Proportion of cross-border services exports delivered over computer networks.
+- `UNCTAD.ECOMM.ENT.RCV`: **Enterprises receiving orders online (% of enterprises)** – Formal firms with 10+ employees receiving commercial orders via web or apps.
+- `UNCTAD.ECOMM.ENT.WEB`: **Enterprises with a website (% of enterprises)** – Formal firms maintaining an active public homepage.
+- `UNCTAD.ECOMM.IND.BUY`: **Individuals who purchased goods or services online (% of individuals)** – Share of population engaging in consumer e-commerce.
+
+### 3. Terms of Reuse & Attribution
+- **License**: Creative Commons Attribution 3.0 IGO (**CC-BY 3.0 IGO**).
+- **Attribution**: `Source: United Nations Trade and Development (UNCTAD).`
+- **Permitted Reuse**: Open reproduction, adaptation, and sharing permitted for personal, research, educational, and commercial purposes with proper attribution.
+
+### 4. Explicit Commercial Research Boundary
+> ⚠️ **CRITICAL BOUNDARY**: E-commerce activity and digital trade metrics quantify national commercial digital infrastructure, enterprise connectivity, and cross-border digital services flows. **They do not prove that a customer will buy a specific product**, nor do they forecast individual willingness to pay, unit economics, or venture product-market fit. In Foundry, sourced observations are strictly partitioned from heuristic simulation assumptions.
+
+---
+
+## 🛠️ How to Import or Update UNCTAD Data
+
+### Option A: Command-Line Backend Importer (Recommended)
+1. Ensure your `.env` contains your private Supabase service-role credentials:
+   ```env
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=your_private_service_role_key
+   ```
+2. Run the importer using the verified reference dataset:
+   ```bash
+   node scripts/import-unctad.mjs
+   ```
+3. Or pass a custom CSV export downloaded from the UNCTADstat Data Centre:
+   ```bash
+   node scripts/import-unctad.mjs path/to/your-unctad-export.csv
+   ```
+4. **Behavior**:
+   - Validates ISO-3 country codes and indicator codes.
+   - Retains missing values as `NULL` (never fills gaps with synthetic data).
+   - Idempotently upserts into `public.country_observations`.
+   - Records an audit trail in `public.market_import_logs` with row counts, country/year coverage, and errors.
+
+### Option B: Supabase Edge Function
+Trigger ingestion via HTTP header authentication:
+```bash
+curl -X POST "https://your-project.supabase.co/functions/v1/import-unctad" \
+  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "Content-Type: text/csv" \
+  --data-binary "@data/unctad-digital-economy-data.csv"
+```
+
+
 

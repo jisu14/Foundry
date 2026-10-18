@@ -1750,6 +1750,56 @@ const SOURCED_INDICATOR_CATALOG = [
     sourceUrl: 'https://databank.worldbank.org/source/global-financial-inclusion',
     terms: 'CC-BY 4.0',
     limitations: 'Captures the outbound transmission of funds through digital rails. Does not distinguish between high-value transactions and small utility payments, nor does it guarantee customer conversion for new digital services.'
+  },
+  {
+    code: 'UNCTAD.ECOMM.B2C.IDX',
+    name: 'UNCTAD B2C E-commerce Index (0–100)',
+    topic: 'E-Commerce & Digital Economy',
+    unit: 'Index (0–100)',
+    publisher: 'UN Trade and Development (UNCTADstat)',
+    sourceUrl: 'https://unctadstat.unctad.org/',
+    terms: 'CC-BY 3.0 IGO',
+    limitations: 'Measures structural macroeconomic readiness and transaction infrastructure, not individual purchasing volume, consumer product preference, or commercial conversion for a specific startup.'
+  },
+  {
+    code: 'UNCTAD.ECOMM.DDS.SHR',
+    name: 'Share of digitally deliverable services in total services exports (%)',
+    topic: 'Digital Trade & Services',
+    unit: '% of total services exports',
+    publisher: 'UN Trade and Development (UNCTADstat)',
+    sourceUrl: 'https://unctadstat.unctad.org/',
+    terms: 'CC-BY 3.0 IGO',
+    limitations: 'Measures national macro-export competitiveness in cross-border digital services. It does not measure domestic commercial SaaS demand, local software spending power, or willingness to pay.'
+  },
+  {
+    code: 'UNCTAD.ECOMM.ENT.RCV',
+    name: 'Enterprises receiving orders online (% of enterprises)',
+    topic: 'Enterprise ICT Adoption',
+    unit: '% of enterprises',
+    publisher: 'UN Trade and Development (UNCTADstat)',
+    sourceUrl: 'https://unctadstat.unctad.org/',
+    terms: 'CC-BY 3.0 IGO',
+    limitations: 'Measures commercial digital sales channel adoption among formal firms. Does not measure order profitability, transaction volume, or enterprise budget readiness for new software tools.'
+  },
+  {
+    code: 'UNCTAD.ECOMM.ENT.WEB',
+    name: 'Enterprises with a website (% of enterprises)',
+    topic: 'Enterprise ICT Adoption',
+    unit: '% of enterprises',
+    publisher: 'UN Trade and Development (UNCTADstat)',
+    sourceUrl: 'https://unctadstat.unctad.org/',
+    terms: 'CC-BY 3.0 IGO',
+    limitations: 'Indicates baseline corporate web presence. Having a homepage does not indicate cloud software maturity, modern tech stack adoption, or willingness to purchase enterprise software.'
+  },
+  {
+    code: 'UNCTAD.ECOMM.IND.BUY',
+    name: 'Individuals who purchased goods or services online (% of individuals)',
+    topic: 'E-Commerce & Digital Economy',
+    unit: '% of individuals',
+    publisher: 'UN Trade and Development (UNCTADstat)',
+    sourceUrl: 'https://unctadstat.unctad.org/',
+    terms: 'CC-BY 3.0 IGO',
+    limitations: 'Measures general consumer e-commerce participation across all commercial sectors (retail, groceries, transport). Past online shopping activity does not prove customer interest or demand for a specific startup\'s offering.'
   }
 ];
 
