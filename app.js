@@ -5896,6 +5896,8 @@ function initSupabaseAuthAndModals() {
   const evidenceModal = document.getElementById('evidenceModal');
   const coverageModal = document.getElementById('coverageDetailModal');
   const sourceLogModal = document.getElementById('sourceLogModal');
+  const workspaceSettingsModal = document.getElementById('workspaceSettingsModal');
+  const privacyPolicyModal = document.getElementById('privacyPolicyModal');
 
   // Trigger buttons
   const btnOpenAuth = document.getElementById('btnOpenAuthModal');
@@ -5906,6 +5908,17 @@ function initSupabaseAuthAndModals() {
   const btnCloseCoverage = document.getElementById('btnCloseCoverageModal');
   const btnCloseSourceLog = document.getElementById('btnCloseSourceLogModal');
   const btnSwitchConfig = document.getElementById('btnSwitchToCloudConfig');
+
+  // New Beta Controls: Privacy & Data Rights
+  const btnOpenPrivacyPolicy = document.getElementById('btnOpenPrivacyPolicy');
+  const btnQuickExport = document.getElementById('btnQuickExportWorkspace');
+  const btnExportJson = document.getElementById('btnExportWorkspaceJson');
+  const btnOpenPrivacyFromSettings = document.getElementById('btnOpenPrivacyFromSettings');
+  const btnCloseSettings = document.getElementById('btnCloseWorkspaceSettingsModal');
+  const btnClosePrivacy = document.getElementById('btnClosePrivacyPolicyModal');
+  const btnClosePrivacyBottom = document.getElementById('btnClosePrivacyPolicyBottom');
+  const deleteInput = document.getElementById('deleteConfirmationInput');
+  const btnConfirmDelete = document.getElementById('btnConfirmDeleteAccount');
 
   if (btnOpenAuth) {
     btnOpenAuth.addEventListener('click', () => {
@@ -5960,8 +5973,47 @@ function initSupabaseAuthAndModals() {
     });
   }
 
+  // Privacy Policy Handlers
+  if (btnOpenPrivacyPolicy) {
+    btnOpenPrivacyPolicy.addEventListener('click', openPrivacyPolicyModal);
+  }
+  if (btnOpenPrivacyFromSettings) {
+    btnOpenPrivacyFromSettings.addEventListener('click', openPrivacyPolicyModal);
+  }
+  if (btnClosePrivacy) {
+    btnClosePrivacy.addEventListener('click', () => {
+      if (privacyPolicyModal) privacyPolicyModal.classList.add('hidden');
+    });
+  }
+  if (btnClosePrivacyBottom) {
+    btnClosePrivacyBottom.addEventListener('click', () => {
+      if (privacyPolicyModal) privacyPolicyModal.classList.add('hidden');
+    });
+  }
+
+  // Workspace Settings & Export Handlers
+  if (btnCloseSettings) {
+    btnCloseSettings.addEventListener('click', () => {
+      if (workspaceSettingsModal) workspaceSettingsModal.classList.add('hidden');
+    });
+  }
+  if (btnQuickExport) {
+    btnQuickExport.addEventListener('click', handleExportWorkspaceJson);
+  }
+  if (btnExportJson) {
+    btnExportJson.addEventListener('click', handleExportWorkspaceJson);
+  }
+
+  // Account & Data Deletion Handlers
+  if (deleteInput && btnConfirmDelete) {
+    deleteInput.addEventListener('input', () => {
+      btnConfirmDelete.disabled = deleteInput.value.trim().toUpperCase() !== 'DELETE';
+    });
+    btnConfirmDelete.addEventListener('click', handleConfirmDeleteAccount);
+  }
+
   // Close modals on backdrop click
-  [authModal, cloudModal, evidenceModal, coverageModal, sourceLogModal].forEach(m => {
+  [authModal, cloudModal, evidenceModal, coverageModal, sourceLogModal, workspaceSettingsModal, privacyPolicyModal].forEach(m => {
     if (m) {
       m.addEventListener('click', (e) => {
         if (e.target === m) m.classList.add('hidden');
@@ -6129,10 +6181,15 @@ function updateCloudStatusUI() {
     label.textContent = 'Cloud Sync: Active';
     actionsContainer.innerHTML = `
       <div class="cloud-user-badge" title="${escapeHtml(user.email)}">👤 ${escapeHtml(user.email)}</div>
-      <div class="cloud-actions-row">
+      <div class="cloud-actions-row" style="display: flex; gap: 6px; margin-top: 6px;">
+        <button class="btn btn-outline btn-xs" id="btnOpenWorkspaceSettings" type="button" title="Data Export & Account Management">⚙️ Workspace</button>
         <button class="btn btn-outline btn-xs" id="btnSignOut" type="button">Sign Out</button>
       </div>
     `;
+    const btnSettings = document.getElementById('btnOpenWorkspaceSettings');
+    if (btnSettings) {
+      btnSettings.addEventListener('click', openWorkspaceSettingsModal);
+    }
     const signOutBtn = document.getElementById('btnSignOut');
     if (signOutBtn) {
       signOutBtn.addEventListener('click', async () => {
@@ -6169,6 +6226,148 @@ function updateCloudStatusUI() {
         const authModal = document.getElementById('authModal');
         if (authModal) authModal.classList.remove('hidden');
       });
+    }
+  }
+}
+
+function openWorkspaceSettingsModal() {
+  const modal = document.getElementById('workspaceSettingsModal');
+  if (!modal) return;
+
+  const emailEl = document.getElementById('settingsUserEmail');
+  const backendEl = document.getElementById('settingsBackendTag');
+  const wsIdEl = document.getElementById('settingsWorkspaceId');
+  const deleteInput = document.getElementById('deleteConfirmationInput');
+  const btnDelete = document.getElementById('btnConfirmDeleteAccount');
+  const deleteNotice = document.getElementById('deleteAccountNotice');
+  const exportStatus = document.getElementById('exportStatusText');
+
+  const client = window.foundrySupabase;
+  const isAuth = client && client.isAuthenticated();
+  const user = client && client.getUser();
+
+  if (emailEl) emailEl.textContent = isAuth && user ? user.email : 'Offline / Anonymous Founder';
+  if (backendEl) {
+    if (isAuth) {
+      backendEl.textContent = 'Supabase Cloud (RLS Active)';
+      backendEl.className = 'evidence-badge-lime';
+    } else if (client && client.isConfigured()) {
+      backendEl.textContent = 'Supabase (Awaiting Sign-In)';
+      backendEl.className = 'badge-status-neutral';
+    } else {
+      backendEl.textContent = 'LocalStorage Browser Cache';
+      backendEl.className = 'badge-status-neutral';
+    }
+  }
+  if (wsIdEl) {
+    wsIdEl.textContent = (client && client.workspaceId) ? client.workspaceId : (isAuth && user ? user.id.slice(0, 8) + '...' : 'local-workspace');
+  }
+
+  if (deleteInput) deleteInput.value = '';
+  if (btnDelete) {
+    btnDelete.disabled = true;
+    btnDelete.textContent = '🗑️ Permanently Delete Account & Erase All Data';
+  }
+  if (deleteNotice) {
+    deleteNotice.className = 'auth-notice hidden';
+    deleteNotice.textContent = '';
+  }
+  if (exportStatus) {
+    exportStatus.textContent = 'Includes all profile, simulation, and empirical evidence data';
+    exportStatus.className = 'text-xs text-muted';
+  }
+
+  modal.classList.remove('hidden');
+}
+window.openWorkspaceSettingsModal = openWorkspaceSettingsModal;
+
+function openPrivacyPolicyModal() {
+  const modal = document.getElementById('privacyPolicyModal');
+  if (modal) modal.classList.remove('hidden');
+}
+window.openPrivacyPolicyModal = openPrivacyPolicyModal;
+
+async function handleExportWorkspaceJson() {
+  const exportStatus = document.getElementById('exportStatusText');
+  if (exportStatus) {
+    exportStatus.textContent = 'Gathering workspace records...';
+    exportStatus.className = 'text-xs text-lime';
+  }
+
+  try {
+    const dataPackage = await window.foundrySupabase.exportWorkspaceData();
+    const jsonStr = JSON.stringify(dataPackage, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    a.download = `foundry-workspace-export-${dateStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    if (exportStatus) {
+      exportStatus.textContent = '✅ Export downloaded successfully!';
+      exportStatus.className = 'text-xs text-lime';
+    }
+  } catch (err) {
+    console.error('Workspace export error:', err);
+    if (exportStatus) {
+      exportStatus.textContent = '⚠️ Export failed: ' + (err.message || 'Unknown error');
+      exportStatus.className = 'text-xs text-danger';
+    }
+  }
+}
+
+async function handleConfirmDeleteAccount() {
+  const btnDelete = document.getElementById('btnConfirmDeleteAccount');
+  const deleteNotice = document.getElementById('deleteAccountNotice');
+  const deleteInput = document.getElementById('deleteConfirmationInput');
+
+  if (!deleteInput || deleteInput.value.trim().toUpperCase() !== 'DELETE') {
+    if (deleteNotice) {
+      deleteNotice.className = 'auth-notice error';
+      deleteNotice.textContent = 'Please type DELETE exactly to confirm account erasure.';
+      deleteNotice.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (btnDelete) {
+    btnDelete.disabled = true;
+    btnDelete.textContent = 'Purging all workspace data...';
+  }
+
+  try {
+    await window.foundrySupabase.deleteAccountAndData();
+
+    if (deleteNotice) {
+      deleteNotice.className = 'auth-notice success';
+      deleteNotice.textContent = '✅ Account and all workspace records permanently deleted. Resetting workspace...';
+      deleteNotice.classList.remove('hidden');
+    }
+
+    // Reset client state
+    setTimeout(() => {
+      handleResetWorld();
+      const modal = document.getElementById('workspaceSettingsModal');
+      if (modal) modal.classList.add('hidden');
+      updateCloudStatusUI();
+    }, 1200);
+
+  } catch (err) {
+    console.error('Account deletion failed:', err);
+    if (deleteNotice) {
+      deleteNotice.className = 'auth-notice error';
+      deleteNotice.textContent = '⚠️ Account deletion failed: ' + (err.message || 'Unknown error');
+      deleteNotice.classList.remove('hidden');
+    }
+    if (btnDelete) {
+      btnDelete.disabled = false;
+      btnDelete.textContent = '🗑️ Permanently Delete Account & Erase All Data';
     }
   }
 }

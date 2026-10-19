@@ -4991,6 +4991,60 @@ input[type="range"]::-webkit-slider-thumb {
   color: #7dd3fc;
 }
 
+/* ==========================================================
+   PUBLIC BETA: WORKSPACE SETTINGS, PRIVACY & RETENTION STYLES
+   ========================================================== */
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #ef4444;
+  padding: 8px 14px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #dc2626;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.sidebar-links-row .btn-text-link {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.sidebar-links-row .btn-text-link:hover {
+  color: var(--lime);
+}
+
+.workspace-settings-body h4 {
+  font-family: inherit;
+  letter-spacing: -0.01em;
+}
+
+.privacy-modal-body h4 {
+  font-family: inherit;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 4px;
+}
+
+
 
 
 

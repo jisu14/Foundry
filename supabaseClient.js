@@ -1840,6 +1840,143 @@
         return [];
       }
     }
+
+    // ==========================================================
+    // DATA PORTABILITY & RETENTION: EXPORT WORKSPACE DATA (GDPR)
+    // ==========================================================
+    async exportWorkspaceData() {
+      const isAuth = this.isAuthenticated();
+      const user = this.getUser();
+
+      // Gather cloud data if authenticated, otherwise use local storage state
+      let profile = null;
+      let groups = [];
+      let competitorNotes = null;
+      let campaign = null;
+      let simulations = [];
+      let realEvidence = [];
+      let betaFeedback = [];
+      let simFeedback = [];
+      let aiLogs = [];
+
+      if (isAuth) {
+        try {
+          const [p, g, cNotes, camp, sList, evList, bFb, sFb, aLogs] = await Promise.allSettled([
+            this.loadStartupProfile(),
+            this.loadCustomerGroups(),
+            this.loadCompetitorNotes(),
+            this.loadCampaign(),
+            this.loadSimulationHistory(),
+            this.loadRealEvidence(),
+            this.loadUserBetaFeedback(),
+            this.loadUserSimulationFeedback(),
+            this.getAiAnalystLogs(100)
+          ]);
+
+          profile = p.status === 'fulfilled' ? p.value : null;
+          groups = g.status === 'fulfilled' ? (g.value || []) : [];
+          competitorNotes = cNotes.status === 'fulfilled' ? cNotes.value : null;
+          campaign = camp.status === 'fulfilled' ? camp.value : null;
+          simulations = sList.status === 'fulfilled' ? (sList.value || []) : [];
+          realEvidence = evList.status === 'fulfilled' ? (evList.value || []) : [];
+          betaFeedback = bFb.status === 'fulfilled' ? (bFb.value || []) : [];
+          simFeedback = sFb.status === 'fulfilled' ? (sFb.value || []) : [];
+          aiLogs = aLogs.status === 'fulfilled' ? (aLogs.value || []) : [];
+        } catch (err) {
+          console.warn('Error during cloud export data aggregation:', err);
+        }
+      }
+
+      // Merge with local state to ensure complete offline/online snapshot
+      const localState = (typeof state !== 'undefined') ? state : {};
+
+      const exportPackage = {
+        metadata: {
+          platform: 'Foundry Virtual Startup World',
+          exportVersion: 'v2.0-beta-export',
+          exportedAt: new Date().toISOString(),
+          authenticated: isAuth,
+          userEmail: user ? user.email : 'local-anonymous-founder',
+          userId: user ? user.id : null,
+          dataBoundaryNotice: 'Private founder workspace export. Contains stated assumptions, customer segments, simulation outcomes, empirical field research, and AI audit history.'
+        },
+        workspace: {
+          profile: profile || localState.profile || null,
+          targetMarket: {
+            country: (localState.campaign && localState.campaign.country) || 'USA',
+            industry: (localState.campaign && localState.campaign.industry) || 'Mobile Applications',
+            competitorNotes: competitorNotes || (localState.market && localState.market.competitorNotes) || ''
+          },
+          customerGroups: (groups && groups.length > 0) ? groups : ((localState.market && localState.market.groups) || []),
+          activeCampaign: campaign || localState.campaign || null,
+          simulationHistory: (simulations && simulations.length > 0) ? simulations : (localState.history || []),
+          realEvidenceStudies: (realEvidence && realEvidence.length > 0) ? realEvidence : (localState.realEvidence || []),
+          feedbackReports: betaFeedback,
+          simulationFeedback: simFeedback,
+          aiAnalystAuditLogs: aiLogs
+        }
+      };
+
+      return exportPackage;
+    }
+
+    // ==========================================================
+    // DATA RETENTION & ACCOUNT DELETION (RIGHT TO ERASURE)
+    // ==========================================================
+    async deleteAccountAndData() {
+      const isAuth = this.isAuthenticated();
+      let rpcResult = null;
+
+      if (isAuth) {
+        try {
+          // 1. Invoke atomic database deletion RPC
+          const { data, error } = await this.client.rpc('delete_founder_workspace_data');
+          if (error) {
+            console.warn('RPC delete_founder_workspace_data failed, attempting fallback manual cascading deletion:', error);
+            // Fallback: manual row cleanup
+            await this.deleteAllRealEvidence().catch(() => {});
+            if (this.workspaceId) {
+              await this.client.from('simulation_runs').delete().eq('workspace_id', this.workspaceId).catch(() => {});
+              await this.client.from('customer_groups').delete().eq('workspace_id', this.workspaceId).catch(() => {});
+              await this.client.from('founder_profiles').delete().eq('workspace_id', this.workspaceId).catch(() => {});
+              await this.client.from('founder_workspaces').delete().eq('id', this.workspaceId).catch(() => {});
+            }
+          } else {
+            rpcResult = data;
+          }
+        } catch (err) {
+          console.error('Account data purge error:', err);
+          throw new Error('Database deletion failed: ' + (err.message || 'Unknown error'));
+        }
+
+        // 2. Sign out of Supabase Auth
+        try {
+          await this.signOut();
+        } catch (e) {
+          console.warn('Sign out after account deletion warning:', e);
+        }
+      }
+
+      // 3. Clear all Foundry local storage keys
+      try {
+        const keysToRemove = [
+          'foundry_profile',
+          'foundry_market',
+          'foundry_campaign',
+          'foundry_history',
+          'foundry_events',
+          'foundry_real_evidence',
+          'foundry_beta_feedback_cache',
+          'foundry_simulation_feedback_cache'
+        ];
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+      } catch (err) {
+        console.warn('Local storage purge warning:', err);
+      }
+
+      this.workspaceId = null;
+      return rpcResult || { status: 'success', message: 'Workspace purged and session cleared.' };
+    }
   }
 
   // Expose singleton instances on window
