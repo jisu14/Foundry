@@ -43,14 +43,28 @@
       </div>
 
       <div class="sidebar-section">
-        <div class="section-label">YOUR STARTUP</div>
+        <div class="section-label">PUBLIC PRODUCT TOUR</div>
+        <nav class="sidebar-nav">
+          <button class="nav-item" data-view="landing" id="navItemLanding">
+            <span class="nav-svg-icon" style="color: #a3e635;">
+              <!-- Compass / Play icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            </span>
+            <span class="nav-label">Product Tour &amp; Beta</span>
+            <span class="sidebar-badge" style="background: rgba(163,230,53,0.15); color: #a3e635;">Tour</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">YOUR STARTUP WORKSPACE</div>
         <nav class="sidebar-nav">
           <button class="nav-item active" data-view="overview">
             <span class="nav-svg-icon">
               <!-- Grid / ▦ icon -->
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             </span>
-            <span class="nav-label">Overview</span>
+            <span class="nav-label">Market City Overview</span>
           </button>
 
           <button class="nav-item" data-view="profile">
@@ -183,6 +197,565 @@
     <main class="main-viewport">
 
       <!-- ========================================================== -->
+      <!-- VIEW 0: PUBLIC LANDING & GUIDED PRODUCT TOUR (NEW)         -->
+      <!-- ========================================================== -->
+      <section id="view-landing" class="page-view">
+        <div class="landing-page-container">
+          
+          <!-- Hero Section -->
+          <header class="landing-hero-section">
+            <div class="landing-badge">
+              <span class="badge-dot pulse-lime"></span>
+              <span>FOUNDRY BETA &bull; EVIDENCE-GROUNDED DECISION INTELLIGENCE</span>
+            </div>
+
+            <h1 class="landing-hero-title">
+              Explore New Markets and Test Assumptions<br>
+              <span class="text-gradient-lime">Before Burning Real Capital.</span>
+            </h1>
+
+            <p class="landing-hero-lead">
+              Foundry provides early-stage tech founders, product strategists, and cross-border teams with an empirical simulation workspace. Formulate explicit customer hypotheses, inspect verified macroeconomic indicators from official statistical bodies, run deterministic simulations, and challenge blindspots with grounded AI scenarios.
+            </p>
+
+            <div class="landing-cta-group">
+              <button class="btn btn-lime btn-lg landing-cta-primary" id="btnLandingSignup" type="button">
+                <span>Join Private Beta &amp; Open Workspace</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+              <button class="btn btn-outline-cyan btn-lg landing-cta-secondary" id="btnLandingExploreMap" type="button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                <span>Live Product Preview (2D Market City)</span>
+              </button>
+            </div>
+
+            <!-- Micro Trust & Architectural Commitments -->
+            <div class="landing-trust-bar">
+              <div class="trust-item">
+                <span class="trust-icon">&#9737;</span>
+                <span class="trust-text"><strong>Official Sources:</strong> World Bank, ITU, Eurostat &amp; UNCTAD</span>
+              </div>
+              <div class="trust-item">
+                <span class="trust-icon">&#9874;</span>
+                <span class="trust-text"><strong>Deterministic Math:</strong> Zero hallucinated revenue or conversion</span>
+              </div>
+              <div class="trust-item">
+                <span class="trust-icon">&#9681;</span>
+                <span class="trust-text"><strong>Privacy Assured:</strong> Supabase RLS, Local-First &amp; GDPR Export</span>
+              </div>
+            </div>
+          </header>
+
+          <!-- Core Decision Scope Card: Who Foundry Helps & What Decisions It Explores -->
+          <section class="landing-card-section">
+            <div class="decision-scope-card">
+              <div class="scope-grid">
+                <div class="scope-col">
+                  <div class="scope-header">
+                    <span class="scope-badge who">TARGET FOUNDERS</span>
+                    <h3>Who Foundry Helps</h3>
+                  </div>
+                  <ul class="scope-list">
+                    <li><strong>Early-Stage Tech Founders:</strong> Assessing country expansion, channel feasibility, and pricing tiers prior to committing dev or ad spend.</li>
+                    <li><strong>Product &amp; Venture Strategists:</strong> Stress-testing customer willingness-to-pay and unit economics under explicit, audited assumptions.</li>
+                    <li><strong>Cross-Border Operators:</strong> Comparing digital payment adoption, broadband penetration, and regulatory friction across different geographies.</li>
+                  </ul>
+                </div>
+                <div class="scope-col">
+                  <div class="scope-header">
+                    <span class="scope-badge decision">STRATEGIC DECISION</span>
+                    <h3>What Decision You Can Explore</h3>
+                  </div>
+                  <ul class="scope-list">
+                    <li><strong>Go / No-Go Market Entry:</strong> Should we enter this target vertical or country now, or is infrastructure readiness insufficient?</li>
+                    <li><strong>Pricing &amp; Channel Viability:</strong> Will our proposed unit pricing survive the customer group's estimated budget ceiling and sensitivity?</li>
+                    <li><strong>Empirical Evidence vs. Fantasy:</strong> Which of our critical business assumptions lack empirical validation and demand customer interviews today?</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 7-Step Iterative Learning Loop (The Foundry Loop) -->
+          <section class="landing-section" id="sectionFounderLoop">
+            <div class="section-heading-center">
+              <div class="section-eyebrow">DISCIPLINED ITERATIVE LEARNING LOOP</div>
+              <h2 class="section-title">The 7-Step Founder Decision Cycle</h2>
+              <p class="section-subtitle">
+                Foundry replaces speculative guessing with an empirical, step-by-step decision framework. Every stage connects directly to an actionable next step.
+              </p>
+            </div>
+
+            <div class="loop-cards-grid">
+              <!-- Step 1 -->
+              <div class="loop-step-card" data-step-target="profile">
+                <div class="step-num-badge">01</div>
+                <div class="step-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>
+                </div>
+                <h4 class="step-title">Set Up Startup Profile</h4>
+                <p class="step-desc">Specify your venture name, development stage, core product value proposition, business model, and initial target market geography.</p>
+                <div class="step-next-action">
+                  <span class="action-label">Produces:</span>
+                  <span class="action-target">Clear positioning baseline</span>
+                </div>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="loop-step-card" data-step-target="library">
+                <div class="step-num-badge">02</div>
+                <div class="step-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <h4 class="step-title">Explore Market Evidence</h4>
+                <p class="step-desc">Inspect verified indicators (World Bank, ITU, Eurostat) covering digital payment penetration, mobile connectivity, and commercial metrics with full source URLs.</p>
+                <div class="step-next-action">
+                  <span class="action-label">Produces:</span>
+                  <span class="action-target">Empirical macro grounding</span>
+                </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="loop-step-card" data-step-target="market">
+                <div class="step-num-badge">03</div>
+                <div class="step-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                </div>
+                <h4 class="step-title">Define Customer Assumptions</h4>
+                <p class="step-desc">Articulate explicit founder hypotheses: willingness-to-pay ceiling, price sensitivity index, discovery channel bias, and primary adoption friction.</p>
+                <div class="step-next-action">
+                  <span class="action-label">Produces:</span>
+                  <span class="action-target">Testable behavioral model</span>
+                </div>
+              </div>
+
+              <!-- Step 4 -->
+              <div class="loop-step-card" data-step-target="launch">
+                <div class="step-num-badge">04</div>
+                <div class="step-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                </div>
+                <h4 class="step-title">Create Experiment</h4>
+                <p class="step-desc">Configure your unit pricing, select a customer group, select an acquisition channel (Social, Search, Outbound, Referral), and allocate a test budget.</p>
+                <div class="step-next-action">
+                  <span class="action-label">Produces:</span>
+                  <span class="action-target">Executable test parameters</span>
+                </div>
+              </div>
+
+              <!-- Step 5 -->
+              <div class="loop-step-card" data-step-target="overview">
+                <div class="step-num-badge">05</div>
+                <div class="step-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+                <h4 class="step-title">Run Labeled Simulation</h4>
+                <p class="step-desc">Execute Foundry's deterministic simulation engine. Watch consumer traffic flow across the 2D Market City and view calculated reach, conversions, and revenue bounds.</p>
+                <div class="step-next-action">
+                  <span class="action-label">Produces:</span>
+                  <span class="action-target">Deterministic scenario bounds</span>
+                </div>
+              </div>
+
+              <!-- Step 6 -->
+              <div class="loop-step-card" data-step-target="launch">
+                <div class="step-num-badge">06</div>
+                <div class="step-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <h4 class="step-title">Review Evidence &amp; AI Scenarios</h4>
+                <p class="step-desc">Audit the 4-part boundary: official indicators, your stated assumptions, deterministic calculation ranges, and fictional AI counter-scenarios revealing blindspots.</p>
+                <div class="step-next-action">
+                  <span class="action-label">Produces:</span>
+                  <span class="action-target">Transparent audit trail</span>
+                </div>
+              </div>
+
+              <!-- Step 7 -->
+              <div class="loop-step-card" data-step-target="real-evidence">
+                <div class="step-num-badge">07</div>
+                <div class="step-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+                </div>
+                <h4 class="step-title">Save Result &amp; Ground With Real Data</h4>
+                <p class="step-desc">Save the run to history. Log real customer interview notes, survey results, or pilot conversion data to evaluate where your assumptions diverged from reality.</p>
+                <div class="step-next-action">
+                  <span class="action-label">Produces:</span>
+                  <span class="action-target">Prioritized customer interview goals</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Authentic Product Previews (Genuine Foundry Components) -->
+          <section class="landing-section" id="sectionProductPreviews">
+            <div class="section-heading-center">
+              <div class="section-eyebrow">GENUINE PRODUCT PREVIEWS</div>
+              <h2 class="section-title">Experience the Real Foundry Interface</h2>
+              <p class="section-subtitle">
+                No vaporware or fabricated screenshots. The previews below reflect genuine working modules built inside Foundry.
+              </p>
+            </div>
+
+            <div class="previews-container">
+              <!-- Preview Card 1: 2D Living Market City -->
+              <div class="product-preview-card">
+                <div class="preview-card-header">
+                  <div class="preview-header-meta">
+                    <span class="preview-tag lime">DISTINCTIVE PRODUCT EXPERIENCE</span>
+                    <h3 class="preview-heading">The 2D Living Market City</h3>
+                  </div>
+                  <button class="btn btn-lime-outline btn-xs" data-nav="overview" type="button">Open Interactive Map &rarr;</button>
+                </div>
+                <div class="preview-visual-panel city-preview-panel">
+                  <div class="mini-city-display">
+                    <div class="mini-district hq">
+                      <div class="mini-icon">&#127970;</div>
+                      <div class="mini-name">Startup HQ</div>
+                      <div class="mini-status">Active Cycle</div>
+                    </div>
+                    <div class="mini-road horizontal"></div>
+                    <div class="mini-district billboard">
+                      <div class="mini-icon">&#128227;</div>
+                      <div class="mini-name">Ad Billboard</div>
+                      <div class="mini-status">Channel Testing</div>
+                    </div>
+                    <div class="mini-road vertical"></div>
+                    <div class="mini-district consumer">
+                      <div class="mini-icon">&#128101;</div>
+                      <div class="mini-name">Consumer District</div>
+                      <div class="mini-status">Cohort Flow</div>
+                    </div>
+                    <div class="mini-district gov">
+                      <div class="mini-icon">&#127963;</div>
+                      <div class="mini-name">Gov &amp; Macro Tower</div>
+                      <div class="mini-status">World Bank Sourced</div>
+                    </div>
+                  </div>
+                </div>
+                <p class="preview-description">
+                  Foundry translates abstract market assumptions into a spatial, living 2D virtual market city. Founders observe customer discovery flow, test billboards, and regulatory checkpoints to gain intuitive clarity on market bottlenecks.
+                </p>
+              </div>
+
+              <!-- Preview Card 2: Market Data Library -->
+              <div class="product-preview-card">
+                <div class="preview-card-header">
+                  <div class="preview-header-meta">
+                    <span class="preview-tag cyan">SOURCED EVIDENCE</span>
+                    <h3 class="preview-heading">Macroeconomic &amp; Sector Library</h3>
+                  </div>
+                  <button class="btn btn-outline-cyan btn-xs" data-nav="library" type="button">Inspect Library &rarr;</button>
+                </div>
+                <div class="preview-visual-panel">
+                  <div class="mock-data-table">
+                    <div class="mock-row head">
+                      <span>Indicator / Metric</span>
+                      <span>Country</span>
+                      <span>Ref Year</span>
+                      <span>Source Body</span>
+                      <span>License</span>
+                    </div>
+                    <div class="mock-row">
+                      <span class="mono-label">Digital Payment Account Penetration</span>
+                      <span>USA</span>
+                      <span>2021</span>
+                      <span class="text-cyan">World Bank Global Findex</span>
+                      <span class="badge-subtle">CC-BY 4.0</span>
+                    </div>
+                    <div class="mock-row">
+                      <span class="mono-label">Active Mobile Broadband Subscriptions</span>
+                      <span>DEU</span>
+                      <span>2023</span>
+                      <span class="text-cyan">ITU DataHub</span>
+                      <span class="badge-subtle">Open Research</span>
+                    </div>
+                    <div class="mock-row">
+                      <span class="mono-label">E-Commerce Enterprises (% Total)</span>
+                      <span>FRA</span>
+                      <span>2022</span>
+                      <span class="text-cyan">Eurostat Official</span>
+                      <span class="badge-subtle">EU 2011/833</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="preview-description">
+                  Every macroeconomic indicator in Foundry carries verifiable provenance: original publishing body, measurement methodology, exact reference year, and stated analytical limitations.
+                </p>
+              </div>
+
+              <!-- Preview Card 3: 4-Part Evidence & AI Scenario Inspector -->
+              <div class="product-preview-card">
+                <div class="preview-card-header">
+                  <div class="preview-header-meta">
+                    <span class="preview-tag purple">INTEGRITY ARCHITECTURE</span>
+                    <h3 class="preview-heading">4-Part Evidence &amp; AI Counter-Scenarios</h3>
+                  </div>
+                  <button class="btn btn-outline-cyan btn-xs" data-nav="launch" type="button">Test Launch Lab &rarr;</button>
+                </div>
+                <div class="preview-visual-panel">
+                  <div class="mock-four-part">
+                    <div class="part-chip sourced">&#9673; 1. Official Indicators (World Bank)</div>
+                    <div class="part-chip assumptions">&#9652; 2. Founder Hypotheses ($49/mo Price)</div>
+                    <div class="part-chip deterministic">&#9874; 3. Deterministic Sim (8.2% &plusmn; 1.4%)</div>
+                    <div class="part-chip ai-fictional">&#9672; 4. Hypothetical AI Scenarios (Gemini Grounded)</div>
+                  </div>
+                  <div class="mock-ai-disclaimer">
+                    &#9888; <strong>Notice:</strong> AI scenarios explore psychological objections; they are fictional possibilities and NEVER presented as real customer reviews.
+                  </div>
+                </div>
+                <p class="preview-description">
+                  We enforce architectural separation between verified facts, founder guesses, deterministic math, and AI narratives. Gemini is restricted to citing retrieved database facts, with strict request limits and minimal data shields.
+                </p>
+              </div>
+
+              <!-- Preview Card 4: Real Customer Evidence vs. Sim Evaluator -->
+              <div class="product-preview-card">
+                <div class="preview-card-header">
+                  <div class="preview-header-meta">
+                    <span class="preview-tag yellow">EMPIRICAL GROUNDING</span>
+                    <h3 class="preview-heading">Real Customer Evidence Evaluator</h3>
+                  </div>
+                  <button class="btn btn-outline-cyan btn-xs" data-nav="real-evidence" type="button">Log Customer Data &rarr;</button>
+                </div>
+                <div class="preview-visual-panel">
+                  <div class="mock-evaluation-grid">
+                    <div class="eval-box sim">
+                      <span class="eval-title">Simulation Projection</span>
+                      <div class="eval-value">12.5% Conversion</div>
+                      <span class="eval-sub">Based on $29/mo assumption</span>
+                    </div>
+                    <div class="eval-divider">&harr;</div>
+                    <div class="eval-box real">
+                      <span class="eval-title">Logged Real Customer Evidence</span>
+                      <div class="eval-value">4.2% Pilot Conversion</div>
+                      <span class="eval-sub">5 User Interviews &bull; Friction: Setup Time</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="preview-description">
+                  Foundry helps founders reconcile simulation models against real customer discovery calls and pilot metrics, highlighting where mental models diverged from market reality.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Three-Tier Boundary Section: How Market Sources, Assumptions & Simulations Differ -->
+          <section class="landing-section" id="sectionThreeTierBoundary">
+            <div class="section-heading-center">
+              <div class="section-eyebrow">METHODOLOGICAL TRANSPARENCY</div>
+              <h2 class="section-title">How Market Sources, Assumptions, and Simulations Differ</h2>
+              <p class="section-subtitle">
+                Foundry avoids the common AI trap of blending facts, guesses, and synthetic outputs into opaque scores. Here is how each data tier is strictly defined:
+              </p>
+            </div>
+
+            <div class="boundary-table-wrapper">
+              <table class="boundary-table">
+                <thead>
+                  <tr>
+                    <th>Data Tier</th>
+                    <th>Source &amp; Provenance</th>
+                    <th>Epistemic Status</th>
+                    <th>Role in Decision Making</th>
+                    <th>Foundry Safeguard</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="tier-cell">
+                        <span class="tier-dot sourced"></span>
+                        <strong>Tier 1: Sourced Market Indicators</strong>
+                      </div>
+                    </td>
+                    <td>World Bank, ITU, Eurostat, UNCTAD</td>
+                    <td><span class="badge-status verified">Empirical Fact</span></td>
+                    <td>Establishes market infrastructure ceiling and macro readiness.</td>
+                    <td>Direct source attribution, reference year, unit, and stated analytical limitation.</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="tier-cell">
+                        <span class="tier-dot assumptions"></span>
+                        <strong>Tier 2: Founder Assumptions</strong>
+                      </div>
+                    </td>
+                    <td>Entered explicitly by the founder</td>
+                    <td><span class="badge-status unproven">Unproven Hypothesis</span></td>
+                    <td>Defines target customer sensitivity, channel fit, and willingness-to-pay.</td>
+                    <td>Audited explicitly; clearly separated from third-party facts.</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="tier-cell">
+                        <span class="tier-dot deterministic"></span>
+                        <strong>Tier 3: Deterministic Simulation</strong>
+                      </div>
+                    </td>
+                    <td>Foundry local calculation engine</td>
+                    <td><span class="badge-status modeled">Mathematical Model</span></td>
+                    <td>Projects reachable market size, conversion friction, and unit economics under parameters.</td>
+                    <td>Deterministic formulas with variance ranges; zero synthetic AI math or fabricated numbers.</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="tier-cell">
+                        <span class="tier-dot ai"></span>
+                        <strong>Tier 4: Hypothetical AI Scenarios</strong>
+                      </div>
+                    </td>
+                    <td>Gemini API (via Supabase Edge Function)</td>
+                    <td><span class="badge-status synthetic">Exploratory Possibility</span></td>
+                    <td>Uncovers blindspots, counter-arguments, and consumer hesitation modes.</td>
+                    <td>Mandatory label: <em>"AI-generated simulation—not real customer feedback"</em>. Never invents quotes or data.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Beta Program Details, Cohort Placeholder, & Data Privacy -->
+          <section class="landing-section" id="sectionBetaDetails">
+            <div class="section-heading-center">
+              <div class="section-eyebrow">FOUNDRY PRIVATE BETA PROGRAM</div>
+              <h2 class="section-title">Built for Serious Founders. Transparent by Design.</h2>
+              <p class="section-subtitle">
+                Foundry is currently in private beta for early-stage entrepreneurs, venture researchers, and product teams.
+              </p>
+            </div>
+
+            <!-- Empirical Cohort Placeholder (Strictly No Fake Numbers) -->
+            <div class="beta-cohort-card">
+              <div class="cohort-header">
+                <span class="cohort-pill">EMPIRICAL BENCHMARKS PLACEHOLDER</span>
+                <span class="cohort-phase">Current Cohort: Private Beta #1</span>
+              </div>
+              <div class="cohort-body">
+                <p class="placeholder-notice">
+                  <strong>[Beta Founder Cohort Benchmarks — Empirical customer validation studies will populate here as beta cohorts complete research]</strong>
+                </p>
+                <p class="placeholder-subtext">
+                  Foundry adheres to strict scientific honesty. We do not invent customer testimonials, fake user counters, or fabricated conversion case studies. As verified founders in our active beta program complete validation cycles and explicitly consent to anonymized benchmark sharing, verifiable aggregated statistics will be published in this space.
+                </p>
+              </div>
+            </div>
+
+            <!-- Privacy, Data-Use & Security Pillars -->
+            <div class="privacy-pillars-grid">
+              <div class="privacy-card">
+                <div class="privacy-icon">&#128737;</div>
+                <h4>Minimal Data Shield</h4>
+                <p>By default, only macroeconomic indicators and chosen verticals are transmitted to the AI analyst. Your proprietary startup description and private notes remain on your device unless you check the affirmative consent box.</p>
+              </div>
+
+              <div class="privacy-card">
+                <div class="privacy-icon">&#128274;</div>
+                <h4>Supabase Row-Level Security</h4>
+                <p>Every profile, customer group, and simulation run is strictly isolated by cryptographic user ID. Only you can read or modify your workspace data in the database.</p>
+              </div>
+
+              <div class="privacy-card">
+                <div class="privacy-icon">&#128190;</div>
+                <h4>1-Click GDPR Portability &amp; Erasure</h4>
+                <p>Download your complete workspace in standard JSON format at any time. If you choose to close your account, all records are permanently deleted with zero retention.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Frequently Asked Questions (Accordion) -->
+          <section class="landing-section" id="sectionFaq">
+            <div class="section-heading-center">
+              <div class="section-eyebrow">FREQUENTLY ASKED QUESTIONS</div>
+              <h2 class="section-title">Understanding Foundry's Methodology</h2>
+              <p class="section-subtitle">
+                Clear answers regarding our simulation philosophy, AI safety guardrails, and data ownership.
+              </p>
+            </div>
+
+            <div class="faq-accordion" id="faqAccordion">
+              <div class="faq-item">
+                <button class="faq-question" type="button">
+                  <span>How does Foundry differ from typical AI startup idea generators?</span>
+                  <span class="faq-chevron">&darr;</span>
+                </button>
+                <div class="faq-answer">
+                  <p>Most AI tools generate enthusiastic, unsubstantiated marketing text and invent flattering financial projections. Foundry is an empirical simulation tool: it grounds your exploration in verified macroeconomic indicators from official statistical agencies (World Bank, ITU, Eurostat), requires you to state your assumptions explicitly, and uses deterministic formulas—not AI—to calculate market dynamics.</p>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button class="faq-question" type="button">
+                  <span>Does Foundry predict my real-world sales or revenue?</span>
+                  <span class="faq-chevron">&darr;</span>
+                </button>
+                <div class="faq-answer">
+                  <p>No. Foundry is an assumption stress-testing workbench, not a crystal ball. It calculates hypothetical run-rates and conversion ranges under the assumptions you configure. Its purpose is to highlight where your pricing or channel assumptions might be fragile so you can prioritize which questions to ask real customers during discovery calls.</p>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button class="faq-question" type="button">
+                  <span>Where does the market data come from, and can I verify it?</span>
+                  <span class="faq-chevron">&darr;</span>
+                </button>
+                <div class="faq-answer">
+                  <p>All macroeconomic indicators come from official statistical bodies including the World Bank (World Development Indicators and Global Findex), the International Telecommunication Union (ITU DataHub), and Eurostat. Every indicator displays its exact source URL, reference year, measurement unit, and analytical limitations.</p>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button class="faq-question" type="button">
+                  <span>Is my proprietary startup concept or customer data used to train AI models?</span>
+                  <span class="faq-chevron">&darr;</span>
+                </button>
+                <div class="faq-answer">
+                  <p>No. Foundry employs a Minimal Data Shield: by default, only public macroeconomic indicators and your target country/vertical are passed to the AI analyst. Your startup name, description, and customer group notes are never transmitted without your explicit, affirmative consent checkbox. In addition, Foundry supports full offline Local-First mode without cloud sync.</p>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button class="faq-question" type="button">
+                  <span>What happens to my data if I decide to leave the beta?</span>
+                  <span class="faq-chevron">&darr;</span>
+                </button>
+                <div class="faq-answer">
+                  <p>You can click "Export Data" in the sidebar at any time to receive a full JSON export of all profiles, customer groups, simulation runs, and empirical research logs. If you wish to delete your workspace, you can use the permanent account deletion option, which instantly purges all database records with zero retention.</p>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button class="faq-question" type="button">
+                  <span>What is the recommended next action after running a simulation?</span>
+                  <span class="faq-chevron">&darr;</span>
+                </button>
+                <div class="faq-answer">
+                  <p>After reviewing simulation results and AI counter-scenarios, navigate to the "Real Evidence" view. Log notes from real founder customer discovery interviews or landing page tests to compare your simulated conversion expectations against empirical customer behavior.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Bottom Beta Launch Action Bar -->
+          <section class="landing-footer-cta">
+            <div class="footer-cta-inner">
+              <h2>Ready to Test Your Startup's Market Assumptions?</h2>
+              <p>Sign in to initialize your founder workspace, or inspect the Market Data Library in guest mode.</p>
+              <div class="footer-cta-buttons">
+                <button class="btn btn-lime btn-lg" id="btnLandingFooterSignup" type="button">
+                  Open Founder Workspace &rarr;
+                </button>
+                <button class="btn btn-outline-cyan btn-lg" data-nav="library" type="button">
+                  Browse Market Data Library
+                </button>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </section>
+
+      <!-- ========================================================== -->
       <!-- VIEW 1: OVERVIEW (THE 2D LIVING MARKET CITY MAP)           -->
       <!-- ========================================================== -->
       <section id="view-overview" class="page-view active">
@@ -212,6 +785,59 @@
             <button class="btn btn-outline-cyan btn-sm" data-nav="launch" title="Configure campaign parameters">
               Deploy Campaign
             </button>
+          </div>
+        </div>
+
+        <!-- NEW: Guided Founder Journey & Dynamic Next Action Bar -->
+        <div class="guided-journey-banner" id="guidedJourneyOverviewBanner">
+          <div class="journey-header">
+            <div class="journey-title-wrap">
+              <span class="journey-badge-step" id="journeyBadgeStep">STEP 1 OF 7</span>
+              <h3 class="journey-title" id="journeyStepTitle">Set Up Startup Profile</h3>
+            </div>
+            <div class="journey-action-wrap">
+              <span class="journey-rec-label">Recommended Next Action:</span>
+              <button class="btn btn-lime btn-sm journey-cta-btn" id="journeyNextActionBtn" data-nav="profile" type="button">
+                Configure Startup Profile &rarr;
+              </button>
+            </div>
+          </div>
+          <!-- 7-Step Progress Stepper -->
+          <div class="journey-steps-track" id="journeyStepsTrack">
+            <div class="journey-step-node active" data-step="1" data-nav="profile" title="Step 1: Set up startup profile">
+              <span class="node-num">1</span>
+              <span class="node-label">Profile</span>
+            </div>
+            <div class="journey-step-connector"></div>
+            <div class="journey-step-node" data-step="2" data-nav="library" title="Step 2: Explore market evidence">
+              <span class="node-num">2</span>
+              <span class="node-label">Evidence</span>
+            </div>
+            <div class="journey-step-connector"></div>
+            <div class="journey-step-node" data-step="3" data-nav="market" title="Step 3: Define customer group assumptions">
+              <span class="node-num">3</span>
+              <span class="node-label">Assumptions</span>
+            </div>
+            <div class="journey-step-connector"></div>
+            <div class="journey-step-node" data-step="4" data-nav="launch" title="Step 4: Create experiment">
+              <span class="node-num">4</span>
+              <span class="node-label">Experiment</span>
+            </div>
+            <div class="journey-step-connector"></div>
+            <div class="journey-step-node" data-step="5" data-nav="overview" title="Step 5: Run simulation in city">
+              <span class="node-num">5</span>
+              <span class="node-label">Simulation</span>
+            </div>
+            <div class="journey-step-connector"></div>
+            <div class="journey-step-node" data-step="6" data-nav="launch" title="Step 6: Review evidence & AI scenarios">
+              <span class="node-num">6</span>
+              <span class="node-label">Scenarios</span>
+            </div>
+            <div class="journey-step-connector"></div>
+            <div class="journey-step-node" data-step="7" data-nav="real-evidence" title="Step 7: Ground with real customer data">
+              <span class="node-num">7</span>
+              <span class="node-label">Validation</span>
+            </div>
           </div>
         </div>
 

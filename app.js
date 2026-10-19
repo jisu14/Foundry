@@ -48,6 +48,7 @@ let state = {
 document.addEventListener('DOMContentLoaded', () => {
   loadStateFromStorage();
   initNavigation();
+  initLandingPage();
   initMarketCityMap();
   initProfileForm();
   initMarketForms();
@@ -108,7 +109,7 @@ function initNavigation() {
   // Handle URL hash on load & on hashchange
   const handleHashRouting = () => {
     const hash = window.location.hash.replace('#', '');
-    if (['overview', 'profile', 'market', 'launch', 'history', 'library', 'coverage', 'real-evidence', 'evaluation'].includes(hash)) {
+    if (['landing', 'overview', 'profile', 'market', 'launch', 'history', 'library', 'coverage', 'real-evidence', 'evaluation'].includes(hash)) {
       navigateToView(hash);
     } else {
       navigateToView('overview');
@@ -148,6 +149,7 @@ function navigateToView(viewId) {
   // Dynamic refresh
   if (viewId === 'overview') {
     renderWorldView();
+    renderGuidedJourneyBanner();
   } else if (viewId === 'launch') {
     populateTargetGroupDropdown();
   } else if (viewId === 'library') {
@@ -160,6 +162,162 @@ function navigateToView(viewId) {
   } else if (viewId === 'evaluation') {
     renderEvaluationView();
   }
+}
+
+/* ==========================================================
+   1B. PUBLIC LANDING & GUIDED FOUNDER WORKFLOW
+   ========================================================== */
+function initLandingPage() {
+  // Primary CTA: Open Auth or Go to Workspace
+  const signupBtn = document.getElementById('btnLandingSignup');
+  if (signupBtn) {
+    signupBtn.addEventListener('click', () => {
+      const authBtn = document.getElementById('btnOpenAuthModal');
+      if (typeof supabaseClient !== 'undefined' && supabaseClient && supabaseClient.auth) {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            navigateToView('overview');
+          } else if (authBtn) {
+            authBtn.click();
+          } else {
+            navigateToView('overview');
+          }
+        }).catch(() => navigateToView('overview'));
+      } else {
+        navigateToView('overview');
+      }
+    });
+  }
+
+  // Footer CTA: same logic
+  const footerSignupBtn = document.getElementById('btnLandingFooterSignup');
+  if (footerSignupBtn) {
+    footerSignupBtn.addEventListener('click', () => {
+      if (signupBtn) signupBtn.click();
+      else navigateToView('overview');
+    });
+  }
+
+  // Secondary CTA: Explore Map
+  const exploreMapBtn = document.getElementById('btnLandingExploreMap');
+  if (exploreMapBtn) {
+    exploreMapBtn.addEventListener('click', () => {
+      navigateToView('overview');
+    });
+  }
+
+  // Loop Step Cards: click to deep-dive
+  const stepCards = document.querySelectorAll('.loop-step-card');
+  stepCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const target = card.getAttribute('data-step-target');
+      if (target) navigateToView(target);
+    });
+  });
+
+  // FAQ Accordion
+  const faqItems = document.querySelectorAll('.faq-item');
+  faqItems.forEach(item => {
+    const question = item.querySelector('.faq-question');
+    if (question) {
+      question.addEventListener('click', () => {
+        const wasOpen = item.classList.contains('open');
+        faqItems.forEach(i => i.classList.remove('open'));
+        if (!wasOpen) {
+          item.classList.add('open');
+        }
+      });
+    }
+  });
+}
+
+function renderGuidedJourneyBanner() {
+  const badgeStep = document.getElementById('journeyBadgeStep');
+  const titleElem = document.getElementById('journeyStepTitle');
+  const nextBtn = document.getElementById('journeyNextActionBtn');
+  const nodes = document.querySelectorAll('.journey-step-node');
+  if (!badgeStep || !titleElem || !nextBtn) return;
+
+  const hasProfile = Boolean(state.profile && state.profile.name && state.profile.name.trim().length > 0);
+  const hasCountry = Boolean(state.profile && state.profile.country && state.profile.country.trim().length > 0);
+  const hasGroups = Boolean(state.market && state.market.groups && state.market.groups.length > 0);
+  const hasExperiment = Boolean(state.campaign && state.campaign.targetGroupId && state.campaign.price > 0);
+  const hasSimulation = Boolean(state.history && state.history.length > 0);
+  const hasReviewedScenarios = Boolean(state.history && state.history.some(h => (h.hypotheticalScenarios && h.hypotheticalScenarios.length > 0) || (h.observationsCount && h.observationsCount > 0)));
+  const hasRealEvidence = Boolean(state.realEvidence && state.realEvidence.length > 0);
+
+  let currentStep = 1;
+  let stepTitle = 'Set Up Startup Profile';
+  let nextLabel = 'Configure Startup Profile →';
+  let targetNav = 'profile';
+
+  if (!hasProfile) {
+    currentStep = 1;
+    stepTitle = 'Set Up Startup Profile';
+    nextLabel = 'Configure Startup Profile →';
+    targetNav = 'profile';
+  } else if (!hasCountry) {
+    currentStep = 2;
+    stepTitle = 'Explore Market Evidence for Target Country';
+    nextLabel = 'Browse Country Indicators →';
+    targetNav = 'library';
+  } else if (!hasGroups) {
+    currentStep = 3;
+    stepTitle = 'Define Customer Group & Explicit Assumptions';
+    nextLabel = 'Add Customer Group →';
+    targetNav = 'market';
+  } else if (!hasExperiment) {
+    currentStep = 4;
+    stepTitle = 'Create Marketing or Product Experiment';
+    nextLabel = 'Set Pricing & Channels →';
+    targetNav = 'launch';
+  } else if (!hasSimulation) {
+    currentStep = 5;
+    stepTitle = 'Run Clearly Labeled Simulation in City';
+    nextLabel = 'Advance World & Simulate (+7 Days) →';
+    targetNav = 'overview';
+  } else if (!hasReviewedScenarios) {
+    currentStep = 6;
+    stepTitle = 'Review Sourced Evidence & AI Scenarios';
+    nextLabel = 'Inspect Scenarios & Observations →';
+    targetNav = 'launch';
+  } else if (!hasRealEvidence) {
+    currentStep = 7;
+    stepTitle = 'Ground Assumptions with Real Customer Evidence';
+    nextLabel = 'Log Real Customer Evidence →';
+    targetNav = 'real-evidence';
+  } else {
+    currentStep = 7;
+    stepTitle = 'Decision Cycle Complete: Evaluate Variance';
+    nextLabel = 'Open Assumption Evaluator →';
+    targetNav = 'evaluation';
+  }
+
+  badgeStep.textContent = `STEP ${currentStep} OF 7`;
+  titleElem.textContent = stepTitle;
+  nextBtn.innerHTML = `${nextLabel}`;
+  nextBtn.setAttribute('data-nav', targetNav);
+
+  // If on step 5 and clicking next on overview, we can also advance world
+  if (currentStep === 5) {
+    nextBtn.onclick = (e) => {
+      e.preventDefault();
+      handleAdvanceWorld();
+    };
+  } else {
+    nextBtn.onclick = null;
+  }
+
+  // Update step nodes
+  nodes.forEach(node => {
+    const stepNum = parseInt(node.getAttribute('data-step'), 10);
+    node.classList.remove('active', 'completed');
+    if (stepNum < currentStep) {
+      node.classList.add('completed');
+    } else if (stepNum === currentStep) {
+      node.classList.add('active');
+    }
+  });
 }
 
 /* ==========================================================
@@ -2841,6 +2999,7 @@ async function renderSourcedMarketData() {
 function renderAllViews() {
   renderHeader();
   renderWorldView();
+  renderGuidedJourneyBanner();
   renderCustomerGroupsList();
   renderHistoryTable();
   renderSourcedMarketData();
