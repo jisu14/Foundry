@@ -1367,8 +1367,8 @@
       <section id="view-launch" class="page-view">
         <div class="view-header">
           <div>
-            <h2>Launch Lab</h2>
-            <p class="view-desc">Design a test campaign using your custom customer groups, set pricing, and run a simulated launch.</p>
+            <h2>Accelerated Launch Lab</h2>
+            <p class="view-desc">Bring your product, define key user flow tasks, and run day-by-day simulated market launches to find friction bottlenecks before spending real capital.</p>
           </div>
           <div class="header-actions">
             <button class="btn btn-outline-cyan btn-sm" data-nav="overview">Return to World Map</button>
@@ -1376,444 +1376,501 @@
           </div>
         </div>
 
-        <div class="workspace-grid">
-          
-          <!-- Campaign Setup Form -->
-          <div class="city-panel config-panel">
-            <h3 class="panel-title mb-2">Campaign Setup</h3>
-            <p class="panel-desc mb-3">Choose target audience, price, channel, and budget for this simulation run.</p>
+        <!-- Launch Lab Navigation Sub-Tabs -->
+        <div class="launch-subtabs-bar">
+          <button class="launch-tab-btn active" data-launch-tab="flow" type="button">
+            <span class="tab-step-num">1</span>
+            <span>Test Product &amp; Flow Definition</span>
+          </button>
+          <button class="launch-tab-btn" data-launch-tab="stepper" type="button">
+            <span class="tab-step-num">2</span>
+            <span>Launch &amp; Daily Stepper</span>
+          </button>
+          <button class="launch-tab-btn" data-launch-tab="daily" type="button">
+            <span class="tab-step-num">3</span>
+            <span>Daily Reports &amp; Flow Bottlenecks</span>
+          </button>
+          <button class="launch-tab-btn" data-launch-tab="compare" type="button">
+            <span class="tab-step-num">4</span>
+            <span>Run Comparison &amp; AI Diagnosis</span>
+          </button>
+        </div>
+        <!-- Start of Launch Tab Panels -->
+        <div id="panelLaunchFlow" class="launch-tab-panel active">
+          <div class="workspace-grid">
+            
+            <!-- Product Input & Security Notice -->
+            <div class="city-panel config-panel">
+              <h3 class="panel-title mb-2">MVP Web App Input</h3>
+              <p class="panel-desc mb-3">Provide your staging or demo web app URL. Foundry models user journeys based on your declared flow steps.</p>
 
-            <!-- Grounding Market & Industry Context Bar -->
-            <div id="simRunContextBar" class="sim-context-bar">
-              <div class="sim-context-item">
-                <span class="sim-context-label">Target Market</span>
-                <span class="sim-context-val" id="simContextCountry">United States (USA)</span>
-              </div>
-              <div class="sim-context-item">
-                <span class="sim-context-label">Industry Domain</span>
-                <span class="sim-context-val" id="simContextIndustry">Mobile Applications</span>
-              </div>
-              <div class="sim-context-item">
-                <span class="sim-context-label">Model Engine</span>
-                <span class="sim-context-val font-mono" id="simContextModel">v2.0-grounded</span>
-              </div>
-            </div>
-
-            <form id="launchForm" onsubmit="return false;">
-              
-              <div class="form-row">
-                <div class="form-group flex-1">
-                  <label for="campaignCountry">Target Market Geography <span class="required">*</span></label>
-                  <select id="campaignCountry" required>
-                    <option value="USA">United States (USA)</option>
-                    <option value="DEU">Germany (DEU)</option>
-                    <option value="GBR">United Kingdom (GBR)</option>
-                    <option value="FRA">France (FRA)</option>
-                    <option value="IND">India (IND)</option>
-                    <option value="BRA">Brazil (BRA)</option>
-                    <option value="KEN">Kenya (KEN)</option>
-                    <option value="JPN">Japan (JPN)</option>
-                    <option value="SGP">Singapore (SGP)</option>
-                    <option value="NGA">Nigeria (NGA)</option>
-                    <option value="CAN">Canada (CAN)</option>
-                  </select>
-                  <span class="field-hint">Country-level macroeconomic context only.</span>
-                </div>
-
-                <div class="form-group flex-1">
-                  <label for="campaignIndustry">Industry Domain <span class="required">*</span></label>
-                  <select id="campaignIndustry" required>
-                    <option value="Mobile Applications" selected>Mobile Applications</option>
-                    <option value="B2B SaaS / Business Software">B2B SaaS / Business Software</option>
-                    <option value="Developer Tools / Cloud">Developer Tools / Cloud</option>
-                    <option value="E-Commerce & Retail">E-Commerce & Retail</option>
-                    <option value="FinTech / Financial Software">FinTech / Financial Software</option>
-                    <option value="Consumer Internet">Consumer Internet</option>
-                  </select>
-                  <span class="field-hint">Filters relevant market indicators.</span>
+              <!-- Security Disclosure Box -->
+              <div class="auth-notice safe-notice mb-3" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.3);">
+                <span class="notice-icon" style="color: #34d399;">🛡</span>
+                <div style="font-size: 0.77rem; line-height: 1.5; color: #cbd5e1;">
+                  <strong style="color: #6ee7b7;">Safe Architectural Boundary:</strong>
+                  Foundry calculates behavioral cohort dynamics mathematically. Foundry <strong>never</strong> executes arbitrary uploaded scripts, injects code, or asks for production credentials or customer passwords.
                 </div>
               </div>
 
               <div class="form-group">
-                <label for="campaignTargetGroup">Target Customer Group <span class="required">*</span></label>
-                <select id="campaignTargetGroup" required>
-                  <!-- Populated from custom customer groups -->
-                </select>
-                <div id="noGroupWarning" class="field-warning hidden">
-                  <span class="warning-tag">Notice:</span> No customer groups found. <button type="button" class="link-btn" data-nav="market">Create a customer group</button> first before running a simulation.
+                <label for="productAppUrl">Founder Test Web App URL <span class="required">*</span></label>
+                <div class="url-input-wrap" style="display: flex; gap: 8px;">
+                  <input type="url" id="productAppUrl" placeholder="https://staging.myproduct.com" value="https://app.foundrydemo.io" required style="flex-grow: 1;">
+                  <button type="button" class="btn btn-outline-cyan btn-sm" id="btnVerifyProductUrl" title="Verify URL format and accessibility">
+                    Verify Link
+                  </button>
+                </div>
+                <div id="productUrlStatusMsg" class="field-hint text-cyan" style="margin-top: 4px;">
+                  ✓ Valid secure HTTPS protocol endpoint. No credentials required.
                 </div>
               </div>
 
-              <div class="form-group">
-                <div class="label-with-val">
-                  <label for="campaignPrice">Subscription Price / Unit</label>
-                  <span id="campaignPriceDisplay" class="value-badge-lime">$10 / mo</span>
-                </div>
-                <input type="range" id="campaignPrice" min="0" max="80" step="1" value="10">
-                <div class="range-labels">
-                  <span>Free ($0)</span>
-                  <span>$20</span>
-                  <span>$40</span>
-                  <span>$60</span>
-                  <span>$80</span>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="campaignChannel">Marketing / Acquisition Channel <span class="required">*</span></label>
-                <select id="campaignChannel" required>
-                  <option value="social" selected>Viral Social Ads (TikTok, Instagram, YouTube)</option>
-                  <option value="search">Search Engine Ads (Google Ads intent search)</option>
-                  <option value="community">Specialized Tech Communities (Product Hunt, Reddit, Indie Hackers)</option>
-                  <option value="outreach">Direct Outreach & Professional Cold Emails</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <div class="label-with-val">
-                  <label for="campaignBudget">Simulated Test Ad Budget</label>
-                  <span id="campaignBudgetDisplay" class="value-badge-lime">$300</span>
-                </div>
-                <input type="range" id="campaignBudget" min="50" max="2000" step="50" value="300">
-                <div class="range-labels">
-                  <span>$50</span>
-                  <span>$500</span>
-                  <span>$1,000</span>
-                  <span>$1,500</span>
-                  <span>$2,000</span>
-                </div>
+              <!-- Scope of Technical Inspection vs Simulation -->
+              <div class="card-inner-box mt-3" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px;">
+                <h5 style="color: #7dd3fc; margin: 0 0 6px 0; font-size: 0.8rem;">Technical Boundary: What is Read vs Simulated</h5>
+                <ul style="margin: 0 0 0 16px; padding: 0; font-size: 0.73rem; color: #94a3b8; line-height: 1.5;">
+                  <li><strong>Read From Founder:</strong> Endpoint URL, sequential task topology, relative routes, and declared interaction friction.</li>
+                  <li><strong>Simulated by Foundry:</strong> Cohort discovery volume, step-by-step completion probability, drop-offs, pricing tolerance, and returning user retention.</li>
+                  <li><strong>Requires Real Customer Research:</strong> Actual UX emotional resonance, qualitative usability bugs, and long-term unassisted organic referrals.</li>
+                </ul>
               </div>
 
               <div class="form-actions mt-4">
-                <button type="button" id="executeSimulationBtn" class="btn btn-lime btn-lg">
-                  Run Simulated Launch
+                <button type="button" class="btn btn-lime btn-sm" id="btnProceedToStepper">
+                  Proceed to Launch Controls &rarr;
+                </button>
+              </div>
+            </div>
+
+            <!-- Guided Flow Tasks Definition Form -->
+            <div class="city-panel results-panel">
+              <div class="panel-header mb-3">
+                <div>
+                  <h3 class="panel-title">Key User Journey Tasks &amp; Friction Mapping</h3>
+                  <p class="panel-desc" style="margin:2px 0 0 0; font-size:0.75rem;">Define the critical sequential milestones users must complete in your product.</p>
+                </div>
+                <button type="button" class="btn btn-outline-cyan btn-xs" id="btnAddFlowStep">
+                  + Add Step
                 </button>
               </div>
 
-            </form>
+              <!-- Flow Tasks List Container -->
+              <div id="productFlowTasksContainer" class="flow-tasks-list">
+                <!-- Dynamically rendered flow step cards -->
+              </div>
+
+              <div class="flow-actions-row mt-3" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+                <span class="text-dim text-xs" id="flowTaskCountLabel">5 Steps Configured</span>
+                <button type="button" class="btn btn-lime btn-sm" id="btnSaveProductFlow">
+                  Save Product Flow Model
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- TAB 2: ACCELERATED VIRTUAL LAUNCH & DAILY STEPPER          -->
+        <!-- ========================================================== -->
+        <div id="panelLaunchStepper" class="launch-tab-panel">
+          <div class="workspace-grid">
+            
+            <!-- Campaign Setup Form -->
+            <div class="city-panel config-panel">
+              <h3 class="panel-title mb-2">Launch Experiment Parameters</h3>
+              <p class="panel-desc mb-3">Set audience, channel, pricing, and duration for your virtual market launch.</p>
+
+              <!-- Grounding Market & Industry Context Bar -->
+              <div id="simRunContextBar" class="sim-context-bar">
+                <div class="sim-context-item">
+                  <span class="sim-context-label">Target Market</span>
+                  <span class="sim-context-val" id="simContextCountry">United States (USA)</span>
+                </div>
+                <div class="sim-context-item">
+                  <span class="sim-context-label">Industry Domain</span>
+                  <span class="sim-context-val" id="simContextIndustry">Mobile Applications</span>
+                </div>
+                <div class="sim-context-item">
+                  <span class="sim-context-label">Model Engine</span>
+                  <span class="sim-context-val font-mono" id="simContextModel">v2.1-daily-stepper</span>
+                </div>
+              </div>
+
+              <form id="launchForm" onsubmit="return false;">
+                
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label for="campaignCountry">Target Market Geography <span class="required">*</span></label>
+                    <select id="campaignCountry" required>
+                      <option value="USA">United States (USA)</option>
+                      <option value="DEU">Germany (DEU)</option>
+                      <option value="GBR">United Kingdom (GBR)</option>
+                      <option value="FRA">France (FRA)</option>
+                      <option value="IND">India (IND)</option>
+                      <option value="BRA">Brazil (BRA)</option>
+                      <option value="KEN">Kenya (KEN)</option>
+                      <option value="JPN">Japan (JPN)</option>
+                      <option value="SGP">Singapore (SGP)</option>
+                      <option value="NGA">Nigeria (NGA)</option>
+                      <option value="CAN">Canada (CAN)</option>
+                    </select>
+                    <span class="field-hint">Country-level macroeconomic context only.</span>
+                  </div>
+
+                  <div class="form-group flex-1">
+                    <label for="campaignIndustry">Industry Domain <span class="required">*</span></label>
+                    <select id="campaignIndustry" required>
+                      <option value="Mobile Applications" selected>Mobile Applications</option>
+                      <option value="B2B SaaS / Business Software">B2B SaaS / Business Software</option>
+                      <option value="Developer Tools / Cloud">Developer Tools / Cloud</option>
+                      <option value="E-Commerce &amp; Retail">E-Commerce &amp; Retail</option>
+                      <option value="FinTech / Financial Software">FinTech / Financial Software</option>
+                      <option value="Consumer Internet">Consumer Internet</option>
+                    </select>
+                    <span class="field-hint">Filters relevant market indicators.</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="campaignTargetGroup">Target Customer Group <span class="required">*</span></label>
+                  <select id="campaignTargetGroup" required>
+                    <!-- Populated from custom customer groups -->
+                  </select>
+                  <div id="noGroupWarning" class="field-warning hidden">
+                    <span class="warning-tag">Notice:</span> No customer groups found. <button type="button" class="link-btn" data-nav="market">Create a customer group</button> first before running a simulation.
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="campaignChannel">Acquisition Channel <span class="required">*</span></label>
+                  <select id="campaignChannel" required>
+                    <option value="social" selected>Viral Social Ads (TikTok, Instagram, YouTube)</option>
+                    <option value="search">Search Engine Ads (Google Ads intent search)</option>
+                    <option value="community">Specialized Tech Communities (Product Hunt, Reddit, Indie Hackers)</option>
+                    <option value="outreach">Direct Outreach &amp; Professional Cold Emails</option>
+                  </select>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <div class="label-with-val">
+                      <label for="campaignPrice">Subscription Unit Price</label>
+                      <span id="campaignPriceDisplay" class="value-badge-lime">$10 / mo</span>
+                    </div>
+                    <input type="range" id="campaignPrice" min="0" max="80" step="1" value="10">
+                    <div class="range-labels">
+                      <span>Free ($0)</span>
+                      <span>$40</span>
+                      <span>$80</span>
+                    </div>
+                  </div>
+
+                  <div class="form-group flex-1">
+                    <div class="label-with-val">
+                      <label for="campaignDailyBudget">Daily Test Ad Budget</label>
+                      <span id="campaignDailyBudgetDisplay" class="value-badge-lime">$50 / day</span>
+                    </div>
+                    <input type="range" id="campaignDailyBudget" min="10" max="300" step="10" value="50">
+                    <div class="range-labels">
+                      <span>$10</span>
+                      <span>$150</span>
+                      <span>$300</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Duration & Seed Reproducibility Row -->
+                <div class="form-row mt-2">
+                  <div class="form-group flex-1">
+                    <label for="campaignDuration">Simulation Duration</label>
+                    <select id="campaignDuration">
+                      <option value="7">7 Simulated Days</option>
+                      <option value="14" selected>14 Simulated Days</option>
+                      <option value="30">30 Simulated Days</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group flex-1">
+                    <div class="label-with-val">
+                      <label for="campaignSeed">Reproducibility Seed</label>
+                      <button type="button" class="btn-text-link" id="btnRandomizeSeed">New Seed</button>
+                    </div>
+                    <input type="number" id="campaignSeed" value="42" min="1" max="999999" style="font-family: var(--font-mono); font-size: 0.82rem;">
+                    <span class="field-hint">Identical inputs &amp; seed guarantee 100% reproducible runs.</span>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+          <!-- Day-by-Day Stepper Deck & Live Daily Activity Feed -->
+            <div class="city-panel results-panel">
+              <div class="panel-header mb-3">
+                <div>
+                  <h3 class="panel-title">Virtual Market Stepper Deck</h3>
+                  <p class="panel-desc" style="margin:2px 0 0 0; font-size:0.75rem;">Step through each virtual market day or play continuously.</p>
+                </div>
+                <span class="simulated-pill">Deterministic Engine</span>
+              </div>
+
+              <!-- Big Day HUD & Progress -->
+              <div class="stepper-hud-box">
+                <div class="stepper-hud-header">
+                  <div class="hud-day-counter">
+                    <span class="hud-label">SIMULATED MARKET TIMELINE</span>
+                    <div class="hud-digits">
+                      DAY <span id="stepperCurrentDayNum">0</span> <span class="hud-divider">/</span> <span id="stepperTotalDaysNum">14</span>
+                    </div>
+                  </div>
+                  <div class="hud-status-badge" id="stepperStatusBadge">
+                    <span class="dot-indicator"></span>
+                    <span id="stepperStatusText">Awaiting Launch</span>
+                  </div>
+                </div>
+
+                <!-- Stepper Progress Bar -->
+                <div class="stepper-progress-bg">
+                  <div class="stepper-progress-fill" id="stepperProgressBar" style="width: 0%;"></div>
+                </div>
+
+                <!-- Stepper Action Buttons Deck -->
+                <div class="stepper-buttons-row mt-3">
+                  <button type="button" id="btnStepOneDay" class="btn btn-lime btn-md">
+                    <span>▶ Step +1 Day</span>
+                  </button>
+                  <button type="button" id="btnPlayPauseDays" class="btn btn-outline-cyan btn-md">
+                    <span id="playPauseBtnText">⏯ Auto-Play</span>
+                  </button>
+                  <button type="button" id="btnFastForwardDays" class="btn btn-outline-cyan btn-md">
+                    <span>⏩ Fast-Forward (All Days)</span>
+                  </button>
+                  <button type="button" id="btnResetLaunchRun" class="btn btn-outline-amber btn-md">
+                    <span>↺ Reset</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Live Daily Event Chronicle -->
+              <div class="stepper-live-feed-wrap mt-3">
+                <div class="feed-header">
+                  <span class="text-xs text-muted"><strong>DAILY EVENT FEED &bull; ACCELERATED COHORTS</strong></span>
+                  <span class="text-xs text-dim" id="stepperFeedSummary">0 daily cycles logged</span>
+                </div>
+                <div id="stepperLiveFeed" class="stepper-live-feed">
+                  <div class="empty-state-inline">
+                    <p>No days simulated yet. Click <strong>"Step +1 Day"</strong> or <strong>"Auto-Play"</strong> to advance the market.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-3 text-right">
+                <button type="button" class="btn btn-lime btn-sm" id="btnViewDailyReportFromStepper">
+                  Inspect Day-by-Day Report &rarr;
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- TAB 3: DAILY REPORTS & FLOW BOTTLENECKS                    -->
+        <!-- ========================================================== -->
+        <div id="panelLaunchDaily" class="launch-tab-panel">
+          
+          <!-- Day Navigator Scrubber -->
+          <div class="daily-report-nav-bar city-panel mb-3">
+            <div class="daily-nav-header">
+              <span class="text-xs text-muted">SELECT SIMULATED DAY FOR DETAILED AUDIT:</span>
+              <span class="text-xs text-lime" id="dailyReportCurrentLabel">Showing: Day 1</span>
+            </div>
+            <div id="dailyReportDayPicker" class="daily-day-picker">
+              <!-- Dynamically populated day pill buttons [Day 1] [Day 2] ... [Cumulative Total] -->
+            </div>
           </div>
 
-          <!-- Simulation Output Dashboard -->
-          <div class="city-panel results-panel">
-            
+          <!-- Daily Core Metrics Grid -->
+          <div class="metrics-grid mb-3" id="dailyReportMetricsGrid">
+            <div class="metric-card">
+              <div class="metric-label">Simulated Reach (Impressions)</div>
+              <div class="metric-val" id="repImpressions">0</div>
+              <div class="metric-sub" id="repClicks">0 clicks</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Signups / Installs</div>
+              <div class="metric-val text-cyan" id="repSignups">0</div>
+              <div class="metric-sub" id="repSignupRate">0% conversion from visit</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Onboarding Activations</div>
+              <div class="metric-val" id="repActivations">0</div>
+              <div class="metric-sub" id="repActivationRate">0% of signups activated</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Core "Aha" Completions</div>
+              <div class="metric-val text-lime" id="repCoreCompletions">0</div>
+              <div class="metric-sub" id="repCoreRate">0% of activated completed core</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Retained Returning Users</div>
+              <div class="metric-val" id="repReturningUsers">0</div>
+              <div class="metric-sub" id="repDauSummary">DAU: 0 active users</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Paid Subscribers</div>
+              <div class="metric-val text-lime" id="repPaidUsers">0</div>
+              <div class="metric-sub" id="repRevenueSummary">Rev: $0 | Net: $0</div>
+            </div>
+          </div>
+
+          <!-- Product Flow Bottleneck & Drop-Off Funnel -->
+          <div class="city-panel mb-3">
             <div class="panel-header mb-3">
               <div>
-                <h3 class="panel-title">Simulated Market Outcomes</h3>
-                <p class="panel-desc" style="margin:2px 0 0 0; font-size:0.75rem;">Theoretical outcomes generated from founder hypotheses and regional infrastructure baselines.</p>
+                <h3 class="panel-title">Product Flow Drop-off Map &amp; Bottleneck Diagnosis</h3>
+                <p class="panel-desc" style="margin:2px 0 0 0; font-size:0.75rem;">Step-by-step conversion tracking identifying where prospective users abandoned your web product.</p>
               </div>
-              <div class="action-tag-group">
-                <button class="btn btn-outline-cyan btn-xs" data-nav="overview">View in World Map</button>
-                <span class="simulated-pill">Simulated Model</span>
+              <span class="simulated-pill">Flow Friction Analysis</span>
+            </div>
+
+            <!-- Critical Friction Alert Banner -->
+            <div id="dailyFrictionAlertBox" class="friction-alert-card mb-3">
+              <!-- Dynamically populated bottleneck flag -->
+            </div>
+
+            <!-- Visual Flow Drop-Off Funnel -->
+            <div id="dailyFlowSankey" class="daily-flow-sankey">
+              <!-- Dynamically rendered step cards with drop-offs -->
+            </div>
+          </div>
+
+          <!-- Data Limitations & Sourced Context Box -->
+          <div class="city-panel mb-3" style="background: rgba(8, 20, 15, 0.95); border: 1px solid rgba(255,255,255,0.08);">
+            <div class="panel-header mb-2">
+              <h4 style="font-size: 0.88rem; color: #f8fafc; margin: 0;">Evidence Integrity &amp; Unavailable Metrics</h4>
+              <span class="badge-status-neutral">Data Availability Boundary</span>
+            </div>
+            <div class="unavailable-metrics-grid">
+              <div class="unavail-item">
+                <span class="unavail-title">Annual LTV &amp; Net Retention:</span>
+                <span class="unavail-badge">Evidence Unavailable</span>
+                <p class="unavail-note">Simulation spans 14-30 days. Validating 12-month retention requires empirical cohort logging in the Real Evidence tab.</p>
+              </div>
+              <div class="unavail-item">
+                <span class="unavail-title">Organic Viral Coefficient (K-factor):</span>
+                <span class="unavail-badge">Evidence Unavailable</span>
+                <p class="unavail-note">Viral word-of-mouth cannot be fabricated ethically without empirical user invitation telemetry.</p>
+              </div>
+              <div class="unavail-item">
+                <span class="unavail-title">Payment Decline Rates:</span>
+                <span class="unavail-badge">Estimated via Macro Baseline</span>
+                <p class="unavail-note">Grounded in World Bank Global Findex digital payment account penetration statistics for the target country.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Day-by-Day Historical Log Table -->
+          <div class="city-panel">
+            <h4 class="panel-title mb-2">Day-by-Day Cohort Timeline</h4>
+            <div class="table-responsive">
+              <table class="daily-timeline-table" id="dailyTimelineTable">
+                <thead>
+                  <tr>
+                    <th>Day</th>
+                    <th>New Visits</th>
+                    <th>Signups</th>
+                    <th>Activations</th>
+                    <th>Core Tasks</th>
+                    <th>Returning (DAU)</th>
+                    <th>Paid Users</th>
+                    <th>Daily Rev</th>
+                    <th>Bottleneck Step</th>
+                  </tr>
+                </thead>
+                <tbody id="dailyTimelineTableBody">
+                  <!-- Dynamically populated rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- TAB 4: RUN COMPARISON & GROUNDED AI DIAGNOSIS              -->
+        <!-- ========================================================== -->
+        <div id="panelLaunchCompare" class="launch-tab-panel">
+          <div class="workspace-grid">
+            
+            <!-- Run Comparison Module -->
+            <div class="city-panel config-panel">
+              <h3 class="panel-title mb-2">Compare Simulation Runs</h3>
+              <p class="panel-desc mb-3">Compare outcomes when changing friction, pricing, customer groups, or channels.</p>
+
+              <div class="form-row mb-3">
+                <div class="form-group flex-1">
+                  <label for="compareRunASelect">Baseline Run (A)</label>
+                  <select id="compareRunASelect">
+                    <!-- Populated from saved runs -->
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="compareRunBSelect">Comparison Run (B)</label>
+                  <select id="compareRunBSelect">
+                    <!-- Populated from saved runs -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Comparison Delta Results Card -->
+              <div id="compareDeltaCard" class="compare-delta-card">
+                <div class="empty-state-inline">
+                  <p>Select two runs from your simulation history to inspect comparative variance.</p>
+                </div>
               </div>
             </div>
 
-            <!-- Empty State Before Any Launch -->
-            <div id="launchEmptyState" class="empty-state">
-              <div class="empty-icon-svg">
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+            <!-- Grounded AI Flow Analyst -->
+            <div class="city-panel results-panel">
+              <div class="panel-header mb-3">
+                <div>
+                  <h3 class="panel-title">Grounded AI Product-Flow Diagnosis</h3>
+                  <p class="panel-desc" style="margin:2px 0 0 0; font-size:0.75rem;">Analyzes simulated flow drop-offs against verified market indicators and founder assumptions.</p>
+                </div>
+                <span class="simulated-pill">Gemini 2.5 Flash-Lite</span>
               </div>
-              <h4>No Launch Simulated Yet</h4>
-              <p>Configure campaign settings on the left, then click <strong>"Run Simulated Launch"</strong> to see simulated outcomes in the world.</p>
-            </div>
 
-            <!-- Simulation Results Container -->
-            <div id="launchResultsArea" class="results-container hidden">
-              
-              <!-- Key Metrics with Uncertainty Ranges -->
-              <div class="metrics-grid">
-                <div class="metric-card">
-                  <div class="metric-label">Simulated Reach (Impressions)</div>
-                  <div class="metric-val" id="resImpressions">0</div>
-                  <div class="metric-range" id="resImpressionsRange">Range: 0 – 0</div>
-                  <div class="metric-sub" id="resClicks">0 clicks</div>
-                </div>
+              <div class="ai-analyst-control-box mb-3">
+                <p class="text-xs text-muted mb-2">
+                  Gemini inspects the specific product tasks where users abandoned, identifies likely behavioral objections, and generates prioritized interview questions for real customer research.
+                </p>
+                <button type="button" class="btn btn-lime btn-sm" id="btnRunAiFlowAnalysis">
+                  <span>✦ Diagnose Product Flow Bottlenecks with AI</span>
+                </button>
+              </div>
 
-                <div class="metric-card">
-                  <div class="metric-label">Simulated Installs / Signups</div>
-                  <div class="metric-val text-cyan" id="resInstalls">0</div>
-                  <div class="metric-range" id="resInstallsRange">Range: 0 – 0</div>
-                  <div class="metric-sub" id="resConversion">0% conversion</div>
-                </div>
-
-                <div class="metric-card">
-                  <div class="metric-label">Paying Customers (Simulated)</div>
-                  <div class="metric-val text-lime" id="resPaidUsers">0</div>
-                  <div class="metric-range" id="resPaidUsersRange">Range: 0 – 0</div>
-                  <div class="metric-sub" id="resPaidRate">0% of installs paid</div>
-                </div>
-
-                <div class="metric-card">
-                  <div class="metric-label">Simulated Financial Outcome</div>
-                  <div class="metric-val" id="resNetProfit">$0</div>
-                  <div class="metric-range" id="resProfitRange">Range: $0 – $0</div>
-                  <div class="metric-sub" id="resRevenueBreakdown">Rev: $0 | Budget: $0</div>
+              <!-- AI Results Display -->
+              <div id="aiFlowAnalysisOutput" class="ai-analysis-output-box">
+                <div class="empty-state-inline">
+                  <p>Click <strong>"Diagnose Product Flow Bottlenecks with AI"</strong> to generate a grounded analysis of simulated friction points.</p>
                 </div>
               </div>
 
-              <!-- Uncertainty & Data Gaps Analysis Card -->
-              <div id="simUncertaintyBox" class="uncertainty-card">
-                <div class="uncertainty-header">
-                  <span class="icon-warning-amber">⚠</span>
-                  <div>
-                    <h5>Model Uncertainty &amp; Market Data Gaps</h5>
-                    <p id="simUncertaintySubtitle">Analyzing data availability for the selected country.</p>
-                  </div>
-                </div>
-                <div id="simUncertaintyContent" class="uncertainty-body">
-                  <!-- Populated dynamically -->
-                </div>
+              <!-- Hypothetical Scenarios Disclaimer -->
+              <div class="factor-disclaimer mt-3">
+                <strong>Ethical Boundary:</strong> AI-generated flow analyses and user hesitation scenarios are fictional exploratory hypotheses. They must never be treated as real user reviews or empirical usability studies.
               </div>
-
-              <!-- Real Empirical Field Evidence Comparison Box -->
-              <div id="simRealEvidenceBox" class="launch-real-evidence-box hidden">
-                <div class="launch-real-evidence-header">
-                  <span class="launch-real-evidence-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
-                    Real Empirical Evidence Comparison
-                  </span>
-                  <span class="badge-status-neutral" id="simRealEvidenceBadge">0 Field Studies</span>
-                </div>
-                <div id="simRealEvidenceContent" class="text-xs text-muted">
-                  <!-- Populated dynamically -->
-                </div>
-              </div>
-
-              <!-- Funnel & Drop-off Breakdown -->
-              <div class="panel-section">
-                <h4 class="section-title">
-                  <span>Simulated Funnel &amp; Drop-off Breakdown</span>
-                  <span class="simulated-pill">Theoretical Funnel</span>
-                </h4>
-                
-                <div class="funnel-container">
-                  <div class="funnel-row">
-                    <div class="funnel-info">
-                      <span class="funnel-stage">1. Ad Impressions</span>
-                      <span class="funnel-count" id="barImpCount">0</span>
-                    </div>
-                    <div class="funnel-bar-bg">
-                      <div class="funnel-bar-fill" id="barImpFill" style="width: 100%;"></div>
-                    </div>
-                  </div>
-
-                  <div class="funnel-row">
-                    <div class="funnel-info">
-                      <span class="funnel-stage">2. Landing Page Clicks</span>
-                      <span class="funnel-count" id="barClickCount">0</span>
-                    </div>
-                    <div class="funnel-bar-bg">
-                      <div class="funnel-bar-fill" id="barClickFill" style="width: 0%;"></div>
-                    </div>
-                    <div class="dropoff-text" id="dropClickText">Drop-off: -0%</div>
-                  </div>
-
-                  <div class="funnel-row">
-                    <div class="funnel-info">
-                      <span class="funnel-stage">3. App Installs / Trials</span>
-                      <span class="funnel-count" id="barInstallCount">0</span>
-                    </div>
-                    <div class="funnel-bar-bg">
-                      <div class="funnel-bar-fill" id="barInstallFill" style="width: 0%;"></div>
-                    </div>
-                    <div class="dropoff-text" id="dropInstallText">Drop-off: -0%</div>
-                  </div>
-
-                  <div class="funnel-row">
-                    <div class="funnel-info">
-                      <span class="funnel-stage">4. Paid Conversions</span>
-                      <span class="funnel-count" id="barPaidCount">0</span>
-                    </div>
-                    <div class="funnel-bar-bg">
-                      <div class="funnel-bar-fill" id="barPaidFill" style="width: 0%;"></div>
-                    </div>
-                    <div class="dropoff-text" id="dropPaidText">Drop-off: -0%</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Grounding Factors: Sourced Data vs. Founder Assumptions -->
-              <div class="panel-section factors-comparison-section">
-                <div class="factors-section-header">
-                  <h4 class="section-title">
-                    <span>Factor Provenance: Sourced Market Data vs. Founder Hypotheses</span>
-                    <span class="simulated-pill">Model Evidence</span>
-                  </h4>
-                  <p class="section-desc">Distinguishing verified external statistics from founder-declared assumptions.</p>
-                </div>
-
-                <div class="factors-grid">
-                  <!-- Sourced Indicators Box -->
-                  <div class="factor-card factor-card-sourced">
-                    <div class="factor-header">
-                      <span class="factor-badge factor-badge-sourced">🌐 SOURCED MARKET DATA</span>
-                      <span class="factor-scope" id="factorSourcedScope">National Context</span>
-                    </div>
-                    <div id="simSourcedFactorsList" class="factors-list">
-                      <!-- Dynamically populated relevant indicators -->
-                    </div>
-                    <div class="factor-disclaimer">
-                      <strong>Ethical Guardrail:</strong> National statistics describe regional demographic volume and digital infrastructure. They do <em>not</em> determine individual willingness to buy or forecast customer-level decisions.
-                    </div>
-                  </div>
-
-                  <!-- Founder Assumptions Box -->
-                  <div class="factor-card factor-card-assumptions">
-                    <div class="factor-header">
-                      <span class="factor-badge factor-badge-founder">💡 FOUNDER HYPOTHESES</span>
-                      <span class="factor-scope">Persona &amp; Pricing Model</span>
-                    </div>
-                    <div id="simFounderFactorsList" class="factors-list">
-                      <!-- Dynamically populated founder assumptions -->
-                    </div>
-                    <div class="factor-disclaimer">
-                      <strong>Boundary:</strong> Pricing elasticity and channel preference are hypotheses declared by the founder, not validated customer conversions.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Customer Feedback & Reviews (Fictional Simulation) -->
-              <div class="panel-section">
-                <div class="reviews-header">
-                  <div>
-                    <h4 class="section-title">
-                      <span>Simulated Persona Feedback</span>
-                      <span class="simulated-pill fiction-pill">100% Fictional Simulation</span>
-                    </h4>
-                    <p class="section-desc">Illustrative reactions generated algorithmically from the pricing elasticity curve for this budget tier. Does not reflect real human feedback.</p>
-                  </div>
-                  <div class="rating-summary">
-                    <span class="stars" id="resStars">★★★★☆</span>
-                    <strong id="resAvgRating">4.0 / 5.0</strong>
-                  </div>
-                </div>
-
-                <div class="reviews-list" id="resReviewsList">
-                  <!-- Populated from simulation engine -->
-                </div>
-              </div>
-
-              <!-- ========================================================== -->
-              <!-- HYPOTHETICAL CUSTOMER SCENARIOS (AI ANALYST SIMULATION)   -->
-              <!-- ========================================================== -->
-              <div class="panel-section hypothetical-scenarios-section" id="simHypotheticalScenariosSection">
-                <div class="scenarios-section-header">
-                  <div class="flex-align-center gap-2">
-                    <span class="scenarios-icon">🔮</span>
-                    <div>
-                      <div class="flex-align-center gap-2">
-                        <h4 class="section-title" style="margin: 0;">Hypothetical Customer Scenarios</h4>
-                        <span class="sim-tag-fictional ai-simulation-badge">AI-generated simulation—not real customer feedback</span>
-                      </div>
-                      <p class="section-desc" style="margin: 2px 0 0 0;">
-                        Fictional customer reactions simulating plausible uncertainty and disagreement based on your declared customer traits and verified macroeconomic context.
-                      </p>
-                    </div>
-                  </div>
-                  <div class="scenarios-header-actions" id="scenariosHeaderActions">
-                    <!-- Dynamic action buttons (Generate / Tweak & Rerun) -->
-                  </div>
-                </div>
-
-                <!-- Ethical & Provenance Context Bar -->
-                <div class="scenarios-context-bar" id="scenariosContextBar">
-                  <!-- Populated dynamically with stated traits: Budget, Sensitivity, Priority, Channel -->
-                </div>
-
-                <!-- Scenarios Container (Empty Prompt or Generated Cards) -->
-                <div id="scenariosDynamicContainer" class="scenarios-dynamic-container">
-                  <!-- Populated dynamically -->
-                </div>
-
-                <!-- Visually Distinct Separation Footer Notice -->
-                <div class="scenarios-provenance-footer">
-                  <div class="flex-align-center justify-between flex-wrap gap-2">
-                    <span class="text-xs text-muted">
-                      🛡️ <strong>Methodological Boundary:</strong> Reach, conversion, and financial metrics are calculated 100% deterministically in local code. AI never invents metrics, real people, or purchase probabilities.
-                    </span>
-                    <button type="button" class="btn btn-outline-cyan btn-xs" id="btnExplainScenarioRerun">
-                      💡 How Assumptions Change Reactions
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Model Logic & Real-World Research Guidance Accordion -->
-              <div class="panel-section model-logic-section">
-                <div class="model-logic-card">
-                  <div class="model-logic-header" onclick="window.toggleModelLogicAccordion()">
-                    <div class="model-logic-title-row">
-                      <span class="logic-icon">🧠</span>
-                      <div>
-                        <h5>Simulation Model Logic &amp; De-Risking Guidance</h5>
-                        <p class="text-dim">Plain language walkthrough of calculations and what requires real customer research.</p>
-                      </div>
-                    </div>
-                    <span id="logicAccordionToggle" class="accordion-arrow">▼</span>
-                  </div>
-                  <div id="modelLogicDetails" class="model-logic-body hidden">
-                    <!-- Populated dynamically -->
-                  </div>
-                </div>
-              </div>
-
-              <!-- AI Market Analyst Callout Card (Gemini Free Tier) -->
-              <div class="panel-section ai-analyst-launch-card" style="margin-top: 16px;">
-                <div class="ai-analyst-banner">
-                  <div class="ai-analyst-banner-header">
-                    <div class="flex-align-center gap-2">
-                      <span class="ai-sparkle-icon">✨</span>
-                      <div>
-                        <div class="flex-align-center gap-2">
-                          <h5 style="margin: 0; color: #f8fafc; font-size: 0.95rem;">AI Market Analyst (Gemini Free Tier)</h5>
-                          <span class="sim-tag-fictional" id="launchAiStatusTag" style="font-size: 0.65rem;">Gemini 3.5 Flash-Lite</span>
-                        </div>
-                        <p class="text-dim" style="font-size: 0.78rem; margin: 2px 0 0 0;">Examine pricing &amp; CAC assumptions against verified indicators, identify evidence gaps, and get research guidance.</p>
-                      </div>
-                    </div>
-                    <button class="btn btn-cyan btn-sm" id="btnOpenAiAnalystModal" type="button">
-                      ✨ Open AI Analyst →
-                    </button>
-                  </div>
-                  <div class="ai-analyst-quick-actions" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button class="btn btn-outline-cyan btn-xs" id="btnQuickAiScenarios" type="button">
-                      🔮 Customer Scenarios
-                    </button>
-                    <button class="btn btn-outline-cyan btn-xs" id="btnQuickAiExamine" type="button">
-                      🔍 Examine Assumptions &amp; Pricing
-                    </button>
-                    <button class="btn btn-outline-cyan btn-xs" id="btnQuickAiIndicators" type="button">
-                      🌐 Explain Sourced Indicators
-                    </button>
-                    <button class="btn btn-outline-cyan btn-xs" id="btnQuickAiGaps" type="button">
-                      ⚠️ Audit Evidence Gaps
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Private Beta Feedback Callout on Simulation Result -->
-              <div class="panel-section launch-feedback-banner" id="launchFeedbackBanner" style="margin-top: 16px;">
-                <div class="feedback-banner-card">
-                  <div class="feedback-banner-header">
-                    <div class="feedback-banner-title">
-                      <span class="feedback-banner-icon">💬</span>
-                      <div>
-                        <h5 style="margin: 0; color: #f8fafc; font-size: 0.95rem;">Review Simulation Accuracy (Private Beta)</h5>
-                        <p class="text-dim" style="font-size: 0.78rem; margin: 2px 0 0 0;">Did this simulation feel realistic? Report what was surprising and compare it with real customer evidence.</p>
-                      </div>
-                    </div>
-                    <button class="btn btn-lime-outline btn-sm" id="btnOpenRunFeedbackModal" type="button">
-                      Rate Result &amp; Report Surprises →
-                    </button>
-                  </div>
-                </div>
-              </div>
-
             </div>
 
           </div>
-
         </div>
       </section>
 

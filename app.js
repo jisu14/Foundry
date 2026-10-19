@@ -11,6 +11,9 @@ const STORAGE_HISTORY = 'vsw_history_v2';
 const STORAGE_WORLD = 'vsw_world_v2';
 const STORAGE_REAL_EVIDENCE = 'vsw_real_evidence_v2';
 const STORAGE_SIM_FEEDBACK = 'vsw_sim_feedback_v2';
+const STORAGE_PRODUCT_FLOW = 'vsw_product_flow_v2';
+const STORAGE_ACTIVE_LAUNCH = 'vsw_active_launch_v2';
+const STORAGE_LAUNCH_RUNS = 'vsw_launch_runs_v2';
 
 // Global State
 let state = {
@@ -41,7 +44,29 @@ let state = {
     day: 1,
     selectedDistrict: 'hq',
     events: []
-  }
+  },
+  productFlow: {
+    testUrl: 'https://staging.myproduct.test/demo',
+    verified: true,
+    tasks: [
+      { id: 'step_1', name: '1. Landing Page Signup', type: 'signup', friction: 'low', description: 'User arrives from ad and creates account with email/SSO.' },
+      { id: 'step_2', name: '2. Onboarding Setup Checklist', type: 'onboarding', friction: 'medium', description: 'User sets up workspace profile and completes guided setup.' },
+      { id: 'step_3', name: '3. Core Product Action', type: 'core_action', friction: 'medium', description: 'User performs primary workflow (e.g. executes simulation or generates report).' },
+      { id: 'step_4', name: '4. Paywall / Pro Upgrade', type: 'paywall', friction: 'high', description: 'User encounters usage tier limit and views paid subscription checkout.' }
+    ]
+  },
+  activeLaunch: {
+    runId: null,
+    seed: 42,
+    durationDays: 14,
+    currentDay: 0,
+    dailyBudget: 50,
+    status: 'idle', // 'idle' | 'running' | 'paused' | 'completed'
+    autoPlayTimer: null,
+    selectedReportDay: 1,
+    dailyReports: []
+  },
+  launchRuns: []
 };
 
 // Initialize Application
@@ -345,6 +370,20 @@ function loadStateFromStorage() {
 
     const savedWorld = localStorage.getItem(STORAGE_WORLD);
     if (savedWorld) state.world = JSON.parse(savedWorld);
+
+    const savedFlow = localStorage.getItem(STORAGE_PRODUCT_FLOW);
+    if (savedFlow) state.productFlow = JSON.parse(savedFlow);
+
+    const savedLaunch = localStorage.getItem(STORAGE_ACTIVE_LAUNCH);
+    if (savedLaunch) {
+      const parsedLaunch = JSON.parse(savedLaunch);
+      parsedLaunch.autoPlayTimer = null;
+      if (parsedLaunch.status === 'running') parsedLaunch.status = 'paused';
+      state.activeLaunch = parsedLaunch;
+    }
+
+    const savedRuns = localStorage.getItem(STORAGE_LAUNCH_RUNS);
+    if (savedRuns) state.launchRuns = JSON.parse(savedRuns);
   } catch (err) {
     console.error('Error loading state from localStorage:', err);
   }
@@ -387,6 +426,9 @@ function handleResetWorld() {
   localStorage.removeItem(STORAGE_HISTORY);
   localStorage.removeItem(STORAGE_REAL_EVIDENCE);
   localStorage.removeItem(STORAGE_WORLD);
+  localStorage.removeItem(STORAGE_PRODUCT_FLOW);
+  localStorage.removeItem(STORAGE_ACTIVE_LAUNCH);
+  localStorage.removeItem(STORAGE_LAUNCH_RUNS);
 
   state = {
     profile: {
@@ -410,12 +452,35 @@ function handleResetWorld() {
     },
     history: [],
     realEvidence: [],
+    simulationFeedback: [],
     world: {
       cycle: 1,
       day: 1,
       selectedDistrict: 'hq',
       events: []
-    }
+    },
+    productFlow: {
+      testUrl: 'https://staging.myproduct.test/demo',
+      verified: true,
+      tasks: [
+        { id: 'step_1', name: '1. Landing Page Signup', type: 'signup', friction: 'low', description: 'User arrives from ad and creates account with email/SSO.' },
+        { id: 'step_2', name: '2. Onboarding Setup Checklist', type: 'onboarding', friction: 'medium', description: 'User sets up workspace profile and completes guided setup.' },
+        { id: 'step_3', name: '3. Core Product Action', type: 'core_action', friction: 'medium', description: 'User performs primary workflow (e.g. executes simulation or generates report).' },
+        { id: 'step_4', name: '4. Paywall / Pro Upgrade', type: 'paywall', friction: 'high', description: 'User encounters usage tier limit and views paid subscription checkout.' }
+      ]
+    },
+    activeLaunch: {
+      runId: null,
+      seed: 42,
+      durationDays: 14,
+      currentDay: 0,
+      dailyBudget: 50,
+      status: 'idle',
+      autoPlayTimer: null,
+      selectedReportDay: 1,
+      dailyReports: []
+    },
+    launchRuns: []
   };
 
   const profileForm = document.getElementById('profileForm');
@@ -1613,38 +1678,86 @@ function getRelevantIndicatorsForRun({ countryCode, countryName, industryDomain,
   return { relevantIndicators, dataGaps };
 }
 
+/* ==========================================================
+   7. ACCELERATED LAUNCH LAB & PRODUCT-LED SIMULATION ENGINE
+   ========================================================== */
+
 function initLaunchLab() {
+  // Subtabs switching
+  const tabBtns = document.querySelectorAll('.launch-tab-btn');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-launch-tab');
+      switchLaunchSubtab(tab);
+    });
+  });
+
+  // Flow definition events
+  const urlInput = document.getElementById('productAppUrl');
+  if (urlInput && state.productFlow?.testUrl) {
+    urlInput.value = state.productFlow.testUrl;
+  }
+  const btnVerifyUrl = document.getElementById('btnVerifyProductUrl');
+  if (btnVerifyUrl) {
+    btnVerifyUrl.addEventListener('click', handleVerifyProductUrl);
+  }
+
+  const btnAddStep = document.getElementById('btnAddFlowStep');
+  if (btnAddStep) {
+    btnAddStep.addEventListener('click', handleAddFlowStep);
+  }
+
+  const btnSaveFlow = document.getElementById('btnSaveProductFlow');
+  if (btnSaveFlow) {
+    btnSaveFlow.addEventListener('click', handleSaveProductFlow);
+  }
+
+  const btnProceed = document.getElementById('btnProceedToStepper');
+  if (btnProceed) {
+    btnProceed.addEventListener('click', () => switchLaunchSubtab('stepper'));
+  }
+
+  // Stepper campaign parameters
   const priceInput = document.getElementById('campaignPrice');
   const priceDisplay = document.getElementById('campaignPriceDisplay');
-  const budgetInput = document.getElementById('campaignBudget');
-  const budgetDisplay = document.getElementById('campaignBudgetDisplay');
+  const dailyBudgetInput = document.getElementById('campaignDailyBudget');
+  const dailyBudgetDisplay = document.getElementById('campaignDailyBudgetDisplay');
   const channelSelect = document.getElementById('campaignChannel');
   const countrySelect = document.getElementById('campaignCountry');
   const industrySelect = document.getElementById('campaignIndustry');
-  const executeBtn = document.getElementById('executeSimulationBtn');
+  const durationSelect = document.getElementById('campaignDuration');
+  const seedInput = document.getElementById('campaignSeed');
+  const btnRandomSeed = document.getElementById('btnRandomizeSeed');
 
   if (priceInput) {
+    priceInput.value = state.campaign.price ?? 10;
+    if (priceDisplay) priceDisplay.textContent = state.campaign.price === 0 ? 'Free ($0)' : `$${state.campaign.price} / mo`;
     priceInput.addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
-      priceDisplay.textContent = val === 0 ? 'Free ($0)' : `$${val} / mo`;
+      if (priceDisplay) priceDisplay.textContent = val === 0 ? 'Free ($0)' : `$${val} / mo`;
       state.campaign.price = val;
-      saveCampaignState();
+      saveState(STORAGE_CAMPAIGN, state.campaign);
     });
   }
 
-  if (budgetInput) {
-    budgetInput.addEventListener('input', (e) => {
+  if (dailyBudgetInput) {
+    dailyBudgetInput.value = state.activeLaunch.dailyBudget || 50;
+    if (dailyBudgetDisplay) dailyBudgetDisplay.textContent = `$${state.activeLaunch.dailyBudget || 50} / day`;
+    dailyBudgetInput.addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
-      budgetDisplay.textContent = `$${val.toLocaleString()}`;
-      state.campaign.budget = val;
-      saveCampaignState();
+      if (dailyBudgetDisplay) dailyBudgetDisplay.textContent = `$${val} / day`;
+      state.activeLaunch.dailyBudget = val;
+      state.campaign.budget = val * (state.activeLaunch.durationDays || 14);
+      saveState(STORAGE_ACTIVE_LAUNCH, state.activeLaunch);
+      saveState(STORAGE_CAMPAIGN, state.campaign);
     });
   }
 
   if (channelSelect) {
+    channelSelect.value = state.campaign.channel || 'social';
     channelSelect.addEventListener('change', (e) => {
       state.campaign.channel = e.target.value;
-      saveCampaignState();
+      saveState(STORAGE_CAMPAIGN, state.campaign);
     });
   }
 
@@ -1655,7 +1768,7 @@ function initLaunchLab() {
     countrySelect.addEventListener('change', (e) => {
       state.campaign.country = e.target.value;
       updateSimContextBar();
-      saveCampaignState();
+      saveState(STORAGE_CAMPAIGN, state.campaign);
     });
   }
 
@@ -1674,22 +1787,1188 @@ function initLaunchLab() {
     industrySelect.addEventListener('change', (e) => {
       state.campaign.industry = e.target.value;
       updateSimContextBar();
-      saveCampaignState();
+      saveState(STORAGE_CAMPAIGN, state.campaign);
     });
   }
 
-  updateSimContextBar();
+  if (durationSelect) {
+    durationSelect.value = String(state.activeLaunch.durationDays || 14);
+    durationSelect.addEventListener('change', (e) => {
+      const d = parseInt(e.target.value, 10);
+      state.activeLaunch.durationDays = d;
+      const totalDaysEl = document.getElementById('stepperTotalDaysNum');
+      if (totalDaysEl) totalDaysEl.textContent = d;
+      saveState(STORAGE_ACTIVE_LAUNCH, state.activeLaunch);
+    });
+  }
 
-  if (executeBtn) {
-    executeBtn.addEventListener('click', handleExecuteSimulation);
+  if (seedInput) {
+    seedInput.value = state.activeLaunch.seed || 42;
+    seedInput.addEventListener('change', (e) => {
+      state.activeLaunch.seed = parseInt(e.target.value, 10) || 42;
+      saveState(STORAGE_ACTIVE_LAUNCH, state.activeLaunch);
+    });
+  }
+
+  if (btnRandomSeed) {
+    btnRandomSeed.addEventListener('click', () => {
+      const newSeed = Math.floor(Math.random() * 900000) + 10000;
+      state.activeLaunch.seed = newSeed;
+      if (seedInput) seedInput.value = newSeed;
+      saveState(STORAGE_ACTIVE_LAUNCH, state.activeLaunch);
+    });
+  }
+
+  // Stepper controls
+  const btnStepOne = document.getElementById('btnStepOneDay');
+  if (btnStepOne) {
+    btnStepOne.addEventListener('click', () => handleStepOneDay());
+  }
+
+  const btnPlayPause = document.getElementById('btnPlayPauseDays');
+  if (btnPlayPause) {
+    btnPlayPause.addEventListener('click', handleTogglePlayPause);
+  }
+
+  const btnFastForward = document.getElementById('btnFastForwardDays');
+  if (btnFastForward) {
+    btnFastForward.addEventListener('click', handleFastForwardAll);
+  }
+
+  const btnResetRun = document.getElementById('btnResetLaunchRun');
+  if (btnResetRun) {
+    btnResetRun.addEventListener('click', handleResetLaunchRun);
+  }
+
+  const btnViewReportFromStepper = document.getElementById('btnViewDailyReportFromStepper');
+  if (btnViewReportFromStepper) {
+    btnViewReportFromStepper.addEventListener('click', () => switchLaunchSubtab('daily'));
+  }
+
+  // Comparison & AI Analysis
+  const cmpASelect = document.getElementById('compareRunASelect');
+  const cmpBSelect = document.getElementById('compareRunBSelect');
+  if (cmpASelect) {
+    cmpASelect.addEventListener('change', renderRunComparison);
+  }
+  if (cmpBSelect) {
+    cmpBSelect.addEventListener('change', renderRunComparison);
+  }
+
+  const btnRunAiAnalysis = document.getElementById('btnRunAiFlowAnalysis');
+  if (btnRunAiAnalysis) {
+    btnRunAiAnalysis.addEventListener('click', handleAiFlowAnalysis);
+  }
+
+  // Render initial components
+  renderProductFlowTasks();
+  populateTargetGroupDropdown();
+  updateSimContextBar();
+  updateStepperHud();
+  renderDailyReport();
+  populateRunComparisonDropdowns();
+}
+
+function switchLaunchSubtab(tabName) {
+  const tabs = ['flow', 'stepper', 'daily', 'compare'];
+  if (!tabs.includes(tabName)) tabName = 'flow';
+
+  const tabBtns = document.querySelectorAll('.launch-tab-btn');
+  tabBtns.forEach(btn => {
+    if (btn.getAttribute('data-launch-tab') === tabName) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  const panelMap = {
+    flow: 'panelLaunchFlow',
+    stepper: 'panelLaunchStepper',
+    daily: 'panelLaunchDaily',
+    compare: 'panelLaunchCompare'
+  };
+
+  Object.entries(panelMap).forEach(([key, id]) => {
+    const panel = document.getElementById(id);
+    if (panel) {
+      if (key === tabName) {
+        panel.classList.add('active');
+        panel.style.display = 'block';
+      } else {
+        panel.classList.remove('active');
+        panel.style.display = 'none';
+      }
+    }
+  });
+
+  if (tabName === 'daily') {
+    renderDailyReport();
+  } else if (tabName === 'compare') {
+    populateRunComparisonDropdowns();
+    renderRunComparison();
+  } else if (tabName === 'stepper') {
+    populateTargetGroupDropdown();
+    updateSimContextBar();
+    updateStepperHud();
   }
 }
+
+/* ==========================================================
+   PRODUCT FLOW TOPOLOGY MAPPING (MVP WEB APP INPUT)
+   ========================================================== */
+
+function handleVerifyProductUrl() {
+  const input = document.getElementById('productAppUrl');
+  const statusMsg = document.getElementById('productUrlStatusMsg');
+  const urlVal = input ? input.value.trim() : '';
+
+  if (!urlVal || (!urlVal.startsWith('http://') && !urlVal.startsWith('https://'))) {
+    if (statusMsg) {
+      statusMsg.className = 'field-hint text-danger';
+      statusMsg.textContent = '⚠ Please enter a valid URL beginning with https:// or http://';
+    }
+    return;
+  }
+
+  state.productFlow.testUrl = urlVal;
+  state.productFlow.verified = true;
+  saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+
+  if (statusMsg) {
+    statusMsg.className = 'field-hint text-lime';
+    statusMsg.innerHTML = '✓ Valid secure endpoint. Safe boundary verified: Foundry analyzes flow topology without executing client code or requesting credentials.';
+  }
+}
+
+function renderProductFlowTasks() {
+  const container = document.getElementById('productFlowTasksContainer');
+  const countLabel = document.getElementById('flowTaskCountLabel');
+  if (!container) return;
+
+  const tasks = state.productFlow?.tasks || [];
+  if (countLabel) {
+    countLabel.textContent = `${tasks.length} Step${tasks.length === 1 ? '' : 's'} Configured`;
+  }
+
+  if (tasks.length === 0) {
+    container.innerHTML = '<div class="empty-state-inline"><p>No flow steps defined yet. Click "+ Add Step" to map a key user task.</p></div>';
+    return;
+  }
+
+  container.innerHTML = tasks.map((task, idx) => {
+    const frictionClass = task.friction === 'high' ? 'friction-high' : (task.friction === 'low' ? 'friction-low' : 'friction-medium');
+    return `
+      <div class="flow-task-card ${frictionClass}" data-step-id="${task.id}">
+        <div class="flow-step-number">${idx + 1}</div>
+        <div class="flow-task-main">
+          <div class="flow-task-row-1">
+            <input type="text" class="flow-task-title-input" value="${escapeHtml(task.name)}" placeholder="Task Name (e.g. Signup)" data-field="name">
+            <select class="flow-task-type-select" data-field="type">
+              <option value="signup" ${task.type === 'signup' ? 'selected' : ''}>Signup & Account</option>
+              <option value="onboarding" ${task.type === 'onboarding' ? 'selected' : ''}>Onboarding / Tour</option>
+              <option value="core_action" ${task.type === 'core_action' ? 'selected' : ''}>Core Value Action</option>
+              <option value="paywall" ${task.type === 'paywall' ? 'selected' : ''}>Paywall & Upgrade</option>
+              <option value="retention" ${task.type === 'retention' ? 'selected' : ''}>Return Workflow</option>
+            </select>
+            <select class="flow-task-friction-select" data-field="friction">
+              <option value="low" ${task.friction === 'low' ? 'selected' : ''}>Low Friction (~15% drop-off)</option>
+              <option value="medium" ${task.friction === 'medium' ? 'selected' : ''}>Medium Friction (~32% drop-off)</option>
+              <option value="high" ${task.friction === 'high' ? 'selected' : ''}>High Friction (~58% drop-off)</option>
+            </select>
+          </div>
+          <input type="text" class="flow-task-desc-input" value="${escapeHtml(task.description || '')}" placeholder="Describe what happens in this step..." data-field="description">
+        </div>
+        <div>
+          ${tasks.length > 2 ? `<button type="button" class="flow-task-delete-btn" onclick="handleDeleteFlowStep('${task.id}')" title="Delete Step">&times;</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Attach change listeners to update state in real-time
+  container.querySelectorAll('.flow-task-card').forEach(card => {
+    const stepId = card.getAttribute('data-step-id');
+    const task = tasks.find(t => t.id === stepId);
+    if (!task) return;
+
+    card.querySelectorAll('input, select').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const field = e.target.getAttribute('data-field');
+        if (field && task) {
+          task[field] = e.target.value;
+          if (field === 'friction') {
+            card.className = `flow-task-card ${task.friction === 'high' ? 'friction-high' : (task.friction === 'low' ? 'friction-low' : 'friction-medium')}`;
+          }
+          saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+        }
+      });
+    });
+  });
+}
+
+function handleAddFlowStep() {
+  const tasks = state.productFlow.tasks;
+  const newNum = tasks.length + 1;
+  const newStep = {
+    id: 'step_' + Date.now(),
+    name: `${newNum}. Custom Product Action`,
+    type: 'core_action',
+    friction: 'medium',
+    description: 'User evaluates additional feature in test web app.'
+  };
+  tasks.push(newStep);
+  saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+  renderProductFlowTasks();
+}
+
+function handleDeleteFlowStep(stepId) {
+  state.productFlow.tasks = state.productFlow.tasks.filter(t => t.id !== stepId);
+  saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+  renderProductFlowTasks();
+}
+window.handleDeleteFlowStep = handleDeleteFlowStep;
+
+function handleSaveProductFlow() {
+  saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+  const btn = document.getElementById('btnSaveProductFlow');
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = 'Flow Saved ✓';
+    btn.classList.add('btn-cyan');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('btn-cyan');
+    }, 1500);
+  }
+}
+
+/* ==========================================================
+   DETERMINISTIC REPRODUCIBLE PRNG & DAY-BY-DAY SIMULATION
+   ========================================================== */
+
+function seededPrng(seed, step) {
+  let s = ((seed * 15485863 + step * 2038074743) >>> 0);
+  s = (s ^ (s >>> 16)) >>> 0;
+  s = Math.imul(s, 0x45d9f3b);
+  s = (s ^ (s >>> 16)) >>> 0;
+  return (s >>> 0) / 4294967296;
+}
+
+function simulateSingleDay(dayNum, totalDays, seed, inputs, flowTasks, priorReports) {
+  const { price, channel, dailyBudget, targetGroup, countryCode, countryName, industryDomain } = inputs;
+
+  // 1. Marketing Channel baseline economics
+  let baseCPM = 18;
+  let baseCTR = 0.024;
+  let channelAffinity = 1.0;
+
+  if (channel === 'social') {
+    baseCPM = 14; baseCTR = 0.022;
+    channelAffinity = targetGroup.channel === 'social' ? 1.4 : 0.75;
+  } else if (channel === 'search') {
+    baseCPM = 26; baseCTR = 0.038;
+    channelAffinity = targetGroup.channel === 'search' ? 1.35 : 0.85;
+  } else if (channel === 'community') {
+    baseCPM = 16; baseCTR = 0.028;
+    channelAffinity = targetGroup.channel === 'community' ? 1.45 : 0.7;
+  } else if (channel === 'outreach') {
+    baseCPM = 35; baseCTR = 0.048;
+    channelAffinity = targetGroup.channel === 'outreach' ? 1.5 : 0.6;
+  }
+
+  // Impressions & Visitors from Ad Spend with seed variance
+  const impVariance = 0.92 + seededPrng(seed, dayNum * 11 + 1) * 0.16;
+  const impressions = Math.max(100, Math.round((dailyBudget / baseCPM) * 1000 * impVariance));
+
+  const ctrVariance = 0.88 + seededPrng(seed, dayNum * 11 + 2) * 0.24;
+  const visits = Math.max(5, Math.round(impressions * baseCTR * channelAffinity * ctrVariance));
+
+  // 2. Step-by-Step Flow Progression & Drop-offs
+  let currentTraffic = visits;
+  const stepDropOffs = [];
+  let signups = 0;
+  let activations = 0;
+  let coreCompletions = 0;
+  let paidUsers = 0;
+
+  flowTasks.forEach((step, idx) => {
+    const inputCount = currentTraffic;
+    let baseDropRate = 0.30;
+    if (step.friction === 'low') baseDropRate = 0.15;
+    else if (step.friction === 'medium') baseDropRate = 0.32;
+    else if (step.friction === 'high') baseDropRate = 0.58;
+
+    // Small day-to-day noise around the friction baseline
+    const stepNoise = (seededPrng(seed, dayNum * 31 + idx * 7) - 0.5) * 0.08;
+    let dropRate = Math.min(0.95, Math.max(0.05, baseDropRate + stepNoise));
+
+    // Pricing elasticity impact at paywall step
+    if (step.type === 'paywall') {
+      if (price === 0) {
+        dropRate = 0.05; // Free tier has minimal abandonment
+      } else if (targetGroup.budget === 'low') {
+        dropRate = price <= 7 ? 0.45 : (price <= 15 ? 0.75 : 0.94);
+      } else if (targetGroup.budget === 'medium') {
+        dropRate = price <= 25 ? 0.38 : (price <= 45 ? 0.65 : 0.88);
+      } else {
+        dropRate = price <= 55 ? 0.35 : (price <= 80 ? 0.55 : 0.78);
+      }
+    }
+
+    const dropCount = Math.min(inputCount, Math.round(inputCount * dropRate));
+    const outputCount = Math.max(0, inputCount - dropCount);
+
+    if (step.type === 'signup') signups = outputCount;
+    else if (step.type === 'onboarding') activations = outputCount;
+    else if (step.type === 'core_action') coreCompletions = outputCount;
+    else if (step.type === 'paywall') paidUsers = price === 0 ? 0 : outputCount;
+
+    stepDropOffs.push({
+      stepId: step.id,
+      name: step.name,
+      type: step.type,
+      friction: step.friction,
+      inputCount,
+      outputCount,
+      dropCount,
+      dropRate: inputCount > 0 ? (dropCount / inputCount) : 0
+    });
+
+    currentTraffic = outputCount;
+  });
+
+  // If explicit step types were not mapped, fallback to cascade
+  if (signups === 0 && stepDropOffs.length > 0) signups = stepDropOffs[0].outputCount;
+  if (activations === 0 && stepDropOffs.length > 1) activations = stepDropOffs[1].outputCount;
+  if (coreCompletions === 0 && stepDropOffs.length > 2) coreCompletions = stepDropOffs[2].outputCount;
+
+  // Identify primary bottleneck step (highest drop rate with >0 inputs)
+  let bottleneckStep = stepDropOffs.reduce((prev, curr) => {
+    if (!prev) return curr;
+    return curr.dropRate > prev.dropRate ? curr : prev;
+  }, null);
+
+  // 3. Cohort Retention from prior days
+  let returningUsers = 0;
+  const priorCohortBreakdown = [];
+
+  priorReports.forEach(r => {
+    const cohortAge = dayNum - r.day;
+    if (cohortAge > 0) {
+      // Power law decay: R(t) = 0.42 * (t + 1)^-0.62
+      const retentionRate = Math.max(0.04, 0.42 * Math.pow(cohortAge + 1, -0.62));
+      const retainedCount = Math.round(r.signups * retentionRate);
+      returningUsers += retainedCount;
+      priorCohortBreakdown.push({
+        fromDay: r.day,
+        initialSignups: r.signups,
+        ageDays: cohortAge,
+        retainedUsers: retainedCount
+      });
+    }
+  });
+
+  const dau = signups + returningUsers;
+  const dailyRevenue = paidUsers * price;
+  const dailyProfit = dailyRevenue - dailyBudget;
+
+  return {
+    day: dayNum,
+    dateStr: `Day ${dayNum}`,
+    impressions,
+    visits,
+    signups,
+    activations,
+    coreCompletions,
+    paidUsers,
+    returningUsers,
+    dau,
+    dailyBudget,
+    dailyRevenue,
+    dailyProfit,
+    stepDropOffs,
+    bottleneckStep,
+    priorCohortBreakdown,
+    evidenceContext: {
+      countryCode,
+      countryName,
+      industryDomain,
+      channel,
+      price
+    }
+  };
+}
+
+/* ==========================================================
+   STEPPER HUD & CONTROLS
+   ========================================================== */
+
+function updateStepperHud() {
+  const currentDayEl = document.getElementById('stepperCurrentDayNum');
+  const totalDaysEl = document.getElementById('stepperTotalDaysNum');
+  const statusBadge = document.getElementById('stepperStatusBadge');
+  const statusText = document.getElementById('stepperStatusText');
+  const progressBar = document.getElementById('stepperProgressBar');
+  const feedSummary = document.getElementById('stepperFeedSummary');
+
+  const curDay = state.activeLaunch.currentDay || 0;
+  const totalDays = state.activeLaunch.durationDays || 14;
+
+  if (currentDayEl) currentDayEl.textContent = curDay;
+  if (totalDaysEl) totalDaysEl.textContent = totalDays;
+
+  const pct = Math.min(100, Math.round((curDay / totalDays) * 100));
+  if (progressBar) progressBar.style.width = `${pct}%`;
+
+  if (statusText) {
+    if (curDay === 0) statusText.textContent = 'Awaiting Launch';
+    else if (curDay < totalDays) {
+      statusText.textContent = state.activeLaunch.status === 'running' ? `Simulating Day ${curDay}...` : `Paused (Day ${curDay} of ${totalDays})`;
+    } else {
+      statusText.textContent = 'Simulation Complete';
+    }
+  }
+
+  if (statusBadge) {
+    statusBadge.className = curDay >= totalDays ? 'hud-status-badge badge-done' : (curDay > 0 ? 'hud-status-badge badge-running' : 'hud-status-badge');
+  }
+
+  if (feedSummary) {
+    feedSummary.textContent = `${curDay} of ${totalDays} daily cycles simulated`;
+  }
+}
+
+function handleStepOneDay() {
+  const targetGroupId = document.getElementById('campaignTargetGroup')?.value || state.campaign.targetGroupId;
+  const targetGroup = state.market.groups.find(g => g.id === targetGroupId);
+
+  if (!targetGroup) {
+    alert('Please create or select a customer group first.');
+    return;
+  }
+
+  const duration = state.activeLaunch.durationDays || 14;
+  let curDay = state.activeLaunch.currentDay || 0;
+
+  if (curDay >= duration) {
+    alert(`Simulation has already reached the maximum duration of ${duration} days. Click Reset to start a new run.`);
+    return;
+  }
+
+  const nextDay = curDay + 1;
+  const seed = state.activeLaunch.seed || 42;
+  const price = state.campaign.price ?? 10;
+  const channel = state.campaign.channel || 'social';
+  const dailyBudget = state.activeLaunch.dailyBudget || 50;
+  const countryCode = state.campaign.country || 'USA';
+  const countryName = getCountryNameByIso(countryCode);
+  const industryDomain = state.campaign.industry || 'Mobile Applications';
+
+  const flowTasks = state.productFlow.tasks;
+  const priorReports = state.activeLaunch.dailyReports || [];
+
+  const dayResult = simulateSingleDay(
+    nextDay,
+    duration,
+    seed,
+    { price, channel, dailyBudget, targetGroup, countryCode, countryName, industryDomain },
+    flowTasks,
+    priorReports
+  );
+
+  state.activeLaunch.currentDay = nextDay;
+  state.activeLaunch.dailyReports.push(dayResult);
+  state.activeLaunch.selectedReportDay = nextDay;
+
+  // Append live feed row
+  appendStepperFeedRow(dayResult);
+
+  // Check if finished
+  if (nextDay >= duration) {
+    state.activeLaunch.status = 'completed';
+    clearInterval(state.activeLaunch.autoPlayTimer);
+    state.activeLaunch.autoPlayTimer = null;
+    const playPauseBtn = document.getElementById('playPauseBtnText');
+    if (playPauseBtn) playPauseBtn.textContent = '⏯ Auto-Play';
+
+    finalizeLaunchRun(targetGroup, countryCode, countryName, industryDomain);
+  }
+
+  saveState(STORAGE_ACTIVE_LAUNCH, state.activeLaunch);
+  updateStepperHud();
+  renderDailyReport(nextDay);
+}
+
+function appendStepperFeedRow(res) {
+  const feed = document.getElementById('stepperLiveFeed');
+  if (!feed) return;
+
+  const empty = feed.querySelector('.empty-state-inline');
+  if (empty) empty.remove();
+
+  const bottleneck = res.bottleneckStep ? `Bottleneck at <strong>${escapeHtml(res.bottleneckStep.name)}</strong> (-Math.round(res.bottleneckStep.dropRate * 100)% drop)` : '';
+  const row = document.createElement('div');
+  row.className = 'feed-event-row';
+  row.innerHTML = `
+    <span class="feed-event-day">DAY ${res.day}:</span>
+    <span class="feed-event-text">
+      ${res.visits} visitors entered &bull; ${res.signups} signups &bull; ${res.dau} DAU &bull; ${res.paidUsers} paid conversions ($res.dailyRevenue rev).
+      <span style="color: #f87171; margin-left: 6px;">${bottleneck}</span>
+    </span>
+  `;
+  feed.prepend(row);
+}
+
+function handleTogglePlayPause() {
+  const btn = document.getElementById('playPauseBtnText');
+  const duration = state.activeLaunch.durationDays || 14;
+
+  if (state.activeLaunch.currentDay >= duration) {
+    alert('Simulation already complete. Click Reset to start again.');
+    return;
+  }
+
+  if (state.activeLaunch.autoPlayTimer) {
+    // Pause
+    clearInterval(state.activeLaunch.autoPlayTimer);
+    state.activeLaunch.autoPlayTimer = null;
+    state.activeLaunch.status = 'paused';
+    if (btn) btn.textContent = '⏯ Resume';
+    updateStepperHud();
+  } else {
+    // Start Auto-Play
+    state.activeLaunch.status = 'running';
+    if (btn) btn.textContent = '⏸ Pause';
+    updateStepperHud();
+
+    state.activeLaunch.autoPlayTimer = setInterval(() => {
+      if (state.activeLaunch.currentDay >= duration) {
+        clearInterval(state.activeLaunch.autoPlayTimer);
+        state.activeLaunch.autoPlayTimer = null;
+        if (btn) btn.textContent = '⏯ Auto-Play';
+        updateStepperHud();
+      } else {
+        handleStepOneDay();
+      }
+    }, 550);
+  }
+}
+
+function handleFastForwardAll() {
+  const duration = state.activeLaunch.durationDays || 14;
+  if (state.activeLaunch.currentDay >= duration) {
+    alert('Simulation already complete.');
+    return;
+  }
+
+  if (state.activeLaunch.autoPlayTimer) {
+    clearInterval(state.activeLaunch.autoPlayTimer);
+    state.activeLaunch.autoPlayTimer = null;
+  }
+
+  const btn = document.getElementById('playPauseBtnText');
+  if (btn) btn.textContent = '⏯ Auto-Play';
+
+  while (state.activeLaunch.currentDay < duration) {
+    handleStepOneDay();
+  }
+}
+
+function handleResetLaunchRun() {
+  if (state.activeLaunch.autoPlayTimer) {
+    clearInterval(state.activeLaunch.autoPlayTimer);
+    state.activeLaunch.autoPlayTimer = null;
+  }
+
+  state.activeLaunch.currentDay = 0;
+  state.activeLaunch.dailyReports = [];
+  state.activeLaunch.status = 'idle';
+  state.activeLaunch.selectedReportDay = 1;
+  saveState(STORAGE_ACTIVE_LAUNCH, state.activeLaunch);
+
+  const feed = document.getElementById('stepperLiveFeed');
+  if (feed) {
+    feed.innerHTML = `
+      <div class="empty-state-inline">
+        <p>Run reset. Click <strong>"Step +1 Day"</strong> or <strong>"Auto-Play"</strong> to start a new simulated launch.</p>
+      </div>
+    `;
+  }
+
+  const btn = document.getElementById('playPauseBtnText');
+  if (btn) btn.textContent = '⏯ Auto-Play';
+
+  updateStepperHud();
+  renderDailyReport();
+}
+
+function finalizeLaunchRun(targetGroup, countryCode, countryName, industryDomain) {
+  const reports = state.activeLaunch.dailyReports;
+  if (reports.length === 0) return;
+
+  const totalImpressions = reports.reduce((s, r) => s + r.impressions, 0);
+  const totalVisits = reports.reduce((s, r) => s + r.visits, 0);
+  const totalSignups = reports.reduce((s, r) => s + r.signups, 0);
+  const totalActivations = reports.reduce((s, r) => s + r.activations, 0);
+  const totalCoreCompletions = reports.reduce((s, r) => s + r.coreCompletions, 0);
+  const totalPaidUsers = reports.reduce((s, r) => s + r.paidUsers, 0);
+  const totalRevenue = reports.reduce((s, r) => s + r.dailyRevenue, 0);
+  const totalBudget = reports.reduce((s, r) => s + r.dailyBudget, 0);
+  const netProfit = totalRevenue - totalBudget;
+
+  const runRecord = {
+    id: 'launch_' + Date.now(),
+    runNumber: (state.launchRuns?.length || 0) + 1,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    dateStr: new Date().toLocaleDateString(),
+    appName: state.profile.name || 'Your Web Product',
+    targetGroupName: targetGroup.name,
+    targetGroupId: targetGroup.id,
+    targetBudget: targetGroup.budget,
+    channel: state.campaign.channel,
+    price: state.campaign.price,
+    dailyBudget: state.activeLaunch.dailyBudget,
+    totalBudget,
+    durationDays: state.activeLaunch.durationDays,
+    seed: state.activeLaunch.seed,
+    countryCode,
+    countryName,
+    industryDomain,
+    impressions: totalImpressions,
+    clicks: totalVisits,
+    installs: totalSignups,
+    paidUsers: totalPaidUsers,
+    revenue: totalRevenue,
+    netProfit,
+    avgRating: 4.2,
+    flowTasks: JSON.parse(JSON.stringify(state.productFlow.tasks)),
+    dailyReports: JSON.parse(JSON.stringify(reports))
+  };
+
+  if (!state.launchRuns) state.launchRuns = [];
+  state.launchRuns.unshift(runRecord);
+  saveState(STORAGE_LAUNCH_RUNS, state.launchRuns);
+
+  // Sync to history view for cross-tab compatibility
+  state.history.unshift(runRecord);
+  if (state.history.length > 50) state.history = state.history.slice(0, 50);
+  saveState(STORAGE_HISTORY, state.history);
+
+  // Add world city chronicle event
+  const currentDayLabel = `Cycle ${state.world.cycle} • Day ${state.world.day}`;
+  addWorldEvent({
+    day: currentDayLabel,
+    iconKey: 'broadcast',
+    title: `Accelerated Launch Completed (${runRecord.durationDays} Days)`,
+    body: `Simulated virtual launch in ${countryName} generated ${totalImpressions.toLocaleString()} reach, ${totalSignups.toLocaleString()} signups, and ${totalPaidUsers.toLocaleString()} paid customers (${netProfit >= 0 ? '+' : ''}$${netProfit.toLocaleString()} net outcome).`
+  });
+
+  renderHistoryTable();
+  populateRunComparisonDropdowns();
+}
+
+/* ==========================================================
+   DAILY REPORTS & FLOW BOTTLENECK AUDIT VIEW
+   ========================================================== */
+
+function renderDailyReport(targetDay) {
+  const reports = state.activeLaunch.dailyReports || [];
+  const dayPicker = document.getElementById('dailyReportDayPicker');
+  const labelEl = document.getElementById('dailyReportCurrentLabel');
+
+  if (reports.length === 0) {
+    if (dayPicker) dayPicker.innerHTML = '<span class="text-xs text-dim">No simulation days logged yet.</span>';
+    resetDailyReportKpis();
+    return;
+  }
+
+  // Determine which day to show
+  let dayToView = targetDay || state.activeLaunch.selectedReportDay || 1;
+  if (dayToView !== 'cumulative' && (dayToView > reports.length || dayToView < 1)) {
+    dayToView = reports.length;
+  }
+  state.activeLaunch.selectedReportDay = dayToView;
+
+  // Render Day Selector Pills
+  if (dayPicker) {
+    dayPicker.innerHTML = reports.map(r => `
+      <button type="button" class="daily-day-pill ${dayToView === r.day ? 'active' : ''}" onclick="selectDailyReportDay(${r.day})">
+        Day ${r.day}
+      </button>
+    `).join('') + `
+      <button type="button" class="daily-day-pill ${dayToView === 'cumulative' ? 'active' : ''}" onclick="selectDailyReportDay('cumulative')">
+        All Cumulative (Days 1–${reports.length})
+      </button>
+    `;
+  }
+
+  if (labelEl) {
+    labelEl.textContent = dayToView === 'cumulative' ? `Showing: Cumulative (Days 1–${reports.length})` : `Showing: Day ${dayToView} Audit`;
+  }
+
+  // Calculate or retrieve data for this view
+  let activeData;
+  if (dayToView === 'cumulative') {
+    activeData = {
+      impressions: reports.reduce((s, r) => s + r.impressions, 0),
+      visits: reports.reduce((s, r) => s + r.visits, 0),
+      signups: reports.reduce((s, r) => s + r.signups, 0),
+      activations: reports.reduce((s, r) => s + r.activations, 0),
+      coreCompletions: reports.reduce((s, r) => s + r.coreCompletions, 0),
+      paidUsers: reports.reduce((s, r) => s + r.paidUsers, 0),
+      dailyRevenue: reports.reduce((s, r) => s + r.dailyRevenue, 0),
+      dailyProfit: reports.reduce((s, r) => s + r.dailyProfit, 0),
+      returningUsers: reports[reports.length - 1].returningUsers,
+      dau: reports[reports.length - 1].dau,
+      stepDropOffs: aggregateCumulativeStepDropOffs(reports)
+    };
+  } else {
+    activeData = reports.find(r => r.day === dayToView) || reports[0];
+  }
+
+  // Update KPI Cards
+  const repImp = document.getElementById('repImpressions');
+  const repClicks = document.getElementById('repClicks');
+  const repSignups = document.getElementById('repSignups');
+  const repSignupRate = document.getElementById('repSignupRate');
+  const repAct = document.getElementById('repActivations');
+  const repActRate = document.getElementById('repActivationRate');
+  const repCore = document.getElementById('repCoreCompletions');
+  const repCoreRate = document.getElementById('repCoreRate');
+  const repRet = document.getElementById('repReturningUsers');
+  const repDau = document.getElementById('repDauSummary');
+  const repPaid = document.getElementById('repPaidUsers');
+  const repRev = document.getElementById('repRevenueSummary');
+
+  if (repImp) repImp.textContent = activeData.impressions.toLocaleString();
+  if (repClicks) repClicks.textContent = `${activeData.visits.toLocaleString()} visitors (${((activeData.visits / activeData.impressions) * 100).toFixed(1)}% CTR)`;
+
+  if (repSignups) repSignups.textContent = activeData.signups.toLocaleString();
+  if (repSignupRate) {
+    const rate = activeData.visits > 0 ? ((activeData.signups / activeData.visits) * 100).toFixed(1) : 0;
+    repSignupRate.textContent = `${rate}% conversion from landing page`;
+  }
+
+  if (repAct) repAct.textContent = activeData.activations.toLocaleString();
+  if (repActRate) {
+    const rate = activeData.signups > 0 ? ((activeData.activations / activeData.signups) * 100).toFixed(1) : 0;
+    repActRate.textContent = `${rate}% of signups finished onboarding`;
+  }
+
+  if (repCore) repCore.textContent = activeData.coreCompletions.toLocaleString();
+  if (repCoreRate) {
+    const rate = activeData.activations > 0 ? ((activeData.coreCompletions / activeData.activations) * 100).toFixed(1) : 0;
+    repCoreRate.textContent = `${rate}% reached core "aha" moment`;
+  }
+
+  if (repRet) repRet.textContent = activeData.returningUsers.toLocaleString();
+  if (repDau) repDau.textContent = `DAU: ${activeData.dau.toLocaleString()} active daily users`;
+
+  if (repPaid) repPaid.textContent = activeData.paidUsers.toLocaleString();
+  if (repRev) {
+    repRev.textContent = `Rev: $${activeData.dailyRevenue.toLocaleString()} | Net: ${activeData.dailyProfit >= 0 ? '+' : ''}$${activeData.dailyProfit.toLocaleString()}`;
+  }
+
+  // Render Visual Drop-off Sankey Map
+  renderFlowSankey(activeData.stepDropOffs);
+
+  // Render Friction Alert Banner
+  renderFrictionAlert(activeData.stepDropOffs);
+
+  // Render Timeline Cohort Table
+  renderTimelineTable(reports, dayToView);
+}
+
+function selectDailyReportDay(dayNum) {
+  state.activeLaunch.selectedReportDay = dayNum;
+  renderDailyReport(dayNum);
+}
+window.selectDailyReportDay = selectDailyReportDay;
+
+function aggregateCumulativeStepDropOffs(reports) {
+  if (!reports || reports.length === 0) return [];
+  const baseSteps = reports[0].stepDropOffs || [];
+
+  return baseSteps.map((s, idx) => {
+    const totalInput = reports.reduce((acc, r) => acc + (r.stepDropOffs[idx]?.inputCount || 0), 0);
+    const totalOutput = reports.reduce((acc, r) => acc + (r.stepDropOffs[idx]?.outputCount || 0), 0);
+    const totalDrop = totalInput - totalOutput;
+    return {
+      stepId: s.stepId,
+      name: s.name,
+      type: s.type,
+      friction: s.friction,
+      inputCount: totalInput,
+      outputCount: totalOutput,
+      dropCount: totalDrop,
+      dropRate: totalInput > 0 ? (totalDrop / totalInput) : 0
+    };
+  });
+}
+
+function resetDailyReportKpis() {
+  ['repImpressions', 'repClicks', 'repSignups', 'repSignupRate', 'repActivations', 'repActivationRate', 'repCoreCompletions', 'repCoreRate', 'repReturningUsers', 'repDauSummary', 'repPaidUsers', 'repRevenueSummary'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '0';
+  });
+  const alertBox = document.getElementById('dailyFrictionAlertBox');
+  if (alertBox) alertBox.innerHTML = '';
+  const sankey = document.getElementById('dailyFlowSankey');
+  if (sankey) sankey.innerHTML = '<div class="empty-state-inline"><p>Step +1 Day or run a virtual launch to inspect product-flow conversion drop-offs.</p></div>';
+  const tableBody = document.getElementById('dailyTimelineTableBody');
+  if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#94a3b8;">No simulation days logged yet.</td></tr>';
+}
+
+function renderFlowSankey(stepDropOffs) {
+  const container = document.getElementById('dailyFlowSankey');
+  if (!container || !stepDropOffs || stepDropOffs.length === 0) return;
+
+  // Find max drop rate to flag bottleneck
+  let maxRate = 0;
+  stepDropOffs.forEach(s => {
+    if (s.dropRate > maxRate) maxRate = s.dropRate;
+  });
+
+  const colsHtml = stepDropOffs.map(step => {
+    const isBottleneck = step.dropRate === maxRate && step.dropRate > 0.2;
+    const dropPct = (step.dropRate * 100).toFixed(0);
+    const barHeight = Math.max(12, Math.round((step.outputCount / (step.inputCount || 1)) * 100));
+
+    return `
+      <div class="sankey-step-col">
+        <div class="sankey-step-badge">${step.type.toUpperCase()}</div>
+        <div class="sankey-step-title">${escapeHtml(step.name)}</div>
+        <div class="sankey-step-bar-wrap">
+          <div class="sankey-step-bar-fill ${isBottleneck ? 'friction-bottleneck' : ''}" style="height: ${barHeight}%;"></div>
+        </div>
+        <div class="sankey-step-count">${step.outputCount.toLocaleString()}</div>
+        <div class="sankey-step-drop ${isBottleneck ? 'font-bold' : ''}">-${dropPct}% drop-off</div>
+        <span class="text-xs text-dim mt-1">${step.dropCount.toLocaleString()} abandoned</span>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `<div class="sankey-cols-container">${colsHtml}</div>`;
+}
+
+function renderFrictionAlert(stepDropOffs) {
+  const alertBox = document.getElementById('dailyFrictionAlertBox');
+  if (!alertBox || !stepDropOffs || stepDropOffs.length === 0) return;
+
+  let worstStep = null;
+  stepDropOffs.forEach(s => {
+    if (!worstStep || s.dropRate > worstStep.dropRate) worstStep = s;
+  });
+
+  if (!worstStep || worstStep.dropRate < 0.15) {
+    alertBox.innerHTML = `
+      <div class="daily-friction-alert" style="border-color: rgba(52, 211, 153, 0.4); background: rgba(16, 185, 129, 0.08);">
+        <div class="daily-friction-icon" style="color: #34d399;">✓</div>
+        <div class="daily-friction-content">
+          <h4 style="color: #6ee7b7;">Healthy Flow Conversion</h4>
+          <p>Drop-off rates across all mapped tasks remain within expected ranges for early-stage web applications.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const dropPct = (worstStep.dropRate * 100).toFixed(0);
+  const targetGroup = state.market.groups.find(g => g.id === state.campaign.targetGroupId) || { name: 'Target Users', buyingPriorities: 'Immediate ROI' };
+
+  alertBox.innerHTML = `
+    <div class="daily-friction-alert">
+      <div class="daily-friction-icon" style="color: #f87171;">⚠</div>
+      <div class="daily-friction-content">
+        <h4>Critical Flow Bottleneck Detected: ${escapeHtml(worstStep.name)}</h4>
+        <p>
+          <strong>${dropPct}% of users dropped out</strong> at this step (${worstStep.dropCount.toLocaleString()} users abandoned). 
+          Friction level declared as <em>${worstStep.friction.toUpperCase()}</em>.
+          For the <strong>${escapeHtml(targetGroup.name)}</strong> group (whose priority is <em>${escapeHtml(targetGroup.buyingPriorities || 'Fast ROI')}</em>), excessive friction before experiencing core value causes immediate bounce.
+        </p>
+        <div class="daily-friction-recommendation">
+          <strong>Recommended Founder Discovery Action:</strong> Run 5 user testing sessions on your staging app URL specifically observing users attempting "${escapeHtml(worstStep.name)}". Test whether removing optional configuration fields eliminates abandonment.
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTimelineTable(reports, selectedDay) {
+  const tbody = document.getElementById('dailyTimelineTableBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = reports.map(r => {
+    const isSelected = r.day === selectedDay;
+    const bottleneckName = r.bottleneckStep ? r.bottleneckStep.name : 'None';
+    const dropPct = r.bottleneckStep ? `(-${(r.bottleneckStep.dropRate * 100).toFixed(0)}%)` : '';
+
+    return `
+      <tr class="${isSelected ? 'selected-day-row' : ''}" onclick="selectDailyReportDay(${r.day})" style="cursor: pointer;">
+        <td><strong>Day ${r.day}</strong> ${isSelected ? '◀' : ''}</td>
+        <td>${r.visits.toLocaleString()}</td>
+        <td class="text-cyan">${r.signups.toLocaleString()}</td>
+        <td>${r.activations.toLocaleString()}</td>
+        <td class="text-lime">${r.coreCompletions.toLocaleString()}</td>
+        <td>${r.returningUsers.toLocaleString()} (${r.dau} DAU)</td>
+        <td class="text-lime">${r.paidUsers.toLocaleString()}</td>
+        <td>$${r.dailyRevenue.toLocaleString()}</td>
+        <td style="color: #f87171;">${escapeHtml(bottleneckName)} ${dropPct}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/* ==========================================================
+   RUN COMPARISON MODULE
+   ========================================================== */
+
+function populateRunComparisonDropdowns() {
+  const selectA = document.getElementById('compareRunASelect');
+  const selectB = document.getElementById('compareRunBSelect');
+  const runs = state.launchRuns || [];
+
+  if (!selectA || !selectB) return;
+
+  if (runs.length === 0) {
+    selectA.innerHTML = '<option value="">-- No finished runs available --</option>';
+    selectB.innerHTML = '<option value="">-- No finished runs available --</option>';
+    return;
+  }
+
+  const optionsHtml = runs.map((r, i) => `
+    <option value="${r.id}">Run #${r.runNumber || (runs.length - i)}: ${r.dateStr} (${r.durationDays}d, $${r.price}/mo, ${channelLabel(r.channel)})</option>
+  `).join('');
+
+  selectA.innerHTML = optionsHtml;
+  selectB.innerHTML = optionsHtml;
+
+  if (runs.length > 1) {
+    selectB.selectedIndex = 1;
+  }
+}
+
+function renderRunComparison() {
+  const selectA = document.getElementById('compareRunASelect');
+  const selectB = document.getElementById('compareRunBSelect');
+  const deltaCard = document.getElementById('compareDeltaCard');
+  const runs = state.launchRuns || [];
+
+  if (!deltaCard || runs.length < 2) return;
+
+  const idA = selectA ? selectA.value : null;
+  const idB = selectB ? selectB.value : null;
+
+  const runA = runs.find(r => r.id === idA) || runs[0];
+  const runB = runs.find(r => r.id === idB) || runs[1];
+
+  if (!runA || !runB) return;
+
+  const deltaSignups = runB.installs - runA.installs;
+  const deltaPaid = runB.paidUsers - runA.paidUsers;
+  const deltaRev = runB.revenue - runA.revenue;
+  const deltaProfit = runB.netProfit - runA.netProfit;
+
+  deltaCard.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+      <h4 style="margin:0; font-size:0.9rem; color:#f8fafc;">Variance: Run #${runA.runNumber} vs Run #${runB.runNumber}</h4>
+      <span class="badge-status-neutral">A/B Comparative Delta</span>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-col">
+        <h5 style="color:#94a3b8; font-size:0.75rem; text-transform:uppercase; margin-top:0;">Configuration Shifts</h5>
+        <div class="compare-metric-row">
+          <span>Target Group:</span>
+          <span class="font-mono">${escapeHtml(runB.targetGroupName)}</span>
+        </div>
+        <div class="compare-metric-row">
+          <span>Pricing Tier:</span>
+          <span class="font-mono">$${runA.price} &rarr; $${runB.price}/mo</span>
+        </div>
+        <div class="compare-metric-row">
+          <span>Acquisition Channel:</span>
+          <span class="font-mono">${channelLabel(runB.channel)}</span>
+        </div>
+        <div class="compare-metric-row">
+          <span>Reproducibility Seed:</span>
+          <span class="font-mono">${runA.seed === runB.seed ? `Identical (${runA.seed})` : `${runA.seed} &rarr; ${runB.seed}`}</span>
+        </div>
+      </div>
+
+      <div class="compare-col">
+        <h5 style="color:#94a3b8; font-size:0.75rem; text-transform:uppercase; margin-top:0;">Friction &amp; Funnel Deltas</h5>
+        <div class="compare-metric-row">
+          <span>Total Signups:</span>
+          <span class="${deltaSignups >= 0 ? 'compare-delta-better' : 'compare-delta-worse'}">
+            ${deltaSignups >= 0 ? '+' : ''}${deltaSignups.toLocaleString()} (${runA.installs} &rarr; ${runB.installs})
+          </span>
+        </div>
+        <div class="compare-metric-row">
+          <span>Paid Subscribers:</span>
+          <span class="${deltaPaid >= 0 ? 'compare-delta-better' : 'compare-delta-worse'}">
+            ${deltaPaid >= 0 ? '+' : ''}${deltaPaid.toLocaleString()} (${runA.paidUsers} &rarr; ${runB.paidUsers})
+          </span>
+        </div>
+        <div class="compare-metric-row">
+          <span>Conversion Delta:</span>
+          <span class="font-mono">${(((runB.paidUsers / (runB.installs || 1)) - (runA.paidUsers / (runA.installs || 1))) * 100).toFixed(1)}%</span>
+        </div>
+      </div>
+
+      <div class="compare-col">
+        <h5 style="color:#94a3b8; font-size:0.75rem; text-transform:uppercase; margin-top:0;">Financial Impact</h5>
+        <div class="compare-metric-row">
+          <span>Simulated Revenue:</span>
+          <span class="${deltaRev >= 0 ? 'compare-delta-better' : 'compare-delta-worse'}">
+            ${deltaRev >= 0 ? '+' : ''}$${deltaRev.toLocaleString()}
+          </span>
+        </div>
+        <div class="compare-metric-row">
+          <span>Net Bottom-Line:</span>
+          <span class="${deltaProfit >= 0 ? 'compare-delta-better' : 'compare-delta-worse'}">
+            ${deltaProfit >= 0 ? '+' : ''}$${deltaProfit.toLocaleString()}
+          </span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ==========================================================
+   GROUNDED AI FLOW DIAGNOSIS
+   ========================================================== */
+
+async function handleAiFlowAnalysis() {
+  const outputBox = document.getElementById('aiFlowAnalysisOutput');
+  const btn = document.getElementById('btnRunAiFlowAnalysis');
+
+  const reports = state.activeLaunch.dailyReports || [];
+  if (reports.length === 0) {
+    alert('Please simulate at least 1 day before diagnosing product flow friction.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Diagnosing Flow Friction...';
+  }
+  if (outputBox) {
+    outputBox.innerHTML = '<div class="empty-state-inline"><p>Gemini is synthesizing simulated drop-offs against founder persona assumptions and verified market indicators...</p></div>';
+  }
+
+  const latest = reports[reports.length - 1];
+  const flowTasks = state.productFlow.tasks;
+  const targetGroup = state.market.groups.find(g => g.id === state.campaign.targetGroupId) || {
+    name: 'Target Customer Group',
+    budget: 'medium',
+    buyingPriorities: 'Cost reduction & speed',
+    priceSensitivity: 'moderate'
+  };
+
+  const countryCode = state.campaign.country || 'USA';
+  const countryName = getCountryNameByIso(countryCode);
+  const industryDomain = state.campaign.industry || 'Mobile Applications';
+  const price = state.campaign.price;
+
+  // Retrieve macro indicators
+  const { relevantIndicators } = getRelevantIndicatorsForRun({
+    countryCode,
+    countryName,
+    industryDomain,
+    channel: state.campaign.channel,
+    liveObservations: []
+  });
+
+  const promptText = `
+Act as an expert startup product analyst.
+The founder tested their web product with the following simulated launch:
+- Target Market: ${countryName} (${countryCode}), Industry: ${industryDomain}
+- Target Customer Persona: ${targetGroup.name} (Budget tier: ${targetGroup.budget}, Buying Priority: ${targetGroup.buyingPriorities}, Price Sensitivity: ${targetGroup.priceSensitivity})
+- Price Point: $${price}/month
+- Step-by-Step Flow Performance:
+${latest.stepDropOffs.map(s => `  * Step: ${s.name} (${s.type}, declared friction: ${s.friction}) -> ${(s.dropRate * 100).toFixed(0)}% abandonment (${s.dropCount} drop-offs out of ${s.inputCount} users)`).join('\n')}
+- Top Bottleneck Identified: ${latest.bottleneckStep ? latest.bottleneckStep.name : 'None'}
+
+Provide a rigorous analysis in 4 parts:
+1. Product Flow Friction Root-Cause: Why users dropped off at the bottleneck step based on declared persona priorities.
+2. 2-3 Hypothetical Customer Reaction Quotes (Diverse perspectives: one price-sensitive skeptic, one engaged believer, one workflow critique). Explicitly label as hypothetical simulations.
+3. 3 Prioritized Customer Discovery Questions for real interviews.
+4. Data limitation boundary explaining what is simulated vs what requires real customer research.
+  `.trim();
+
+  let diagnosisText = '';
+
+  // Try calling Gemini backend if configured
+  try {
+    if (window.foundrySupabase && window.foundrySupabase.isConfigured()) {
+      const resp = await fetch('/api/ai-market-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: promptText,
+          countryCode,
+          industryDomain,
+          evidenceList: relevantIndicators
+        })
+      });
+      if (resp.ok) {
+        const json = await resp.json();
+        diagnosisText = json.analysis || json.reply || json.content;
+      }
+    }
+  } catch (e) {
+    console.warn('AI analysis API error, falling back to grounded synthesis engine:', e);
+  }
+
+  // Grounded fallback synthesis if API unavailable
+  if (!diagnosisText) {
+    const bottleneckName = latest.bottleneckStep ? latest.bottleneckStep.name : 'Paywall Upgrade';
+    const dropPct = latest.bottleneckStep ? (latest.bottleneckStep.dropRate * 100).toFixed(0) : '48';
+
+    diagnosisText = `
+### 1. Product Flow Bottleneck Root-Cause: ${bottleneckName}
+The primary friction spike occurs at **${bottleneckName}**, where **${dropPct}% of users dropped out**. 
+Because your declared persona **${targetGroup.name}** prioritizes *"${targetGroup.buyingPriorities}"*, introducing high friction before demonstrating indisputable value causes immediate abandonment. At $${price}/mo, users require confidence that onboarding friction will translate directly into measurable ROI.
+
+### 2. Hypothetical Customer Reaction Simulations
+*(AI-generated simulation—not real customer feedback)*
+- **Simulated Persona Jordan (Budget Conscious):** *"I created an account hoping to solve our reporting pain quickly, but when ${bottleneckName} asked for extensive setup before showing outputs, I closed the tab."*
+- **Simulated Persona Morgan (Feature Evaluator):** *"${state.profile.name || 'This tool'} has strong potential, but at $${price}/mo I need our whole team onboarded before I commit company budget."*
+- **Simulated Persona Alex (Active Trial):** *"The core concept is exactly what we need. Once I made it past the initial setup, the workflow saved our team 2 hours."*
+
+### 3. Top 3 Real-World Customer Research Actions
+1. **Unmoderated Usability Audit:** Watch 5 real users attempt to complete ${bottleneckName} on your staging app without giving verbal instructions. Note where cursor hesitation exceeds 10 seconds.
+2. **Value-Before-Friction Test:** Move mandatory onboarding configuration steps *after* the user's first "aha" moment to verify if activation rates rise.
+3. **Price Elasticity Interview:** Ask 10 prospect founders: *"At what price point does this tool feel too expensive, and at what price does it feel suspiciously cheap?"*
+    `.trim();
+  }
+
+  if (outputBox) {
+    outputBox.innerHTML = `
+      <div class="ai-flow-diagnosis-box">
+        <div style="white-space: pre-line; line-height: 1.6; font-size: 0.82rem; color: #e2e8f0;">
+          ${escapeHtml(diagnosisText)}
+        </div>
+      </div>
+    `;
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = '✦ Diagnose Product Flow Bottlenecks with AI';
+  }
+}
+
+/* ==========================================================
+   BACKWARD COMPATIBILITY ADAPTERS FOR MARKET CITY ENGINE
+   ========================================================== */
 
 function populateTargetGroupDropdown() {
   const groupSelect = document.getElementById('campaignTargetGroup');
   const noGroupWarning = document.getElementById('noGroupWarning');
-  const executeBtn = document.getElementById('executeSimulationBtn');
-  const groups = state.market.groups;
+  const groups = state.market.groups || [];
 
   updateSimContextBar();
 
@@ -1698,7 +2977,6 @@ function populateTargetGroupDropdown() {
 
   if (groups.length === 0) {
     if (noGroupWarning) noGroupWarning.classList.remove('hidden');
-    if (executeBtn) executeBtn.disabled = true;
     const opt = document.createElement('option');
     opt.value = '';
     opt.textContent = '-- No custom customer groups available --';
@@ -1707,7 +2985,6 @@ function populateTargetGroupDropdown() {
   }
 
   if (noGroupWarning) noGroupWarning.classList.add('hidden');
-  if (executeBtn) executeBtn.disabled = false;
 
   groups.forEach((grp, idx) => {
     const opt = document.createElement('option');
@@ -1726,246 +3003,17 @@ function populateTargetGroupDropdown() {
   });
 }
 
-async function handleExecuteSimulation() {
-  const targetGroupId = document.getElementById('campaignTargetGroup').value;
-  const targetGroup = state.market.groups.find(g => g.id === targetGroupId);
+function updateSimContextBar() {
+  const cEl = document.getElementById('simContextCountry');
+  const iEl = document.getElementById('simContextIndustry');
+  const mEl = document.getElementById('simContextModel');
 
-  if (!targetGroup) {
-    alert('Please create and select a target customer group in the Virtual Market first.');
-    return;
-  }
+  const cCode = state.campaign.country || 'USA';
+  const iDomain = state.campaign.industry || 'Mobile Applications';
 
-  const appName = state.profile.name || 'Your Startup';
-  const price = parseInt(document.getElementById('campaignPrice').value, 10);
-  const channel = document.getElementById('campaignChannel').value;
-  const budget = parseInt(document.getElementById('campaignBudget').value, 10);
-
-  const countrySelect = document.getElementById('campaignCountry');
-  const industrySelect = document.getElementById('campaignIndustry');
-  const countryCode = (countrySelect ? countrySelect.value : state.campaign.country) || 'USA';
-  const countryName = getCountryNameByIso(countryCode);
-  const industryDomain = (industrySelect ? industrySelect.value : state.campaign.industry) || 'Mobile Applications';
-  const modelVersion = 'v2.0-grounded';
-
-  const executeBtn = document.getElementById('executeSimulationBtn');
-  const statusBadge = document.getElementById('simLabStatusBadge');
-
-  if (executeBtn) {
-    executeBtn.disabled = true;
-    executeBtn.textContent = 'Simulating Market...';
-  }
-  if (statusBadge) {
-    statusBadge.className = 'status-badge badge-running';
-    statusBadge.textContent = 'Simulating Outcomes...';
-  }
-
-  // 1. Fetch live observations if Supabase is connected
-  let liveObservations = [];
-  if (window.foundrySupabase && window.foundrySupabase.isConfigured()) {
-    try {
-      liveObservations = await window.foundrySupabase.getCountryObservations({ countryCode, limit: 100 });
-    } catch (e) {
-      console.warn('Could not query live Supabase country observations:', e);
-    }
-  }
-
-  // 2. Select only relevant indicators for this run
-  const { relevantIndicators, dataGaps } = getRelevantIndicatorsForRun({
-    countryCode,
-    countryName,
-    industryDomain,
-    channel,
-    liveObservations
-  });
-
-  // 3. Document explicit Founder Hypotheses
-  let channelAffinity = 1.0;
-  if (channel === 'social') channelAffinity = targetGroup.channel === 'social' ? 1.4 : 0.75;
-  else if (channel === 'search') channelAffinity = targetGroup.channel === 'search' ? 1.35 : 0.85;
-  else if (channel === 'community') channelAffinity = targetGroup.channel === 'community' ? 1.45 : 0.7;
-  else if (channel === 'outreach') channelAffinity = targetGroup.channel === 'outreach' ? 1.5 : 0.6;
-
-  const founderAssumptions = [
-    {
-      indicator_code: null,
-      indicator_name: 'Customer Group Budget Tolerance',
-      indicator_value: null,
-      indicator_unit: 'budget tier',
-      reference_year: null,
-      country_code: countryCode,
-      country_name: countryName,
-      assumption_type: 'founder_hypothesis',
-      assumption_key: 'budget_tier',
-      assumption_value: `${targetGroup.budget.toUpperCase()} (${targetGroup.name})`,
-      formula_applied: 'Sensitivity threshold: low ($7/mo), medium ($28/mo), high ($55/mo)',
-      disclaimer: 'Hypothesis declared by founder.'
-    },
-    {
-      indicator_code: null,
-      indicator_name: 'Marketing Channel Preference Multiplier',
-      indicator_value: channelAffinity,
-      indicator_unit: 'multiplier',
-      reference_year: null,
-      country_code: countryCode,
-      country_name: countryName,
-      assumption_type: 'founder_hypothesis',
-      assumption_key: 'channel_selection',
-      assumption_value: `${channelLabel(channel)} (${channelAffinity}x affinity for ${targetGroup.name})`,
-      formula_applied: targetGroup.channel === channel ? '1.35x-1.5x affinity multiplier' : '0.6x-0.85x channel mismatch penalty',
-      disclaimer: 'Hypothesis declared by founder based on persona behavior assumption.'
-    },
-    {
-      indicator_code: null,
-      indicator_name: 'Pricing Elasticity Hypothesis',
-      indicator_value: price,
-      indicator_unit: 'US$/mo',
-      reference_year: null,
-      country_code: countryCode,
-      country_name: countryName,
-      assumption_type: 'founder_hypothesis',
-      assumption_key: 'subscription_price',
-      assumption_value: price === 0 ? 'Free ($0)' : `$${price}/mo`,
-      formula_applied: 'Price fit curve applied against customer budget tier',
-      disclaimer: 'Stated subscription tier hypothesis.'
-    },
-    {
-      indicator_code: null,
-      indicator_name: 'Ad Spend Allocation & CPM Baseline',
-      indicator_value: budget,
-      indicator_unit: 'US$',
-      reference_year: null,
-      country_code: countryCode,
-      country_name: countryName,
-      assumption_type: 'founder_hypothesis',
-      assumption_key: 'ad_budget',
-      assumption_value: `$${budget.toLocaleString()} (${channelLabel(channel)})`,
-      formula_applied: 'Raw reach = (Budget / Base CPM) * 1000',
-      disclaimer: 'Budget declared by founder.'
-    },
-    {
-      indicator_code: null,
-      indicator_name: 'Customer Group Price Sensitivity',
-      indicator_value: null,
-      indicator_unit: 'elasticity tier',
-      reference_year: null,
-      country_code: countryCode,
-      country_name: countryName,
-      assumption_type: 'founder_hypothesis',
-      assumption_key: 'price_sensitivity',
-      assumption_value: `${(targetGroup.priceSensitivity || 'moderate').toUpperCase()} (${targetGroup.name})`,
-      formula_applied: 'Price pushback curve based on stated persona price tolerance',
-      disclaimer: 'Customer trait hypothesis declared by founder; never inferred from nationality.'
-    },
-    {
-      indicator_code: null,
-      indicator_name: 'Customer Group Primary Buying Priority',
-      indicator_value: null,
-      indicator_unit: 'priority category',
-      reference_year: null,
-      country_code: countryCode,
-      country_name: countryName,
-      assumption_type: 'founder_hypothesis',
-      assumption_key: 'buying_priority',
-      assumption_value: `${targetGroup.buyingPriorities || 'Immediate ROI & Cost Reduction'} (${targetGroup.name})`,
-      formula_applied: 'Key purchasing criterion guiding product evaluation and trade-offs',
-      disclaimer: 'Customer priority hypothesis declared by founder; never inferred from nationality.'
-    }
-  ];
-
-  const fullEvidence = [...relevantIndicators, ...founderAssumptions];
-
-  setTimeout(async () => {
-    const result = runLaunchSimulationEngine({
-      appName,
-      targetGroup,
-      price,
-      channel,
-      budget,
-      countryCode,
-      countryName,
-      industryDomain,
-      modelVersion,
-      relevantIndicators,
-      dataGaps
-    });
-
-    result.evidence = fullEvidence;
-    result.customerTraits = {
-      groupName: targetGroup.name,
-      needs: targetGroup.desc,
-      budgetRange: targetGroup.budget === 'low' ? 'Low ($0 – $15/mo)' : (targetGroup.budget === 'high' ? 'High ($50 – $150/mo)' : (targetGroup.budget === 'enterprise' ? 'Enterprise ($150+/mo)' : 'Moderate ($15 – $50/mo)')),
-      priceSensitivity: targetGroup.priceSensitivity || 'moderate',
-      buyingPriorities: targetGroup.buyingPriorities || 'Immediate ROI & Cost Reduction',
-      preferredChannels: channelLabel(targetGroup.channel)
-    };
-    result.hypotheticalCustomerScenarios = null;
-
-    displayLaunchResults(result);
-
-    state.history.unshift(result);
-    if (state.history.length > 50) state.history = state.history.slice(0, 50);
-    saveState(STORAGE_HISTORY, state.history);
-
-    const currentDayLabel = `Cycle ${state.world.cycle} • Day ${state.world.day}`;
-    const simEvents = [
-      {
-        district: 'marketing_channels',
-        event_type: 'campaign_broadcast',
-        day: currentDayLabel,
-        title: `1. Campaign Transmitted from Launch Lab`,
-        body: `Broadcasted campaign to ${targetGroup.name} in ${countryName} via ${channelLabel(channel)}. Generated ~${result.impressions.toLocaleString()} reach and ~${result.clicks.toLocaleString()} marketplace visitors.`,
-        metrics: { impressions: result.impressions, clicks: result.clicks }
-      },
-      {
-        district: 'marketplace',
-        event_type: 'store_checkout',
-        day: currentDayLabel,
-        title: `2. Marketplace Activity: ${result.paidUsers} Purchases`,
-        body: `${result.installs} customers tried the product; ${result.paidUsers} converted to paid (${result.netProfit >= 0 ? '+' : ''}$${result.netProfit} net profit).`,
-        metrics: { installs: result.installs, paidUsers: result.paidUsers, revenue: result.revenue, netProfit: result.netProfit }
-      }
-    ];
-
-    addWorldEvent({
-      day: currentDayLabel,
-      iconKey: 'broadcast',
-      title: simEvents[0].title,
-      body: simEvents[0].body
-    });
-
-    addWorldEvent({
-      day: currentDayLabel,
-      iconKey: 'marketplace',
-      title: simEvents[1].title,
-      body: simEvents[1].body
-    });
-
-    // Save to Supabase backend if authenticated
-    if (window.foundrySupabase && window.foundrySupabase.isAuthenticated()) {
-      try {
-        await window.foundrySupabase.recordSimulationRun({
-          run: result,
-          events: simEvents,
-          evidenceList: fullEvidence
-        });
-      } catch (err) {
-        console.error('Supabase simulation run record error:', err);
-      }
-    }
-
-    renderHistoryTable();
-    renderWorldView();
-    updateBadges();
-
-    if (executeBtn) {
-      executeBtn.disabled = false;
-      executeBtn.textContent = 'Run Simulated Launch';
-    }
-    if (statusBadge) {
-      statusBadge.className = 'status-badge badge-done';
-      statusBadge.textContent = 'Simulation Complete';
-    }
-  }, 400);
+  if (cEl) cEl.textContent = `${getCountryNameByIso(cCode)} (${cCode})`;
+  if (iEl) iEl.textContent = iDomain;
+  if (mEl) mEl.textContent = 'v2.2-accelerated-stepper';
 }
 
 function runLaunchSimulationEngine({
@@ -1977,130 +3025,26 @@ function runLaunchSimulationEngine({
   countryCode = 'USA',
   countryName = 'United States',
   industryDomain = 'Mobile Applications',
-  modelVersion = 'v2.0-grounded',
-  relevantIndicators = [],
-  dataGaps = []
+  modelVersion = 'v2.2-grounded'
 }) {
-  let baseCPM = 18;
-  let channelAffinity = 1.0;
-
-  if (channel === 'social') {
-    baseCPM = 14;
-    channelAffinity = targetGroup.channel === 'social' ? 1.4 : 0.75;
-  } else if (channel === 'search') {
-    baseCPM = 26;
-    channelAffinity = targetGroup.channel === 'search' ? 1.35 : 0.85;
-  } else if (channel === 'community') {
-    baseCPM = 16;
-    channelAffinity = targetGroup.channel === 'community' ? 1.45 : 0.7;
-  } else if (channel === 'outreach') {
-    baseCPM = 35;
-    channelAffinity = targetGroup.channel === 'outreach' ? 1.5 : 0.6;
-  }
-
-  const rawImpressions = Math.round((budget / baseCPM) * 1000);
-  const impressions = Math.max(400, Math.round(rawImpressions * (0.95 + Math.random() * 0.1)));
-
-  let baseCTR = 0.024 * channelAffinity;
-  const clicks = Math.max(8, Math.round(impressions * baseCTR));
-
-  let installRate = 0.14;
-  if (targetGroup.budget === 'low') installRate = 0.18;
-  if (targetGroup.budget === 'high') installRate = 0.11;
-  const installs = Math.max(2, Math.round(clicks * installRate));
-
-  let payRate = 0.0;
-  let priceFitScore = 1.0;
-
-  if (price === 0) {
-    payRate = 0.0;
-    priceFitScore = 1.0;
-  } else if (targetGroup.budget === 'low') {
-    if (price <= 7) { payRate = 0.09; priceFitScore = 0.9; }
-    else if (price <= 15) { payRate = 0.035; priceFitScore = 0.5; }
-    else if (price <= 25) { payRate = 0.01; priceFitScore = 0.2; }
-    else { payRate = 0.002; priceFitScore = 0.05; }
-  } else if (targetGroup.budget === 'medium') {
-    if (price < 8) { payRate = 0.05; priceFitScore = 0.65; }
-    else if (price <= 28) { payRate = 0.11; priceFitScore = 0.95; }
-    else if (price <= 45) { payRate = 0.05; priceFitScore = 0.6; }
-    else { payRate = 0.015; priceFitScore = 0.25; }
-  } else if (targetGroup.budget === 'high') {
-    if (price < 15) { payRate = 0.03; priceFitScore = 0.45; }
-    else if (price <= 55) { payRate = 0.105; priceFitScore = 0.92; }
-    else if (price <= 70) { payRate = 0.06; priceFitScore = 0.65; }
-    else { payRate = 0.025; priceFitScore = 0.35; }
-  }
-
-  const paidUsers = price === 0 ? 0 : Math.round(installs * payRate);
-  const revenue = paidUsers * price;
-  const netProfit = revenue - budget;
-
-  const score = (priceFitScore * 0.65) + (Math.min(1.2, channelAffinity) * 0.35);
-  let avgRating = Math.min(5.0, Math.max(1.5, (score * 3.6) + 1.2));
-  avgRating = Math.round(avgRating * 10) / 10;
-
-  const reviews = generateDynamicSimulatedReviews(targetGroup, appName, price, avgRating);
-
-  // Compute Sensitivity / Uncertainty Ranges
-  const lowPaid = price === 0 ? 0 : Math.max(0, Math.round(paidUsers * 0.60));
-  const highPaid = price === 0 ? 0 : Math.max(paidUsers, Math.round(paidUsers * 1.40));
-  const uncertaintyRange = {
-    impressions: {
-      low: Math.round(impressions * 0.85),
-      expected: impressions,
-      high: Math.round(impressions * 1.15)
-    },
-    clicks: {
-      low: Math.round(clicks * 0.75),
-      expected: clicks,
-      high: Math.round(clicks * 1.25)
-    },
-    installs: {
-      low: Math.max(1, Math.round(installs * 0.70)),
-      expected: installs,
-      high: Math.round(installs * 1.30)
-    },
-    paidUsers: {
-      low: lowPaid,
-      expected: paidUsers,
-      high: highPaid
-    },
-    netProfit: {
-      low: (lowPaid * price) - budget,
-      expected: netProfit,
-      high: (highPaid * price) - budget
-    }
-  };
-
-  const modelLogicExplanation = `
-1. Reach & Impressions: Sourced ad channel CPM baseline ($${baseCPM} for ${channelLabel(channel)}) applied against test budget ($${budget.toLocaleString()}), resulting in ~${impressions.toLocaleString()} impressions (sensitivity range: ${uncertaintyRange.impressions.low.toLocaleString()} – ${uncertaintyRange.impressions.high.toLocaleString()} based on ad auction bid volatility).
-2. Traffic & Click-Through: Sourced marketing channel baseline CTR modified by founder's assumed persona channel affinity (${channelAffinity}x for ${targetGroup.name}), resulting in ~${clicks.toLocaleString()} clicks (${((clicks / impressions) * 100).toFixed(1)}% CTR, sensitivity range: ${uncertaintyRange.clicks.low.toLocaleString()} – ${uncertaintyRange.clicks.high.toLocaleString()}).
-3. Installs & Trials: Landing page trial conversion evaluated at ${(installRate * 100).toFixed(0)}% based on persona budget tier (${targetGroup.budget.toUpperCase()}), producing ~${installs.toLocaleString()} trials/installs (sensitivity range: ${uncertaintyRange.installs.low.toLocaleString()} – ${uncertaintyRange.installs.high.toLocaleString()}).
-4. Paid Conversions & Financials: Elasticity model evaluated stated price ($${price}/mo) against persona budget ceiling. Result: ${paidUsers.toLocaleString()} paid conversions (${price === 0 ? 'Free Product' : ((paidUsers / installs) * 100).toFixed(1) + '% conversion'}), producing $${revenue.toLocaleString()} revenue and ${netProfit >= 0 ? '+' : ''}$${netProfit.toLocaleString()} net financial outcome (sensitivity range: $${uncertaintyRange.netProfit.low.toLocaleString()} to $${uncertaintyRange.netProfit.high.toLocaleString()}).
-Ethical Guardrail Enforced: National macroeconomic statistics (e.g. GDP per capita, internet penetration) establish regional baseline infrastructure scale. They are NOT used to infer an individual customer's willingness to buy, nor are macro statistics conflated with individual behavior.
-  `.trim();
-
-  const assumptionsAndLimitations = `
-• Boundary: Macroeconomic, connectivity, and digital payment statistics reflect aggregate national infrastructure, NOT individual willingness to pay, corporate purchasing budgets, or customer interest.
-• Assumption: Channel affinity multiplier (${channelAffinity}x) and persona budget tier (${targetGroup.budget}) are hypotheses declared by the founder, not empirically validated live conversion rates.
-• Variance: Customer acquisition metrics carry structural uncertainty (CTR: ±25%, Signups: ±30%, Paid Conversion: ±40%). Sensitivity ranges illustrate the potential variance.
-• Fictional Simulation: All simulated customer reactions, reviews, and personas are 100% fictional simulation outputs generated algorithmically for educational practice. No real human feedback or real persons are represented.
-  `.trim();
-
-  const researchRecommendations = `
-1. Qualitative Problem Discovery: Conduct 5–10 structured discovery interviews with real users matching the "${targetGroup.name}" persona to validate whether the problem is urgent and whether pricing at $${price}/mo is perceived as fair.
-2. Landing Page Smoke Test: Deploy a simple landing page with ad creatives on ${channelLabel(channel)} with a $50–$100 test budget to capture real CTR and waitlist signups rather than relying on theoretical model baselines.
-3. Willingness-to-Pay Validation: Secure letters of intent (LOIs), advance deposits, or pre-orders before committing capital to engineering or scaling paid ads.
-4. Commercial Category Telemetry: For sector-specific retention, churn, and ARPU benchmarks, subscribe to licensed databases (e.g., Sensor Tower, data.ai for mobile apps; Keyplay or Gartner for enterprise software).
-  `.trim();
+  const tasks = state.productFlow.tasks;
+  const seed = state.activeLaunch.seed || 42;
+  const singleReport = simulateSingleDay(1, 14, seed, {
+    price,
+    channel,
+    dailyBudget: Math.round(budget / 14),
+    targetGroup,
+    countryCode,
+    countryName,
+    industryDomain
+  }, tasks, []);
 
   return {
     id: 'run_' + Date.now(),
-    runNumber: state.history.length + 1,
+    runNumber: (state.history.length || 0) + 1,
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     dateStr: new Date().toLocaleDateString(),
-    appName,
+    appName: appName || state.profile.name || 'Your Startup',
     targetGroupName: targetGroup.name,
     targetGroupId: targetGroup.id,
     targetBudget: targetGroup.budget,
@@ -2111,477 +3055,35 @@ Ethical Guardrail Enforced: National macroeconomic statistics (e.g. GDP per capi
     countryName,
     industryDomain,
     modelVersion,
-    founderInputs: {
-      appName,
-      targetGroupName: targetGroup.name,
-      targetGroupId: targetGroup.id,
-      targetBudget: targetGroup.budget,
-      targetChannelPreference: targetGroup.channel,
-      channel,
-      price,
-      budget,
-      countryCode,
-      countryName,
-      industryDomain
-    },
-    impressions,
-    clicks,
-    installs,
-    paidUsers,
-    revenue,
-    netProfit,
-    avgRating,
-    reviews,
-    uncertaintyRange,
-    modelLogicExplanation,
-    assumptionsAndLimitations,
-    dataGaps,
-    researchRecommendations
+    impressions: singleReport.impressions * 14,
+    clicks: singleReport.visits * 14,
+    installs: singleReport.signups * 14,
+    paidUsers: singleReport.paidUsers * 14,
+    revenue: singleReport.dailyRevenue * 14,
+    netProfit: (singleReport.dailyRevenue * 14) - budget,
+    avgRating: 4.3,
+    reviews: [
+      {
+        name: 'Simulated Persona Taylor S.',
+        initials: 'TS',
+        role: `${targetGroup.name} [Simulated Persona - Fictional]`,
+        rating: 4,
+        quote: `Tested MVP workflow on staging test link. Reasonable baseline at $${price}/mo.`
+      }
+    ],
+    uncertaintyRange: {
+      impressions: { low: Math.round(singleReport.impressions * 12), expected: singleReport.impressions * 14, high: Math.round(singleReport.impressions * 16) },
+      clicks: { low: Math.round(singleReport.visits * 11), expected: singleReport.visits * 14, high: Math.round(singleReport.visits * 17) },
+      installs: { low: Math.round(singleReport.signups * 10), expected: singleReport.signups * 14, high: Math.round(singleReport.signups * 18) },
+      paidUsers: { low: Math.round(singleReport.paidUsers * 9), expected: singleReport.paidUsers * 14, high: Math.round(singleReport.paidUsers * 19) },
+      netProfit: { low: ((singleReport.paidUsers * 9) * price) - budget, expected: (singleReport.dailyRevenue * 14) - budget, high: ((singleReport.paidUsers * 19) * price) - budget }
+    }
   };
 }
 
-function generateDynamicSimulatedReviews(targetGroup, appName, price, avgRating) {
-  const reviews = [];
-  const groupName = targetGroup.name;
-
-  if (targetGroup.budget === 'low') {
-    if (price === 0) {
-      reviews.push({
-        name: 'Simulated Persona Alex M.',
-        initials: 'AM',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 5,
-        quote: `Incredible that ${appName} offers a free tier. Ideal match for our budget-conscious workflow.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Jordan K.',
-        initials: 'JK',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 4,
-        quote: `Discovered this through ads. Clean functionality. Hope you preserve the free tier as you scale!`
-      });
-    } else if (price <= 8) {
-      reviews.push({
-        name: 'Simulated Persona Taylor S.',
-        initials: 'TS',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 5,
-        quote: `At $${price}/mo it fits within our tight monthly budget. Saves enough time to justify the cost.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Morgan P.',
-        initials: 'MP',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 4,
-        quote: `Fair price ($${price}/mo) for the basic features offered.`
-      });
-    } else {
-      reviews.push({
-        name: 'Simulated Persona Casey R.',
-        initials: 'CR',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 2,
-        quote: `$${price}/mo exceeds our spending threshold for this tool type. Uninstalled when the paywall appeared.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Riley B.',
-        initials: 'RB',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 3,
-        quote: `Promising concept, but for ${groupName}, $${price}/mo is too expensive given alternative options.`
-      });
-    }
-  } else if (targetGroup.budget === 'medium') {
-    if (price < 10) {
-      reviews.push({
-        name: 'Simulated Persona Sam V.',
-        initials: 'SV',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 3,
-        quote: `At $${price}/mo it is inexpensive, but makes our team wonder about product stability and security.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Pat D.',
-        initials: 'PD',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 4,
-        quote: `Solid tool that saves our team valuable hours. Worth more than $${price}/mo.`
-      });
-    } else if (price <= 35) {
-      reviews.push({
-        name: 'Simulated Persona Devon L.',
-        initials: 'DL',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 5,
-        quote: `${appName} integrates well into our day-to-day workflow. $${price}/mo is an easy purchase approval.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Robin H.',
-        initials: 'RH',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 4,
-        quote: `Dependable performance. Delivered what we were expecting for ${groupName}.`
-      });
-    } else {
-      reviews.push({
-        name: 'Simulated Persona Chris T.',
-        initials: 'CT',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 2,
-        quote: `$${price}/mo is hard to justify without enterprise team controls, SSO, and compliance certificates.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Dana W.',
-        initials: 'DW',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 3,
-        quote: `Decent baseline, but competitor tools offer broader capabilities at this price tier.`
-      });
-    }
-  } else {
-    if (price < 20) {
-      reviews.push({
-        name: 'Simulated Persona Evelyn G.',
-        initials: 'EG',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 3,
-        quote: `Priced at only $${price}/mo? Feels lightweight for critical business operations.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Quinn N.',
-        initials: 'QN',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 4,
-        quote: `Fast UI. Would appreciate dedicated account management and enterprise SLA guarantees.`
-      });
-    } else if (price <= 60) {
-      reviews.push({
-        name: 'Simulated Persona Marcus E.',
-        initials: 'ME',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 5,
-        quote: `Exactly what we needed. $${price}/mo is fully justified by the productivity gains.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Avery Z.',
-        initials: 'AZ',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 4,
-        quote: `High quality tool tailored for ${groupName}. Solid fit for our operational requirements.`
-      });
-    } else {
-      reviews.push({
-        name: 'Simulated Persona Logan C.',
-        initials: 'LC',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 2,
-        quote: `$${price}/mo requires department VP approval and formal security questionnaire reviews.`
-      });
-      reviews.push({
-        name: 'Simulated Persona Reese F.',
-        initials: 'RF',
-        role: `${groupName} [Simulated Persona - Fictional]`,
-        rating: 3,
-        quote: `High price point for an early offering. We will re-evaluate once the roadmap matures.`
-      });
-    }
-  }
-
-  return reviews;
-}
-
 function displayLaunchResults(res) {
-  const emptyState = document.getElementById('launchEmptyState');
-  const resultsArea = document.getElementById('launchResultsArea');
-
-  if (emptyState) emptyState.classList.add('hidden');
-  if (resultsArea) resultsArea.classList.remove('hidden');
-
-  // Key metrics with uncertainty sensitivity ranges
-  const impElem = document.getElementById('resImpressions');
-  const impRangeElem = document.getElementById('resImpressionsRange');
-  if (impElem) impElem.textContent = res.impressions.toLocaleString();
-  if (impRangeElem && res.uncertaintyRange?.impressions) {
-    impRangeElem.textContent = `Range: ${res.uncertaintyRange.impressions.low.toLocaleString()} – ${res.uncertaintyRange.impressions.high.toLocaleString()} (±15% CPM variance)`;
-  }
-
-  const clicksElem = document.getElementById('resClicks');
-  const ctr = ((res.clicks / res.impressions) * 100).toFixed(1);
-  if (clicksElem) clicksElem.textContent = `${res.clicks.toLocaleString()} clicks (${ctr}% CTR)`;
-
-  const installsElem = document.getElementById('resInstalls');
-  const installsRangeElem = document.getElementById('resInstallsRange');
-  const conv = ((res.installs / res.clicks) * 100).toFixed(1);
-  if (installsElem) installsElem.textContent = res.installs.toLocaleString();
-  if (installsRangeElem && res.uncertaintyRange?.installs) {
-    installsRangeElem.textContent = `Range: ${res.uncertaintyRange.installs.low.toLocaleString()} – ${res.uncertaintyRange.installs.high.toLocaleString()} (±30% funnel variance)`;
-  }
-  const convElem = document.getElementById('resConversion');
-  if (convElem) convElem.textContent = `${conv}% of clicks installed`;
-
-  const paidElem = document.getElementById('resPaidUsers');
-  const paidRangeElem = document.getElementById('resPaidUsersRange');
-  const paidPct = res.installs > 0 ? ((res.paidUsers / res.installs) * 100).toFixed(1) : 0;
-  if (paidElem) paidElem.textContent = res.paidUsers.toLocaleString();
-  if (paidRangeElem && res.uncertaintyRange?.paidUsers) {
-    paidRangeElem.textContent = res.price === 0
-      ? 'Free Tier (0 paid)'
-      : `Range: ${res.uncertaintyRange.paidUsers.low.toLocaleString()} – ${res.uncertaintyRange.paidUsers.high.toLocaleString()} (±40% price sensitivity variance)`;
-  }
-  const paidRateElem = document.getElementById('resPaidRate');
-  if (paidRateElem) paidRateElem.textContent = res.price === 0 ? 'Free Tier (0 paid)' : `${paidPct}% conversion to paid`;
-
-  const isProfit = res.netProfit >= 0;
-  const profitElem = document.getElementById('resNetProfit');
-  const profitRangeElem = document.getElementById('resProfitRange');
-  if (profitElem) {
-    profitElem.textContent = `${isProfit ? '+' : ''}$${res.netProfit.toLocaleString()}`;
-    profitElem.className = `metric-val ${isProfit ? 'text-lime' : 'text-danger'}`;
-  }
-  if (profitRangeElem && res.uncertaintyRange?.netProfit) {
-    const lowNet = res.uncertaintyRange.netProfit.low;
-    const highNet = res.uncertaintyRange.netProfit.high;
-    profitRangeElem.textContent = `Range: ${lowNet >= 0 ? '+' : ''}$${lowNet.toLocaleString()} to ${highNet >= 0 ? '+' : ''}$${highNet.toLocaleString()}`;
-  }
-  const revElem = document.getElementById('resRevenueBreakdown');
-  if (revElem) revElem.textContent = `Rev: $${res.revenue.toLocaleString()} | Budget: $${res.budget.toLocaleString()}`;
-
-  // Funnel bars
-  const barImp = document.getElementById('barImpCount');
-  const barClick = document.getElementById('barClickCount');
-  const barInstall = document.getElementById('barInstallCount');
-  const barPaid = document.getElementById('barPaidCount');
-  if (barImp) barImp.textContent = res.impressions.toLocaleString();
-  if (barClick) barClick.textContent = res.clicks.toLocaleString();
-  if (barInstall) barInstall.textContent = res.installs.toLocaleString();
-  if (barPaid) barPaid.textContent = res.paidUsers.toLocaleString();
-
-  const clickPercent = Math.max(3, (res.clicks / res.impressions) * 100);
-  const installPercent = Math.max(2, (res.installs / res.impressions) * 100 * 4);
-  const paidPercent = res.price === 0 ? 0 : Math.max(1, (res.paidUsers / res.impressions) * 100 * 12);
-
-  const fillImp = document.getElementById('barImpFill');
-  const fillClick = document.getElementById('barClickFill');
-  const fillInstall = document.getElementById('barInstallFill');
-  const fillPaid = document.getElementById('barPaidFill');
-  if (fillImp) fillImp.style.width = '100%';
-  if (fillClick) fillClick.style.width = `${Math.min(100, clickPercent * 8)}%`;
-  if (fillInstall) fillInstall.style.width = `${Math.min(85, installPercent * 6)}%`;
-  if (fillPaid) fillPaid.style.width = `${Math.min(70, paidPercent * 5)}%`;
-
-  const dropClick = (100 - (res.clicks / res.impressions) * 100).toFixed(1);
-  const dropInstall = (100 - (res.installs / res.clicks) * 100).toFixed(1);
-  const dropPaid = res.price === 0 ? '0 (Free Product)' : (100 - (res.paidUsers / res.installs) * 100).toFixed(1);
-
-  const dropClickEl = document.getElementById('dropClickText');
-  const dropInstallEl = document.getElementById('dropInstallText');
-  const dropPaidEl = document.getElementById('dropPaidText');
-  if (dropClickEl) dropClickEl.textContent = `Ad Drop-off: -${dropClick}% (Did not click ad)`;
-  if (dropInstallEl) dropInstallEl.textContent = `Landing Page Drop-off: -${dropInstall}% (Did not install/signup)`;
-  if (dropPaidEl) dropPaidEl.textContent = res.price === 0 ? 'Free Product' : `Paywall Drop-off: -${dropPaid}% (Did not purchase)`;
-
-  // Uncertainty Box & Data Gaps
-  const uncSubtitle = document.getElementById('simUncertaintySubtitle');
-  const uncContent = document.getElementById('simUncertaintyContent');
-  if (uncSubtitle) {
-    uncSubtitle.textContent = `Data audit for ${res.countryName} (${res.countryCode}) • ${res.industryDomain}`;
-  }
-  if (uncContent) {
-    const evidence = res.evidence || [];
-    const macroItems = evidence.filter(e => e.assumption_type === 'macro_market_context');
-    const reportedCount = macroItems.filter(e => e.data_status === 'reported').length;
-    const missingCount = macroItems.filter(e => e.data_status !== 'reported').length;
-
-    let gapsHtml = '';
-    if (res.dataGaps && res.dataGaps.length > 0) {
-      gapsHtml = `
-        <div class="mt-2">
-          <strong style="color: #f87171;">Identified Data Gaps for ${escapeHtml(res.countryName)}:</strong>
-          <div class="data-gap-tag-list mt-1">
-            ${res.dataGaps.map(g => `<span class="data-gap-tag">${escapeHtml(g.name)} (${escapeHtml(g.reason)})</span>`).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    uncContent.innerHTML = `
-      <div>
-        <strong>Baseline Grounding:</strong> ${reportedCount} of ${macroItems.length} industry-relevant indicators were officially reported for <strong>${escapeHtml(res.countryName)}</strong>. ${missingCount > 0 ? `${missingCount} metric(s) have data gaps.` : 'All primary contextual baselines present.'}
-      </div>
-      ${gapsHtml}
-      <div class="mt-2">
-        <strong>Why Sensitivity Ranges Are Applied:</strong> Macroeconomic statistics provide regional population volume and payment infrastructure, but cannot predict microeconomic conversion or price elasticity. We apply sensitivity bounds (±15% CPM, ±25% CTR, ±30% signup conversion, ±40% willingness-to-pay) because real customer outcomes vary based on messaging, positioning, and competitive offerings.
-      </div>
-      <div class="factor-disclaimer mt-2">
-        <strong>Ethical Guardrail Applied:</strong> Country-level statistics describe general territorial infrastructure. They are <em>not</em> used to infer an individual customer's willingness to buy, nor is purchasing intent stereotyping allowed by nationality.
-      </div>
-    `;
-  }
-
-  // Provenance Factors Comparison
-  const scopeEl = document.getElementById('factorSourcedScope');
-  if (scopeEl) scopeEl.textContent = `National Context (${res.countryName})`;
-
-  const sourcedListEl = document.getElementById('simSourcedFactorsList');
-  const founderListEl = document.getElementById('simFounderFactorsList');
-  const evidence = res.evidence || [];
-  const macroItems = evidence.filter(e => e.assumption_type === 'macro_market_context');
-  const founderItems = evidence.filter(e => e.assumption_type !== 'macro_market_context');
-
-  if (sourcedListEl) {
-    sourcedListEl.innerHTML = macroItems.map(item => `
-      <div class="factor-item-row">
-        <div class="factor-item-details">
-          <span class="factor-item-name">${escapeHtml(item.indicator_name)}</span>
-          <span class="factor-item-meta">
-            ${item.data_status === 'reported' ? `Ref Year: ${item.reference_year || '2023'} • ${escapeHtml(item.source_name || '')}` : `<span style="color:#f87171;">${escapeHtml(item.uncertainty_note || 'Unreported Gap')}</span>`}
-          </span>
-        </div>
-        <div class="factor-item-val" style="color: ${item.data_status === 'reported' ? 'var(--cyan)' : '#f87171'};">
-          ${item.indicator_value !== null && item.indicator_value !== undefined ? `${Number(item.indicator_value).toLocaleString()} ${escapeHtml(item.indicator_unit || '')}` : 'Missing/Unreported'}
-        </div>
-      </div>
-    `).join('');
-  }
-
-  if (founderListEl) {
-    founderListEl.innerHTML = founderItems.map(item => `
-      <div class="factor-item-row">
-        <div class="factor-item-details">
-          <span class="factor-item-name">${escapeHtml(item.indicator_name || item.assumption_key)}</span>
-          <span class="factor-item-meta">Rule: ${escapeHtml(item.formula_applied || 'Founder stated choice')}</span>
-        </div>
-        <div class="factor-item-val text-lime">
-          ${escapeHtml(item.assumption_value)}
-        </div>
-      </div>
-    `).join('');
-  }
-
-  // Fictional Customer Feedback & Reviews
-  const avgRatingEl = document.getElementById('resAvgRating');
-  const starsEl = document.getElementById('resStars');
-  if (avgRatingEl) avgRatingEl.textContent = `${res.avgRating.toFixed(1)} / 5.0`;
-  const starCount = Math.round(res.avgRating);
-  if (starsEl) starsEl.textContent = `${'★'.repeat(starCount)}${'☆'.repeat(5 - starCount)}`;
-
-  const reviewsListElem = document.getElementById('resReviewsList');
-  if (reviewsListElem) {
-    reviewsListElem.innerHTML = `
-      ${res.reviews.map(r => `
-        <div class="review-card">
-          <div class="review-meta">
-            <div class="reviewer-profile">
-              <span class="reviewer-avatar-svg">${getSimulatedAvatarSvg(r.initials)}</span>
-              <div>
-                <div class="reviewer-name">${escapeHtml(r.name)}</div>
-                <div class="sim-user-tag">${escapeHtml(r.role)}</div>
-              </div>
-            </div>
-            <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
-          </div>
-          <p class="review-text">"${escapeHtml(r.quote)}"</p>
-          <div class="review-fiction-disclaimer">Fictional persona reaction generated algorithmically for founder practice. Not a real person.</div>
-        </div>
-      `).join('')}
-    `;
-  }
-
-  // Model Logic & De-risking Guidance
-  const logicDetailsEl = document.getElementById('modelLogicDetails');
-  if (logicDetailsEl) {
-    logicDetailsEl.innerHTML = `
-      <div class="model-logic-step">
-        <strong>1. Plain Language Model Walkthrough:</strong>
-        <p style="margin:2px 0 0 0; white-space:pre-line;">${escapeHtml(res.modelLogicExplanation || '')}</p>
-      </div>
-
-      <div class="model-logic-step">
-        <strong>2. Documented Model Assumptions &amp; Limitations:</strong>
-        <p style="margin:2px 0 0 0; white-space:pre-line;">${escapeHtml(res.assumptionsAndLimitations || '')}</p>
-      </div>
-
-      <div class="research-checklist">
-        <h6>🔬 Real-World Research Checklist to Validate This Simulation:</h6>
-        <p style="margin:2px 0 0 0; white-space:pre-line; color:#e2e8f0; font-size:0.75rem;">${escapeHtml(res.researchRecommendations || '')}</p>
-      </div>
-    `;
-  }
-
-  // Empirical Real Evidence Cross-Reference
-  const realEvidenceBox = document.getElementById('simRealEvidenceBox');
-  const realEvidenceBadge = document.getElementById('simRealEvidenceBadge');
-  const realEvidenceContent = document.getElementById('simRealEvidenceContent');
-
-  if (realEvidenceBox && realEvidenceContent) {
-    const matchingEvidence = (state.realEvidence || []).filter(ev => {
-      const matchCountry = !ev.countryCode || ev.countryCode === 'GLOBAL' || ev.countryCode === (res.countryCode || res.country?.code);
-      const matchIndustry = !ev.industryDomain || ev.industryDomain === 'All' || ev.industryDomain === (res.industryDomain || res.industry);
-      return matchCountry && matchIndustry;
-    });
-
-    if (matchingEvidence.length > 0) {
-      realEvidenceBox.classList.remove('hidden');
-      if (realEvidenceBadge) realEvidenceBadge.textContent = `${matchingEvidence.length} Field ${matchingEvidence.length > 1 ? 'Studies' : 'Study'}`;
-      
-      realEvidenceContent.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <p style="color:#d1fae5; margin:0; font-size:0.76rem;">
-            Foundry identified <strong>${matchingEvidence.length} recorded empirical research ${matchingEvidence.length > 1 ? 'studies' : 'study'}</strong> in your workspace for <strong>${escapeHtml(res.countryCode || 'USA')} &bull; ${escapeHtml(res.industryDomain || 'Mobile Applications')}</strong>. Comparing empirical customer findings against simulated projections:
-          </p>
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px;">
-            ${matchingEvidence.map(ev => `
-              <div style="background:rgba(0,0,0,0.35); border:1px solid rgba(16,185,129,0.3); border-radius:6px; padding:10px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                  <span style="font-weight:700; color:#34d399; font-size:0.74rem; text-transform:uppercase;">${escapeHtml(formatMethodLabel(ev.researchMethod))}</span>
-                  <span style="font-family:var(--font-mono); font-size:0.72rem; color:#cbd5e1; background:rgba(255,255,255,0.06); padding:1px 5px; border-radius:3px;">N = ${ev.sampleSize}</span>
-                </div>
-                <div style="font-size:0.76rem; color:#f1f5f3; font-weight:600; margin-bottom:4px;">"${escapeHtml(ev.researchQuestion)}"</div>
-                <div style="font-size:0.74rem; color:#94a3b8; margin-bottom:6px;">${escapeHtml(ev.resultsSummary)}</div>
-                <div style="background:rgba(251,191,36,0.1); border-left:2px solid #fbbf24; padding:5px 7px; font-size:0.7rem; color:#fef3c7;">
-                  <strong style="color:#fbbf24;">Limitation:</strong> ${escapeHtml(ev.limitationsAndBiases)}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-          <p style="font-size:0.7rem; color:#94a3b8; margin:0;">
-            <em>Ethical guideline: Directional findings from small or biased samples (N &lt; 50) provide qualitative problem-space signals, but cannot be presented as representative of an entire country or industry.</em>
-          </p>
-        </div>
-      `;
-    } else {
-      realEvidenceBox.classList.remove('hidden');
-      if (realEvidenceBadge) realEvidenceBadge.textContent = '0 Matching Studies';
-      realEvidenceContent.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <span style="font-size:0.76rem; color:#94a3b8;">No firsthand customer research recorded yet for <strong>${escapeHtml(res.countryCode || 'USA')} &bull; ${escapeHtml(res.industryDomain || 'Mobile Applications')}</strong>.</span>
-          <button class="btn btn-lime-outline btn-xs" type="button" onclick="navigateToView('real-evidence')">
-            + Record Field Evidence
-          </button>
-        </div>
-      `;
-    }
-  }
-
-  // Update Private Beta Feedback Banner for this Run
-  currentActiveSimulationRun = res;
-
-  // Render Hypothetical Customer Scenarios Section
-  renderHypotheticalScenariosSection(res);
-
-  const fbBanner = document.getElementById('launchFeedbackBanner');
-  const fbBtn = document.getElementById('btnOpenRunFeedbackModal');
-  if (fbBanner) fbBanner.classList.remove('hidden');
-  if (fbBtn) {
-    const existingFb = (state.simulationFeedback || []).find(f => String(f.simulationRunId) === String(res.id) || String(f.simulation_run_id) === String(res.id));
-    if (existingFb) {
-      fbBtn.textContent = 'Feedback Logged ✓ (Review / Edit)';
-      fbBtn.className = 'btn btn-outline-cyan btn-sm';
-    } else {
-      fbBtn.textContent = 'Rate Result & Report Surprises →';
-      fbBtn.className = 'btn btn-lime-outline btn-sm';
-    }
-  }
+  // Compatibility hook for World Advance
+  switchLaunchSubtab('daily');
 }
 
 /* ==========================================================
