@@ -980,6 +980,103 @@
     }
 
     /* -------------------------------------------------------------
+       SIMULATION-SPECIFIC BETA FEEDBACK (LINKED TO RUN & MACRO DATA)
+       ------------------------------------------------------------- */
+    async saveSimulationFeedback(fb) {
+      if (!this.isAuthenticated()) {
+        const localList = JSON.parse(localStorage.getItem('vsw_sim_feedback_v2') || '[]');
+        const localRecord = {
+          id: 'sfb_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+          ...fb,
+          created_at: new Date().toISOString(),
+          status: 'stored_locally'
+        };
+        localList.unshift(localRecord);
+        localStorage.setItem('vsw_sim_feedback_v2', JSON.stringify(localList));
+        return { data: localRecord, localOnly: true };
+      }
+
+      try {
+        const ws = await this.ensureWorkspace();
+        const payload = {
+          user_id: this.currentUser ? this.currentUser.id : null,
+          workspace_id: ws ? ws.id : null,
+          simulation_run_id: fb.simulationRunId,
+          country_code: fb.countryCode || 'USA',
+          country_name: fb.countryName || 'United States',
+          industry_domain: fb.industryDomain || 'General',
+          is_useful: fb.isUseful,
+          surprising_or_wrong_factors: fb.surprisingOrWrongFactors,
+          surprising_factor_category: fb.surprisingFactorCategory || 'other',
+          has_real_evidence_comparison: fb.hasRealEvidenceComparison,
+          planned_changes_next_run: fb.plannedChangesNextRun || '',
+          linked_simulation_snapshot: fb.linkedSimulationSnapshot || {},
+          linked_market_sources: fb.linkedMarketSources || [],
+          share_with_foundry_team: Boolean(fb.shareWithFoundryTeam),
+          admin_review_status: 'pending_review'
+        };
+
+        const { data, error } = await this.client
+          .from('simulation_run_feedback')
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return { data, error: null };
+      } catch (err) {
+        console.error('[FoundrySupabase] saveSimulationFeedback error:', err);
+        return { data: null, error: err };
+      }
+    }
+
+    async loadUserSimulationFeedback() {
+      if (!this.isAuthenticated()) {
+        return JSON.parse(localStorage.getItem('vsw_sim_feedback_v2') || '[]');
+      }
+      try {
+        const { data, error } = await this.client
+          .from('simulation_run_feedback')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.warn('[FoundrySupabase] loadUserSimulationFeedback error:', error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('[FoundrySupabase] loadUserSimulationFeedback exception:', err);
+        return [];
+      }
+    }
+
+    async loadSharedSimulationFeedbackAdmin() {
+      if (!this.client) {
+        const local = JSON.parse(localStorage.getItem('vsw_sim_feedback_v2') || '[]');
+        return local.filter(f => f.shareWithFoundryTeam);
+      }
+      try {
+        const { data, error } = await this.client
+          .from('shared_beta_feedback_admin')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.warn('[FoundrySupabase] loadSharedSimulationFeedbackAdmin view error:', error.message);
+          const fallback = await this.client
+            .from('simulation_run_feedback')
+            .select('*')
+            .eq('share_with_foundry_team', true)
+            .order('created_at', { ascending: false });
+          return fallback.data || [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('[FoundrySupabase] loadSharedSimulationFeedbackAdmin exception:', err);
+        return [];
+      }
+    }
+
+    /* -------------------------------------------------------------
        MARKET DATA LIBRARY (PUBLIC READ VIA RLS)
        ------------------------------------------------------------- */
     async getMarketSources() {

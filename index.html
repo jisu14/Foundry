@@ -1045,6 +1045,24 @@
                 </div>
               </div>
 
+              <!-- Private Beta Feedback Callout on Simulation Result -->
+              <div class="panel-section launch-feedback-banner" id="launchFeedbackBanner" style="margin-top: 16px;">
+                <div class="feedback-banner-card">
+                  <div class="feedback-banner-header">
+                    <div class="feedback-banner-title">
+                      <span class="feedback-banner-icon">💬</span>
+                      <div>
+                        <h5 style="margin: 0; color: #f8fafc; font-size: 0.95rem;">Review Simulation Accuracy (Private Beta)</h5>
+                        <p class="text-dim" style="font-size: 0.78rem; margin: 2px 0 0 0;">Did this simulation feel realistic? Report what was surprising and compare it with real customer evidence.</p>
+                      </div>
+                    </div>
+                    <button class="btn btn-lime-outline btn-sm" id="btnOpenRunFeedbackModal" type="button">
+                      Rate Result &amp; Report Surprises →
+                    </button>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
           </div>
@@ -2049,6 +2067,85 @@
           </div>
         </div>
 
+        <!-- 6. Private Beta Simulation Feedback Matrix (Admin Review) -->
+        <div class="city-panel" id="evalBetaFeedbackPanel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="panel-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </span>
+                Private Beta Simulation Feedback Matrix (Admin Review)
+              </h3>
+              <p class="coverage-section-desc">
+                Review qualitative founder diagnostics, recurring surprises, and correlations with real customer evidence. <strong>Anti-Drift Rule:</strong> Feedback is for human researcher review only; zero automated formula shifts on single reports.
+              </p>
+            </div>
+            <div class="flex-align-center gap-2">
+              <span class="badge-status-neutral" id="evalFeedbackCountBadge">0 Reports Logged</span>
+            </div>
+          </div>
+
+          <!-- Feedback Filter & Grouping Toolbar -->
+          <div class="evidence-filter-bar mb-3">
+            <div class="flex-align-center gap-2">
+              <label for="evalFeedbackGroupBy" class="text-xs text-muted">Group By:</label>
+              <select id="evalFeedbackGroupBy" class="form-select form-select-xs" style="width: auto;">
+                <option value="category">Surprising Factor Category</option>
+                <option value="country">Market (Country)</option>
+                <option value="industry">Industry Domain</option>
+                <option value="useful">Usefulness Rating</option>
+              </select>
+            </div>
+
+            <div class="flex-align-center gap-2">
+              <label for="evalFeedbackFilterUseful" class="text-xs text-muted">Usefulness:</label>
+              <select id="evalFeedbackFilterUseful" class="form-select form-select-xs" style="width: auto;">
+                <option value="ALL">All Ratings</option>
+                <option value="very_useful">Very Useful</option>
+                <option value="directionally_useful">Directionally Useful</option>
+                <option value="neutral_unsure">Neutral / Unsure</option>
+                <option value="not_useful">Not Useful</option>
+                <option value="misleading">Misleading</option>
+              </select>
+            </div>
+
+            <div class="flex-align-center gap-2">
+              <label for="evalFeedbackFilterShared" class="text-xs text-muted">Sharing State:</label>
+              <select id="evalFeedbackFilterShared" class="form-select form-select-xs" style="width: auto;">
+                <option value="ALL">All (Shared &amp; Workspace)</option>
+                <option value="shared_only">Shared with Team Only</option>
+                <option value="private_only">Private to Founder Workspace</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Feedback Diagnostic KPI Summary -->
+          <div class="consent-audit-grid mb-3">
+            <div class="consent-stat-box">
+              <span class="consent-stat-label">Total Feedback Reports</span>
+              <span class="consent-stat-val text-lime" id="fbStatTotal">0</span>
+            </div>
+            <div class="consent-stat-box">
+              <span class="consent-stat-label">Shared with Team</span>
+              <span class="consent-stat-val text-cyan" id="fbStatShared">0%</span>
+            </div>
+            <div class="consent-stat-box">
+              <span class="consent-stat-label">Has Real Evidence</span>
+              <span class="consent-stat-val text-lime" id="fbStatRealEvidence">0%</span>
+            </div>
+            <div class="consent-stat-box">
+              <span class="consent-stat-label">Top Recurring Surprise</span>
+              <span class="consent-stat-val text-warning" id="fbStatTopFactor" style="font-size: 0.95rem;">None</span>
+            </div>
+          </div>
+
+          <!-- Grouped Feedback Cards Container -->
+          <div class="cohort-eval-grid" id="evalFeedbackListContainer">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
       </section>
 
     </main>
@@ -2504,6 +2601,148 @@
             Submit Feedback Report
           </button>
           <button type="button" id="btnCancelFeedback" class="btn btn-outline-cyan">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: PRIVATE BETA SIMULATION RUN CALIBRATION FEEDBACK     -->
+  <!-- ========================================================== -->
+  <div id="simulationFeedbackModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <div class="brand-icon-lime">💬</div>
+          <div>
+            <h3 style="margin: 0;">Simulation Experience &amp; Calibration Feedback</h3>
+            <span style="font-size: 0.75rem; color: #94a3b8;">Help calibrate Foundry's simulation model for your industry and target market. Private by default.</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btnCloseSimFeedbackModal" type="button">✕</button>
+      </div>
+
+      <div id="simFeedbackNotice" class="auth-notice hidden"></div>
+
+      <!-- Linked Simulation Run Context Summary -->
+      <div class="sim-feedback-context-card" style="margin-top: 10px; margin-bottom: 14px;">
+        <div class="sim-feedback-context-header">
+          <span class="evidence-badge-lime" id="sfbRunIdBadge">RUN #--</span>
+          <span class="sim-tag-fictional" id="sfbModelVersionBadge">Model v2.0-grounded</span>
+          <span class="text-xs text-muted" id="sfbTimestamp">Timestamp</span>
+        </div>
+        <div class="sim-feedback-context-grid">
+          <div>
+            <span class="text-xs text-muted">Market &amp; Industry:</span>
+            <strong id="sfbMarketDomain" class="text-white block text-sm">--</strong>
+          </div>
+          <div>
+            <span class="text-xs text-muted">Economics:</span>
+            <strong id="sfbEconomics" class="text-white block text-sm">--</strong>
+          </div>
+          <div>
+            <span class="text-xs text-muted">Simulated Outcome:</span>
+            <strong id="sfbSimOutcome" class="text-lime block text-sm">--</strong>
+          </div>
+        </div>
+        <div class="sim-feedback-sources-row">
+          <span class="text-xs text-muted">Linked Market Baseline Sources:</span>
+          <div id="sfbSourcesList" class="flex-wrap gap-1 mt-1">
+            <!-- Dynamically populated tags -->
+          </div>
+        </div>
+      </div>
+
+      <form id="simulationFeedbackForm" class="auth-form">
+        <!-- 1. Usefulness -->
+        <div class="form-group">
+          <label for="simFeedbackUsefulness">1. Was this simulation result useful to your decision making? *</label>
+          <select id="simFeedbackUsefulness" class="form-select" required>
+            <option value="very_useful">Very Useful — Surfaced actionable strategic insights &amp; risks</option>
+            <option value="directionally_useful" selected>Directionally Useful — Broad trends aligned, but needs specific market nuance</option>
+            <option value="neutral_unsure">Neutral / Unsure — Neither validated nor challenged our assumptions</option>
+            <option value="not_useful">Not Useful — Did not reflect realistic startup or customer dynamics</option>
+            <option value="misleading">Misleading — Simulated outcomes diverged strongly from reality</option>
+          </select>
+          <span class="field-hint">Rate how effectively the simulated funnel challenged or refined your market assumptions.</span>
+        </div>
+
+        <!-- 2. Surprising or Wrong Factor Category & Explanation -->
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label for="simFeedbackSurprisingCategory">2a. Which assumption or result seemed wrong or surprising? *</label>
+            <select id="simFeedbackSurprisingCategory" class="form-select" required>
+              <option value="conversion_rate">Conversion Rate &amp; Funnel Drop-off (Clicks to Installs / Signups)</option>
+              <option value="pricing_tolerance">Pricing Tolerance &amp; Elasticity (Willingness to Pay)</option>
+              <option value="channel_cpm_ctr">Channel Reach &amp; Acquisition Volume (CPM / CPC / CTR)</option>
+              <option value="signup_trial_rate">Free-to-Paid / Trial Activation Conversion</option>
+              <option value="macro_indicator_discrepancy">Sourced Macroeconomic Indicator Discrepancy (World Bank / ITU)</option>
+              <option value="persona_comments">Fictional Customer Persona Reactions / Sentiments</option>
+              <option value="other">Other Market or Competitive Dynamics</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="simFeedbackCustomerEvidence">3. Can you compare it with real customer evidence? *</label>
+            <select id="simFeedbackCustomerEvidence" class="form-select" required>
+              <option value="yes_direct_data">Yes — I have direct quantitative sales / customer data</option>
+              <option value="partially_early_interviews">Partially — Based on qualitative discovery interviews</option>
+              <option value="planning_tests">Planning Tests — Currently launching landing page or live test</option>
+              <option value="no_not_yet">No — Unvalidated concept / theoretical hypothesis</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="simFeedbackSurprisingDetails">2b. Explain what seemed wrong, unexpected, or counter-intuitive *</label>
+          <textarea id="simFeedbackSurprisingDetails" class="form-textarea" rows="3" placeholder="e.g. In Germany, our real B2B pilots show customer acquisition cost via LinkedIn is closer to €45, but the simulation estimated lower CAC. The conversion drop-off at the €99 price point felt overly harsh compared to our discovery calls." required></textarea>
+          <span class="field-hint">Detail specific numbers or behaviors where the simulation diverged from your expectations or real experience.</span>
+        </div>
+
+        <!-- 4. Planned Changes -->
+        <div class="form-group">
+          <label for="simFeedbackPlannedChanges">4. What would you change before running the simulation again?</label>
+          <textarea id="simFeedbackPlannedChanges" class="form-textarea" rows="2" placeholder="e.g. Test an annual prepay discount of €79/mo; switch channel allocation 70% to Content/SEO; adjust target ICP to enterprise buyers."></textarea>
+          <span class="field-hint">Optional: Describe pricing, channel, or positioning tweaks you plan to test in your next iteration.</span>
+        </div>
+
+        <!-- Privacy & Anti-Drift Safe Notice -->
+        <div class="privacy-pledge-banner" style="margin: 10px 0; padding: 10px 14px; background: rgba(6, 17, 10, 0.7); border: 1px solid rgba(45, 212, 191, 0.25); border-radius: 6px;">
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <span style="font-size: 1.1rem; line-height: 1;">🛡️</span>
+            <div>
+              <strong style="color: #6ee7b7; font-size: 0.8rem; display: block; margin-bottom: 2px;">Privacy Guardrail &amp; Scientific Anti-Drift Rule:</strong>
+              <p style="color: #cbd5e1; font-size: 0.74rem; line-height: 1.45; margin: 0;">
+                • <strong>Strict Privacy:</strong> Never submit customer names, email addresses, phone numbers, or confidential proprietary IP.<br>
+                • <strong>Isolated Storage:</strong> Feedback stays in your private founder workspace unless you explicitly opt in below.<br>
+                • <strong>Zero Automated Formula Shift:</strong> Foundry will <em>never</em> automatically alter simulation formulas from an isolated report; updates require verified multi-source statistical review.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Explicit Opt-In for Sharing with Foundry Team -->
+        <div class="form-group" style="margin-top: 6px; margin-bottom: 12px;">
+          <label class="checkbox-label" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="simFeedbackShareConsent" style="margin-top: 3px;">
+            <span style="font-size: 0.78rem; color: #f1f5f3; line-height: 1.4;">
+              <strong>Share this report with the Foundry research team</strong> to help calibrate simulation realism for our industry vertical and market. (De-identified; raw startup personal data is never published).
+            </span>
+          </label>
+        </div>
+
+        <input type="hidden" id="sfbRunIdHidden" value="">
+        <input type="hidden" id="sfbCountryCodeHidden" value="">
+        <input type="hidden" id="sfbCountryNameHidden" value="">
+        <input type="hidden" id="sfbIndustryDomainHidden" value="">
+        <input type="hidden" id="sfbModelVersionHidden" value="">
+
+        <div class="modal-actions-row">
+          <button type="submit" id="btnSubmitSimFeedback" class="btn btn-lime">
+            Submit Feedback Report
+          </button>
+          <button type="button" id="btnCancelSimFeedback" class="btn btn-outline-cyan">
             Cancel
           </button>
         </div>

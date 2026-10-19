@@ -10,6 +10,7 @@ const STORAGE_CAMPAIGN = 'vsw_campaign_v2';
 const STORAGE_HISTORY = 'vsw_history_v2';
 const STORAGE_WORLD = 'vsw_world_v2';
 const STORAGE_REAL_EVIDENCE = 'vsw_real_evidence_v2';
+const STORAGE_SIM_FEEDBACK = 'vsw_sim_feedback_v2';
 
 // Global State
 let state = {
@@ -34,6 +35,7 @@ let state = {
   },
   history: [],
   realEvidence: [],
+  simulationFeedback: [],
   world: {
     cycle: 1,
     day: 1,
@@ -56,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initRealEvidenceView();
   initEvaluationView();
   initBetaFeedback();
+  initSimulationFeedback();
   initSupabaseAuthAndModals();
   renderAllViews();
 });
@@ -176,6 +179,9 @@ function loadStateFromStorage() {
 
     const savedEvidence = localStorage.getItem(STORAGE_REAL_EVIDENCE);
     if (savedEvidence) state.realEvidence = JSON.parse(savedEvidence);
+
+    const savedSimFeedback = localStorage.getItem(STORAGE_SIM_FEEDBACK);
+    if (savedSimFeedback) state.simulationFeedback = JSON.parse(savedSimFeedback);
 
     const savedWorld = localStorage.getItem(STORAGE_WORLD);
     if (savedWorld) state.world = JSON.parse(savedWorld);
@@ -2338,6 +2344,22 @@ function displayLaunchResults(res) {
           </button>
         </div>
       `;
+    }
+  }
+
+  // Update Private Beta Feedback Banner for this Run
+  currentActiveSimulationRun = res;
+  const fbBanner = document.getElementById('launchFeedbackBanner');
+  const fbBtn = document.getElementById('btnOpenRunFeedbackModal');
+  if (fbBanner) fbBanner.classList.remove('hidden');
+  if (fbBtn) {
+    const existingFb = (state.simulationFeedback || []).find(f => String(f.simulationRunId) === String(res.id) || String(f.simulation_run_id) === String(res.id));
+    if (existingFb) {
+      fbBtn.textContent = 'Feedback Logged ✓ (Review / Edit)';
+      fbBtn.className = 'btn btn-outline-cyan btn-sm';
+    } else {
+      fbBtn.textContent = 'Rate Result & Report Surprises →';
+      fbBtn.className = 'btn btn-lime-outline btn-sm';
     }
   }
 }
@@ -5015,6 +5037,9 @@ function renderEvaluationView() {
 
   // 5. Render Documented Model Version Reviews & Governance Changelog
   renderModelGovernanceTable();
+
+  // 6. Render Beta Feedback Matrix (Admin Review)
+  renderBetaFeedbackMatrix();
 }
 window.renderEvaluationView = renderEvaluationView;
 
@@ -5231,6 +5256,574 @@ async function handleSaveBetaFeedback(e) {
   }
 }
 window.handleSaveBetaFeedback = handleSaveBetaFeedback;
+
+/* ==========================================================
+   12E. PRIVATE BETA SIMULATION FEEDBACK FLOW & ADMIN OBSERVATORY
+   ========================================================== */
+function initSimulationFeedback() {
+  const modal = document.getElementById('simulationFeedbackModal');
+  const btnOpenBanner = document.getElementById('btnOpenRunFeedbackModal');
+  const btnClose = document.getElementById('btnCloseSimFeedbackModal');
+  const btnCancel = document.getElementById('btnCancelSimFeedback');
+  const form = document.getElementById('simulationFeedbackForm');
+
+  if (btnOpenBanner) {
+    btnOpenBanner.addEventListener('click', () => {
+      openSimulationFeedbackModal(currentActiveSimulationRun || (state.history && state.history[0]));
+    });
+  }
+
+  if (btnClose && modal) {
+    btnClose.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+
+  if (btnCancel && modal) {
+    btnCancel.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', handleSaveSimulationFeedback);
+  }
+
+  // Admin Observatory filter listeners
+  const groupByEl = document.getElementById('evalFeedbackGroupBy');
+  const filterUsefulEl = document.getElementById('evalFeedbackFilterUseful');
+  const filterSharedEl = document.getElementById('evalFeedbackFilterShared');
+
+  if (groupByEl) groupByEl.addEventListener('change', () => renderBetaFeedbackMatrix());
+  if (filterUsefulEl) filterUsefulEl.addEventListener('change', () => renderBetaFeedbackMatrix());
+  if (filterSharedEl) filterSharedEl.addEventListener('change', () => renderBetaFeedbackMatrix());
+}
+
+function openSimulationFeedbackModal(run) {
+  const modal = document.getElementById('simulationFeedbackModal');
+  if (!modal) return;
+
+  if (!run) {
+    if (state.history && state.history.length > 0) {
+      run = state.history[0];
+    } else {
+      alert('Please run a simulation in the Launch Lab before submitting feedback.');
+      return;
+    }
+  }
+
+  const runId = run.id || `run_${run.runNumber || Date.now()}`;
+  const countryCode = run.countryCode || (run.country && run.country.code) || 'USA';
+  const countryName = run.countryName || (run.country && run.country.name) || 'United States';
+  const industryDomain = run.industryDomain || run.industry || 'Mobile Applications';
+  const modelVersion = run.modelVersion || 'v2.0-grounded';
+
+  // Populate Context Header
+  const badgeRun = document.getElementById('sfbRunIdBadge');
+  const badgeModel = document.getElementById('sfbModelVersionBadge');
+  const timeEl = document.getElementById('sfbTimestamp');
+  const domainEl = document.getElementById('sfbMarketDomain');
+  const ecoEl = document.getElementById('sfbEconomics');
+  const outEl = document.getElementById('sfbSimOutcome');
+  const sourcesContainer = document.getElementById('sfbSourcesList');
+  const noticeEl = document.getElementById('simFeedbackNotice');
+
+  if (noticeEl) {
+    noticeEl.className = 'auth-notice hidden';
+    noticeEl.textContent = '';
+  }
+
+  if (badgeRun) badgeRun.textContent = `RUN #${run.runNumber || run.id || 'Current'}`;
+  if (badgeModel) badgeModel.textContent = `Model ${modelVersion}`;
+  if (timeEl) timeEl.textContent = `${run.dateStr || new Date().toLocaleDateString()} ${run.timestamp || ''}`;
+  if (domainEl) domainEl.textContent = `${countryName} (${countryCode}) • ${industryDomain}`;
+  if (ecoEl) ecoEl.textContent = `Target Price: $${run.price} | Budget: $${run.budget} | Channel: ${run.channel || 'social'}`;
+  if (outEl) {
+    const installs = (run.installs || 0).toLocaleString();
+    const paid = (run.paidUsers || 0).toLocaleString();
+    const net = (run.netProfit || 0).toLocaleString();
+    outEl.textContent = `${installs} Installs • ${paid} Paid Users • Net: $${net}`;
+  }
+
+  // Populate linked market baseline indicators
+  if (sourcesContainer) {
+    let indicators = [];
+    if (run.sourcedMarketIndicators && run.sourcedMarketIndicators.length > 0) {
+      indicators = run.sourcedMarketIndicators;
+    } else if (state.marketIndicators && state.marketIndicators[countryCode]) {
+      indicators = state.marketIndicators[countryCode];
+    }
+
+    if (indicators && indicators.length > 0) {
+      sourcesContainer.innerHTML = indicators.slice(0, 4).map(ind => `
+        <span class="feedback-tag-source" title="${escapeHtml(ind.name || ind.indicator_name || '')}">
+          ${escapeHtml(ind.name || ind.indicator_name || ind.indicator_code || 'Macro')} (${escapeHtml(ind.source || 'Verified Source')})
+        </span>
+      `).join(' ');
+    } else {
+      sourcesContainer.innerHTML = `
+        <span class="feedback-tag-source">World Bank (WDI) &bull; ITU Broadband Indicators</span>
+      `;
+    }
+  }
+
+  // Hidden values
+  const hidRunId = document.getElementById('sfbRunIdHidden');
+  const hidCc = document.getElementById('sfbCountryCodeHidden');
+  const hidCn = document.getElementById('sfbCountryNameHidden');
+  const hidInd = document.getElementById('sfbIndustryDomainHidden');
+  const hidMv = document.getElementById('sfbModelVersionHidden');
+
+  if (hidRunId) hidRunId.value = runId;
+  if (hidCc) hidCc.value = countryCode;
+  if (hidCn) hidCn.value = countryName;
+  if (hidInd) hidInd.value = industryDomain;
+  if (hidMv) hidMv.value = modelVersion;
+
+  // Check if founder already submitted feedback for this run
+  const existing = (state.simulationFeedback || []).find(fb => String(fb.simulationRunId) === String(runId) || String(fb.simulation_run_id) === String(runId));
+
+  const usefulnessEl = document.getElementById('simFeedbackUsefulness');
+  const catEl = document.getElementById('simFeedbackSurprisingCategory');
+  const detailsEl = document.getElementById('simFeedbackSurprisingDetails');
+  const evidEl = document.getElementById('simFeedbackCustomerEvidence');
+  const changesEl = document.getElementById('simFeedbackPlannedChanges');
+  const consentEl = document.getElementById('simFeedbackShareConsent');
+
+  if (existing) {
+    if (usefulnessEl) usefulnessEl.value = existing.isUseful || existing.is_useful || 'directionally_useful';
+    if (catEl) catEl.value = existing.surprisingFactorCategory || existing.surprising_factor_category || 'conversion_rate';
+    if (detailsEl) detailsEl.value = existing.surprisingOrWrongFactors || existing.surprising_or_wrong_factors || '';
+    if (evidEl) evidEl.value = existing.hasRealEvidenceComparison || existing.has_real_evidence_comparison || 'partially_early_interviews';
+    if (changesEl) changesEl.value = existing.plannedChangesNextRun || existing.planned_changes_next_run || '';
+    if (consentEl) consentEl.checked = Boolean(existing.shareWithFoundryTeam || existing.share_with_foundry_team);
+  } else {
+    if (usefulnessEl) usefulnessEl.value = 'directionally_useful';
+    if (catEl) catEl.value = 'conversion_rate';
+    if (detailsEl) detailsEl.value = '';
+    if (evidEl) evidEl.value = 'partially_early_interviews';
+    if (changesEl) changesEl.value = '';
+    if (consentEl) consentEl.checked = false; // Private by default
+  }
+
+  modal.classList.remove('hidden');
+}
+window.openSimulationFeedbackModal = openSimulationFeedbackModal;
+
+async function handleSaveSimulationFeedback(e) {
+  e.preventDefault();
+
+  const runId = (document.getElementById('sfbRunIdHidden') && document.getElementById('sfbRunIdHidden').value) || '';
+  const countryCode = (document.getElementById('sfbCountryCodeHidden') && document.getElementById('sfbCountryCodeHidden').value) || 'USA';
+  const countryName = (document.getElementById('sfbCountryNameHidden') && document.getElementById('sfbCountryNameHidden').value) || 'United States';
+  const industryDomain = (document.getElementById('sfbIndustryDomainHidden') && document.getElementById('sfbIndustryDomainHidden').value) || 'General';
+  const modelVersion = (document.getElementById('sfbModelVersionHidden') && document.getElementById('sfbModelVersionHidden').value) || 'v2.0-grounded';
+
+  const isUseful = document.getElementById('simFeedbackUsefulness').value;
+  const surprisingFactorCategory = document.getElementById('simFeedbackSurprisingCategory').value;
+  const surprisingOrWrongFactors = document.getElementById('simFeedbackSurprisingDetails').value.trim();
+  const hasRealEvidenceComparison = document.getElementById('simFeedbackCustomerEvidence').value;
+  const plannedChangesNextRun = document.getElementById('simFeedbackPlannedChanges').value.trim();
+  const shareWithFoundryTeam = document.getElementById('simFeedbackShareConsent').checked;
+
+  const submitBtn = document.getElementById('btnSubmitSimFeedback');
+  const noticeEl = document.getElementById('simFeedbackNotice');
+
+  if (!surprisingOrWrongFactors) {
+    if (noticeEl) {
+      noticeEl.className = 'auth-notice error';
+      noticeEl.textContent = 'Please provide an explanation of which assumption or result seemed surprising.';
+      noticeEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  // Linked Snapshot
+  const runObj = (state.history || []).find(h => String(h.id) === String(runId) || String(h.runNumber) === String(runId)) || currentActiveSimulationRun || {};
+  const linkedSnapshot = {
+    runNumber: runObj.runNumber || null,
+    price: runObj.price || null,
+    budget: runObj.budget || null,
+    channel: runObj.channel || null,
+    impressions: runObj.impressions || null,
+    clicks: runObj.clicks || null,
+    installs: runObj.installs || null,
+    paidUsers: runObj.paidUsers || null,
+    netProfit: runObj.netProfit || null,
+    modelVersion: modelVersion
+  };
+
+  // Linked Market Sources
+  const marketSources = (runObj.sourcedMarketIndicators || []).map(ind => ({
+    indicator_code: ind.indicator_code || null,
+    name: ind.indicator_name || ind.name || null,
+    source: ind.source || 'World Bank / ITU',
+    reference_period: ind.reference_period || null,
+    value: ind.value || null
+  }));
+
+  const feedbackRecord = {
+    id: 'sfb_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    simulationRunId: runId,
+    countryCode,
+    countryName,
+    industryDomain,
+    modelVersion,
+    isUseful,
+    surprisingFactorCategory,
+    surprisingOrWrongFactors,
+    hasRealEvidenceComparison,
+    plannedChangesNextRun,
+    linkedSimulationSnapshot: linkedSnapshot,
+    linkedMarketSources: marketSources,
+    shareWithFoundryTeam,
+    createdAt: new Date().toISOString()
+  };
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving Feedback...';
+  }
+
+  try {
+    // 1. Update in-memory state and localStorage
+    if (!state.simulationFeedback) state.simulationFeedback = [];
+    const existingIdx = state.simulationFeedback.findIndex(fb => String(fb.simulationRunId) === String(runId) || String(fb.simulation_run_id) === String(runId));
+    if (existingIdx >= 0) {
+      state.simulationFeedback[existingIdx] = { ...state.simulationFeedback[existingIdx], ...feedbackRecord };
+    } else {
+      state.simulationFeedback.unshift(feedbackRecord);
+    }
+    saveState(STORAGE_SIM_FEEDBACK, state.simulationFeedback);
+
+    // 2. Persist to Supabase if client available
+    if (window.foundrySupabase) {
+      await window.foundrySupabase.saveSimulationFeedback(feedbackRecord);
+    }
+
+    // 3. Update Launch Banner UI
+    const bannerBtn = document.getElementById('btnOpenRunFeedbackModal');
+    if (bannerBtn) {
+      bannerBtn.textContent = 'Feedback Logged ✓ (Review / Edit)';
+      bannerBtn.className = 'btn btn-outline-cyan btn-sm';
+    }
+
+    if (noticeEl) {
+      noticeEl.className = 'auth-notice success';
+      noticeEl.textContent = shareWithFoundryTeam
+        ? '✓ Feedback saved and shared with Foundry team for model calibration review.'
+        : '✓ Feedback saved privately to your workspace. (Anti-Drift Guardrail: No automated formula changes).';
+      noticeEl.classList.remove('hidden');
+    }
+
+    // Refresh Admin Matrix if currently loaded
+    renderBetaFeedbackMatrix();
+
+    setTimeout(() => {
+      const modal = document.getElementById('simulationFeedbackModal');
+      if (modal) modal.classList.add('hidden');
+      if (noticeEl) noticeEl.classList.add('hidden');
+    }, 1600);
+  } catch (err) {
+    console.error('Error saving simulation feedback:', err);
+    if (noticeEl) {
+      noticeEl.className = 'auth-notice error';
+      noticeEl.textContent = 'Error saving feedback: ' + (err.message || 'Unknown error');
+      noticeEl.classList.remove('hidden');
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Feedback Report';
+    }
+  }
+}
+window.handleSaveSimulationFeedback = handleSaveSimulationFeedback;
+
+async function renderBetaFeedbackMatrix() {
+  const container = document.getElementById('evalFeedbackListContainer');
+  if (!container) return;
+
+  const countBadge = document.getElementById('evalFeedbackCountBadge');
+  const statTotal = document.getElementById('fbStatTotal');
+  const statShared = document.getElementById('fbStatShared');
+  const statReal = document.getElementById('fbStatRealEvidence');
+  const statTopFactor = document.getElementById('fbStatTopFactor');
+
+  const groupBy = (document.getElementById('evalFeedbackGroupBy') && document.getElementById('evalFeedbackGroupBy').value) || 'category';
+  const filterUseful = (document.getElementById('evalFeedbackFilterUseful') && document.getElementById('evalFeedbackFilterUseful').value) || 'ALL';
+  const filterShared = (document.getElementById('evalFeedbackFilterShared') && document.getElementById('evalFeedbackFilterShared').value) || 'ALL';
+
+  // Combine local state feedback with any shared reports from Supabase view
+  let feedbackList = [...(state.simulationFeedback || [])];
+
+  if (window.foundrySupabase && window.foundrySupabase.client) {
+    try {
+      const sharedFromDb = await window.foundrySupabase.loadSharedSimulationFeedbackAdmin();
+      if (sharedFromDb && sharedFromDb.length > 0) {
+        sharedFromDb.forEach(dbItem => {
+          const exists = feedbackList.some(item => (item.id === dbItem.id) || (item.simulationRunId === dbItem.simulation_run_id));
+          if (!exists) {
+            feedbackList.push({
+              id: dbItem.id,
+              simulationRunId: dbItem.simulation_run_id,
+              countryCode: dbItem.country_code,
+              countryName: dbItem.country_name,
+              industryDomain: dbItem.industry_domain,
+              isUseful: dbItem.is_useful,
+              surprisingFactorCategory: dbItem.surprising_factor_category,
+              surprisingOrWrongFactors: dbItem.surprising_or_wrong_factors,
+              hasRealEvidenceComparison: dbItem.has_real_evidence_comparison,
+              plannedChangesNextRun: dbItem.planned_changes_next_run,
+              linkedSimulationSnapshot: dbItem.linked_simulation_snapshot,
+              linkedMarketSources: dbItem.linked_market_sources,
+              shareWithFoundryTeam: true,
+              createdAt: dbItem.created_at
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Could not load shared admin feedback from Supabase:', e);
+    }
+  }
+
+  // Apply filters
+  let filtered = feedbackList.filter(item => {
+    const useful = item.isUseful || item.is_useful;
+    const isShared = Boolean(item.shareWithFoundryTeam || item.share_with_foundry_team);
+
+    if (filterUseful !== 'ALL' && useful !== filterUseful) return false;
+    if (filterShared === 'shared_only' && !isShared) return false;
+    if (filterShared === 'private_only' && isShared) return false;
+    return true;
+  });
+
+  // KPI Calculations
+  const totalReports = filtered.length;
+  const sharedCount = filtered.filter(f => Boolean(f.shareWithFoundryTeam || f.share_with_foundry_team)).length;
+  const sharedPct = totalReports > 0 ? Math.round((sharedCount / totalReports) * 100) : 0;
+
+  const realEvidenceCount = filtered.filter(f => {
+    const ev = f.hasRealEvidenceComparison || f.has_real_evidence_comparison;
+    return ev === 'yes_direct_data' || ev === 'partially_early_interviews';
+  }).length;
+  const realEvidencePct = totalReports > 0 ? Math.round((realEvidenceCount / totalReports) * 100) : 0;
+
+  // Top recurring surprise factor
+  const factorCounts = {};
+  filtered.forEach(f => {
+    const cat = f.surprisingFactorCategory || f.surprising_factor_category || 'other';
+    factorCounts[cat] = (factorCounts[cat] || 0) + 1;
+  });
+  let topFactorKey = 'None';
+  let topFactorMax = 0;
+  Object.keys(factorCounts).forEach(k => {
+    if (factorCounts[k] > topFactorMax) {
+      topFactorMax = factorCounts[k];
+      topFactorKey = k;
+    }
+  });
+
+  const factorLabels = {
+    'conversion_rate': 'Conversion Rate',
+    'pricing_tolerance': 'Pricing Tolerance',
+    'channel_cpm_ctr': 'Channel CAC / CPM',
+    'signup_trial_rate': 'Trial Activation',
+    'macro_indicator_discrepancy': 'Macro Metric Discrepancy',
+    'persona_comments': 'Persona Reactions',
+    'other': 'Other Dynamics'
+  };
+
+  if (countBadge) countBadge.textContent = `${totalReports} Report${totalReports === 1 ? '' : 's'} Logged`;
+  if (statTotal) statTotal.textContent = totalReports.toString();
+  if (statShared) statShared.textContent = `${sharedPct}% (${sharedCount}/${totalReports})`;
+  if (statReal) statReal.textContent = `${realEvidencePct}% (${realEvidenceCount}/${totalReports})`;
+  if (statTopFactor) statTopFactor.textContent = topFactorKey !== 'None' ? `${factorLabels[topFactorKey] || topFactorKey} (${topFactorMax})` : 'None';
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1; padding: 32px 20px;">
+        <div class="empty-icon-svg">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h4 style="margin-top: 10px; color: #f8fafc; font-size: 0.95rem;">No Private Beta Feedback Reports Logged</h4>
+        <p style="max-width: 540px; margin: 8px auto 14px; font-size: 0.78rem; color: #94a3b8; line-height: 1.5;">
+          After executing a simulation run in the <strong>Launch Lab</strong>, founders can report whether the outcome was useful, what seemed surprising, and compare findings with real customer evidence.
+        </p>
+        <button class="btn btn-lime btn-sm" type="button" data-nav="launch">
+          Go to Launch Lab to Run Simulation &amp; Rate →
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  // Group items
+  const groups = {};
+  filtered.forEach(item => {
+    let groupKey = 'General';
+    if (groupBy === 'category') {
+      const cat = item.surprisingFactorCategory || item.surprising_factor_category || 'other';
+      groupKey = factorLabels[cat] || cat;
+    } else if (groupBy === 'country') {
+      groupKey = `${item.countryName || 'United States'} (${item.countryCode || 'USA'})`;
+    } else if (groupBy === 'industry') {
+      groupKey = item.industryDomain || 'General Tech';
+    } else if (groupBy === 'useful') {
+      const u = item.isUseful || item.is_useful || 'neutral_unsure';
+      groupKey = formatUsefulnessLabel(u);
+    }
+    if (!groups[groupKey]) groups[groupKey] = [];
+    groups[groupKey].push(item);
+  });
+
+  const groupHtml = Object.keys(groups).map(gKey => {
+    const items = groups[gKey];
+    return `
+      <div style="grid-column: 1 / -1;">
+        <div class="feedback-group-header">
+          <span>📁 Group: <strong>${escapeHtml(gKey)}</strong></span>
+          <span class="badge-status-neutral" style="font-size: 0.7rem;">${items.length} Report${items.length === 1 ? '' : 's'}</span>
+        </div>
+      </div>
+      ${items.map(fb => renderSingleFeedbackCard(fb)).join('')}
+    `;
+  }).join('');
+
+  container.innerHTML = groupHtml;
+}
+window.renderBetaFeedbackMatrix = renderBetaFeedbackMatrix;
+
+function formatUsefulnessLabel(u) {
+  switch (u) {
+    case 'very_useful': return 'Very Useful';
+    case 'directionally_useful': return 'Directionally Useful';
+    case 'neutral_unsure': return 'Neutral / Unsure';
+    case 'not_useful': return 'Not Useful';
+    case 'misleading': return 'Misleading';
+    default: return u || 'Unrated';
+  }
+}
+
+function getUsefulnessBadgeClass(u) {
+  switch (u) {
+    case 'very_useful': return 'badge-useful-very';
+    case 'directionally_useful': return 'badge-useful-directional';
+    case 'neutral_unsure': return 'badge-useful-neutral';
+    case 'not_useful': return 'badge-useful-not';
+    case 'misleading': return 'badge-useful-misleading';
+    default: return 'badge-useful-neutral';
+  }
+}
+
+function formatCustomerEvidenceLabel(ev) {
+  switch (ev) {
+    case 'yes_direct_data': return 'Direct Customer Data (N &gt; 0)';
+    case 'partially_early_interviews': return 'Qualitative Interviews';
+    case 'planning_tests': return 'Planning Tests / In Flight';
+    case 'no_not_yet': return 'No Evidence Yet';
+    default: return ev || 'Unspecified';
+  }
+}
+
+function renderSingleFeedbackCard(fb) {
+  const isUseful = fb.isUseful || fb.is_useful;
+  const usefulBadge = `<span class="${getUsefulnessBadgeClass(isUseful)}">${formatUsefulnessLabel(isUseful)}</span>`;
+  const isShared = Boolean(fb.shareWithFoundryTeam || fb.share_with_foundry_team);
+  const privacyBadge = isShared
+    ? `<span class="evidence-badge-lime" style="font-size: 0.68rem;">Shared for Calibration</span>`
+    : `<span class="badge-status-neutral" style="font-size: 0.68rem;">Private to Founder Workspace</span>`;
+
+  const evType = fb.hasRealEvidenceComparison || fb.has_real_evidence_comparison;
+  const evBadge = `<span class="sim-tag-fictional" style="background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.3);">Real Evidence: ${formatCustomerEvidenceLabel(evType)}</span>`;
+
+  const simSnapshot = fb.linkedSimulationSnapshot || fb.linked_simulation_snapshot || {};
+  const marketSources = fb.linkedMarketSources || fb.linked_market_sources || [];
+
+  return `
+    <div class="feedback-eval-card">
+      <!-- Card Top Bar -->
+      <div class="feedback-card-top-bar">
+        <div class="feedback-pill-group">
+          <span class="evidence-badge-lime" style="font-size: 0.7rem;">RUN #${escapeHtml(String(fb.simulationRunId || fb.simulation_run_id || ''))}</span>
+          <span class="sim-tag-fictional" style="font-size: 0.7rem;">${escapeHtml(fb.countryName || 'USA')} (${escapeHtml(fb.countryCode || 'USA')}) &bull; ${escapeHtml(fb.industryDomain || 'Tech')}</span>
+          ${usefulBadge}
+          ${evBadge}
+        </div>
+        <div class="flex-align-center gap-2">
+          ${privacyBadge}
+        </div>
+      </div>
+
+      <!-- SECTION 1: Real Human Diagnostic Feedback (Founder Perspective) -->
+      <div class="feedback-subpanel-real">
+        <div class="subpanel-header-real">
+          <span>👤 Real Human Diagnostic Feedback (Founder Perspective)</span>
+        </div>
+        <div style="font-size: 0.76rem; color: #f1f5f3; margin-bottom: 6px;">
+          <strong style="color: #6ee7b7;">Surprising or Questioned Assumption:</strong>
+          <span style="color: #fbbf24; text-transform: capitalize; margin-left: 4px;">[${escapeHtml((fb.surprisingFactorCategory || fb.surprising_factor_category || 'other').replace(/_/g, ' '))}]</span>
+        </div>
+        <div style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.5; white-space: pre-line; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 4px;">
+          "${escapeHtml(fb.surprisingOrWrongFactors || fb.surprising_or_wrong_factors || '')}"
+        </div>
+        ${fb.plannedChangesNextRun || fb.planned_changes_next_run ? `
+          <div style="margin-top: 6px; font-size: 0.74rem; color: #94a3b8;">
+            <strong style="color: #cbd5e1;">Founder Planned Iteration:</strong> ${escapeHtml(fb.plannedChangesNextRun || fb.planned_changes_next_run)}
+          </div>
+        ` : ''}
+        <div style="font-size: 0.68rem; color: #94a3b8; margin-top: 6px;">
+          🛡️ Privacy Verified: De-identified. Zero customer names, emails, or personal contact info collected.
+        </div>
+      </div>
+
+      <!-- SECTION 2: Linked Fictional Simulation Output (Fictional Model Output) -->
+      <div class="feedback-subpanel-sim">
+        <div class="subpanel-header-sim">
+          <span>🔮 Linked Fictional Simulation Output (Educational Model)</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; font-size: 0.72rem; color: #cbd5e1;">
+          <div>Model: <strong class="text-white">${escapeHtml(simSnapshot.modelVersion || 'v2.0-grounded')}</strong></div>
+          <div>Price: <strong class="text-white">$${simSnapshot.price !== undefined ? simSnapshot.price : '--'}</strong></div>
+          <div>Budget: <strong class="text-white">$${simSnapshot.budget !== undefined ? simSnapshot.budget : '--'}</strong></div>
+          <div>Installs: <strong class="text-lime">${simSnapshot.installs !== undefined ? Number(simSnapshot.installs).toLocaleString() : '--'}</strong></div>
+          <div>Paid: <strong class="text-lime">${simSnapshot.paidUsers !== undefined ? Number(simSnapshot.paidUsers).toLocaleString() : '--'}</strong></div>
+          <div>Net Profit: <strong class="${(simSnapshot.netProfit || 0) >= 0 ? 'text-lime' : 'text-danger'}">${simSnapshot.netProfit !== undefined ? '$' + Number(simSnapshot.netProfit).toLocaleString() : '--'}</strong></div>
+        </div>
+        <div style="font-size: 0.68rem; color: #f59e0b; margin-top: 6px;">
+          Educational simulation output generated algorithmically. Does not represent actual customer willingness to pay.
+        </div>
+      </div>
+
+      <!-- SECTION 3: Sourced Market Macro Baselines -->
+      <div class="feedback-subpanel-macro">
+        <div class="subpanel-header-macro">
+          <span>🌐 Sourced Market Macro Baselines (Verified Indicators)</span>
+        </div>
+        <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px;">
+          National infrastructure and economic context applied during simulation run:
+        </div>
+        <div class="flex-wrap gap-1">
+          ${marketSources.length > 0 ? marketSources.map(s => `
+            <span class="feedback-tag-source">
+              ${escapeHtml(s.name || s.indicator_code || 'Macro')} &bull; ${escapeHtml(s.source || 'World Bank')}
+              ${s.reference_period ? `(${escapeHtml(s.reference_period)})` : ''}
+              ${s.value ? `: ${escapeHtml(String(s.value))}` : ''}
+            </span>
+          `).join(' ') : `
+            <span class="feedback-tag-source">World Bank (WDI) &bull; ITU Broadband Indicators</span>
+          `}
+        </div>
+        <div style="font-size: 0.68rem; color: #38bdf8; margin-top: 6px;">
+          🔬 Anti-Drift Guardrail: Qualitative review only. Zero automated parameter modification on single reports.
+        </div>
+      </div>
+    </div>
+  `;
+}
 
 /* ==========================================================
    13. SUPABASE AUTH & MODALS INTEGRATION

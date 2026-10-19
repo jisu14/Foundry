@@ -4232,3 +4232,240 @@ input[type="range"]::-webkit-slider-thumb {
   color: #fde68a;
   border-color: #fbbf24;
 }
+
+/* ==========================================================
+   PRIVATE BETA SIMULATION FEEDBACK FLOW & ADMIN OBSERVATORY
+   ========================================================== */
+
+/* Launch Lab Result Callout Banner */
+.launch-feedback-banner {
+  margin-top: 18px;
+}
+
+.feedback-banner-card {
+  background: linear-gradient(135deg, rgba(6, 17, 10, 0.95) 0%, rgba(13, 148, 136, 0.12) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.feedback-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.feedback-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.feedback-banner-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+/* Simulation Feedback Modal Context Card */
+.sim-feedback-context-card {
+  background: #06110a;
+  border: 1px solid rgba(45, 212, 191, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.sim-feedback-context-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sim-feedback-context-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sim-feedback-sources-row {
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+/* Admin Review Feedback Cards (Visibly Separating Real, Simulated, and Sourced Data) */
+.feedback-eval-card {
+  background: var(--bg-panel-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+.feedback-eval-card:hover {
+  border-color: rgba(45, 212, 191, 0.4);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.feedback-card-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.feedback-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Sub-panel 1: Real Human Diagnostic Feedback */
+.feedback-subpanel-real {
+  background: rgba(6, 17, 10, 0.7);
+  border-left: 3px solid #10b981;
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.subpanel-header-real {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #34d399;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* Sub-panel 2: Linked Fictional Simulation Output */
+.feedback-subpanel-sim {
+  background: rgba(251, 191, 36, 0.04);
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.subpanel-header-sim {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* Sub-panel 3: Sourced Market Macro Baselines */
+.feedback-subpanel-macro {
+  background: rgba(14, 165, 233, 0.04);
+  border-left: 3px solid #0ea5e9;
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.subpanel-header-macro {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.feedback-group-header {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  margin-top: 14px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.feedback-tag-source {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.badge-useful-very {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-useful-directional {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-useful-neutral {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-useful-not {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fde047;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-useful-misleading {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
