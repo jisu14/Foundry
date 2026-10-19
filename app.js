@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initEvaluationView();
   initBetaFeedback();
   initSimulationFeedback();
+  initAiMarketAnalyst();
   initSupabaseAuthAndModals();
   renderAllViews();
 });
@@ -6176,3 +6177,407 @@ async function handleUserSignedIn() {
     console.error('Error hydrating state from Supabase:', err);
   }
 }
+
+/* ==========================================================
+   14. GEMINI AI MARKET ANALYST (FREE TIER INTEGRATION)
+   Server-side Edge Function only. Zero client-side API keys.
+   ========================================================== */
+let activeAiMode = 'examine_assumptions';
+let isAiAnalyzing = false;
+let aiCooldownRemaining = 0;
+let aiCooldownInterval = null;
+
+function initAiMarketAnalyst() {
+  const modal = document.getElementById('aiAnalystModal');
+  const navBtn = document.getElementById('navItemAiAnalyst');
+  const btnOpenBanner = document.getElementById('btnOpenAiAnalystModal');
+  const btnQuickExamine = document.getElementById('btnQuickAiExamine');
+  const btnQuickIndicators = document.getElementById('btnQuickAiIndicators');
+  const btnQuickGaps = document.getElementById('btnQuickAiGaps');
+  const btnClose = document.getElementById('btnCloseAiAnalystModal');
+  const btnCloseBottom = document.getElementById('btnCloseAiModalBottom');
+  const btnRun = document.getElementById('btnRunAiAnalysis');
+  const consentCheckbox = document.getElementById('aiFounderConsentCheckbox');
+
+  // Trigger buttons
+  if (navBtn) {
+    navBtn.addEventListener('click', () => openAiMarketAnalystModal('examine_assumptions'));
+  }
+  if (btnOpenBanner) {
+    btnOpenBanner.addEventListener('click', () => openAiMarketAnalystModal('examine_assumptions'));
+  }
+  if (btnQuickExamine) {
+    btnQuickExamine.addEventListener('click', () => openAiMarketAnalystModal('examine_assumptions'));
+  }
+  if (btnQuickIndicators) {
+    btnQuickIndicators.addEventListener('click', () => openAiMarketAnalystModal('explain_indicators'));
+  }
+  if (btnQuickGaps) {
+    btnQuickGaps.addEventListener('click', () => openAiMarketAnalystModal('audit_gaps'));
+  }
+
+  // Close handlers
+  if (btnClose && modal) {
+    btnClose.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+  if (btnCloseBottom && modal) {
+    btnCloseBottom.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+  }
+
+  // Mode Selection Tabs
+  const modeButtons = document.querySelectorAll('[data-ai-mode]');
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeAiMode = btn.getAttribute('data-ai-mode') || 'examine_assumptions';
+    });
+  });
+
+  // Consent checkbox update
+  if (consentCheckbox) {
+    consentCheckbox.addEventListener('change', () => {
+      updateAiPrivacyBadge(consentCheckbox.checked);
+    });
+  }
+
+  // Run Analysis Button
+  if (btnRun) {
+    btnRun.addEventListener('click', runAiMarketAnalysis);
+  }
+}
+
+function updateAiPrivacyBadge(consentGiven) {
+  const badge = document.getElementById('aiPrivacyStateTag');
+  const indicator = document.getElementById('aiShieldStatusIndicator');
+
+  if (consentGiven) {
+    if (badge) {
+      badge.textContent = 'Included: Description & Segment Context';
+      badge.className = 'evidence-badge-lime';
+    }
+    if (indicator) {
+      indicator.textContent = 'Founder Consent Granted (Tailored Analysis)';
+      indicator.className = 'text-xs text-lime';
+    }
+  } else {
+    if (badge) {
+      badge.textContent = 'Shield Active: Description Withheld';
+      badge.className = 'badge-status-neutral';
+    }
+    if (indicator) {
+      indicator.textContent = 'Shield Active: Minimal Data Mode';
+      indicator.className = 'text-xs text-muted';
+    }
+  }
+}
+
+async function openAiMarketAnalystModal(initialMode = 'examine_assumptions') {
+  const modal = document.getElementById('aiAnalystModal');
+  if (!modal) return;
+
+  activeAiMode = initialMode;
+
+  // Update mode selector buttons
+  const modeButtons = document.querySelectorAll('[data-ai-mode]');
+  modeButtons.forEach(btn => {
+    if (btn.getAttribute('data-ai-mode') === activeAiMode) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Get current context from campaign or latest simulation
+  const latestRun = (state.history && state.history[0]) || null;
+  const countryCode = (state.campaign && state.campaign.country) || (latestRun && latestRun.countryCode) || 'USA';
+  const countryName = resolveCountryName(countryCode);
+  const industryDomain = (state.campaign && state.campaign.industry) || (latestRun && latestRun.industryDomain) || 'Mobile Applications';
+  const price = (state.campaign && state.campaign.price !== undefined) ? state.campaign.price : 10;
+  const budget = (state.campaign && state.campaign.budget !== undefined) ? state.campaign.budget : 300;
+  const channel = (state.campaign && state.campaign.channel) || 'social';
+
+  // Target group title
+  let targetGroupTitle = 'All Segments';
+  if (state.campaign && state.campaign.targetGroupId && state.market && state.market.groups) {
+    const tg = state.market.groups.find(g => String(g.id) === String(state.campaign.targetGroupId));
+    if (tg) targetGroupTitle = tg.name;
+  }
+
+  // Populate preview DOM
+  const countryEl = document.getElementById('aiContextCountryBadge');
+  const industryEl = document.getElementById('aiContextIndustryBadge');
+  const pricingEl = document.getElementById('aiContextPricing');
+  const targetGroupEl = document.getElementById('aiContextTargetGroup');
+  const indicatorsListEl = document.getElementById('aiContextIndicatorsList');
+  const consentCheckbox = document.getElementById('aiFounderConsentCheckbox');
+  const noticeEl = document.getElementById('aiAnalystNotice');
+
+  if (noticeEl) {
+    noticeEl.className = 'auth-notice hidden';
+    noticeEl.textContent = '';
+  }
+
+  if (countryEl) countryEl.textContent = `Market: ${countryName} (${countryCode})`;
+  if (industryEl) industryEl.textContent = `Industry: ${industryDomain}`;
+  if (pricingEl) pricingEl.textContent = `Price: $${price} | Budget: $${budget} | Channel: ${channel}`;
+  if (targetGroupEl) targetGroupEl.textContent = targetGroupTitle;
+
+  // Populate Sourced Indicators for this market
+  const indicators = getIndicatorsForCountry(countryCode);
+  if (indicatorsListEl) {
+    if (indicators && indicators.length > 0) {
+      indicatorsListEl.innerHTML = indicators.slice(0, 5).map(ind => `
+        <span class="feedback-tag-source" title="${escapeHtml(ind.name || ind.indicator_name || '')}">
+          ${escapeHtml(ind.name || ind.indicator_name || ind.code)} (${escapeHtml(ind.source || 'World Bank/ITU')})
+        </span>
+      `).join(' ');
+    } else {
+      indicatorsListEl.innerHTML = `
+        <span class="feedback-tag-source">World Bank (WDI) &bull; ITU Broadband Indicators</span>
+      `;
+    }
+  }
+
+  // Update consent status
+  if (consentCheckbox) {
+    updateAiPrivacyBadge(consentCheckbox.checked);
+  }
+
+  modal.classList.remove('hidden');
+
+  // Check Edge Function & Gemini API Status asynchronously
+  await checkAndDisplayAiStatus();
+}
+window.openAiMarketAnalystModal = openAiMarketAnalystModal;
+
+function resolveCountryName(code) {
+  const map = {
+    'USA': 'United States',
+    'DEU': 'Germany',
+    'GBR': 'United Kingdom',
+    'IND': 'India',
+    'BRA': 'Brazil',
+    'JPN': 'Japan',
+    'NGA': 'Nigeria',
+    'KEN': 'Kenya',
+    'FRA': 'France',
+    'SGP': 'Singapore',
+    'CAN': 'Canada'
+  };
+  return map[code] || code;
+}
+
+function getIndicatorsForCountry(code) {
+  if (state.marketIndicators && state.marketIndicators[code]) {
+    return state.marketIndicators[code];
+  }
+  // Fallback defaults from World Bank & ITU observations
+  return [
+    { code: 'IT.NET.BBND.P2', name: 'Fixed broadband subscriptions (per 100 people)', source: 'World Bank WDI', reference_period: '2023' },
+    { code: 'IT.CEL.SETS.P2', name: 'Mobile cellular subscriptions (per 100 people)', source: 'ITU Connectivity', reference_period: '2024' },
+    { code: 'NY.GDP.PCAP.CD', name: 'GDP per capita (current US$)', source: 'World Bank WDI', reference_period: '2023' },
+    { code: 'FX.OWN.TOTL.ZS', name: 'Account ownership at financial institution (%)', source: 'Global Findex', reference_period: '2021' }
+  ];
+}
+
+async function checkAndDisplayAiStatus() {
+  const banner = document.getElementById('aiConnectionStatusBanner');
+  const textEl = document.getElementById('aiConnectionStatusText');
+  const helpLink = document.getElementById('aiConnectionHelpLink');
+  const launchTag = document.getElementById('launchAiStatusTag');
+  const modelBadge = document.getElementById('aiAnalystModelBadge');
+
+  if (!banner || !textEl) return;
+
+  if (!window.foundrySupabase || !window.foundrySupabase.isConfigured()) {
+    banner.className = 'ai-connection-banner not-connected';
+    textEl.textContent = 'Supabase Edge Function not configured (Setup Required)';
+    if (helpLink) {
+      helpLink.innerHTML = `<button type="button" class="btn btn-outline-cyan btn-xs" onclick="window.openCloudConfigModal ? window.openCloudConfigModal() : null">Connect Supabase</button>`;
+    }
+    if (launchTag) launchTag.textContent = 'Setup Required';
+    return;
+  }
+
+  try {
+    const status = await window.foundrySupabase.checkAiAnalystStatus();
+
+    if (modelBadge && status.model) {
+      modelBadge.textContent = status.model;
+    }
+
+    if (status.configured) {
+      banner.className = 'ai-connection-banner connected';
+      textEl.textContent = `Connected to Gemini Free Tier (${status.model}) via Supabase Edge Function`;
+      if (helpLink) helpLink.innerHTML = `<span class="text-lime text-xs">Ready &bull; Free Tier</span>`;
+      if (launchTag) launchTag.textContent = 'Online (Gemini)';
+    } else {
+      banner.className = 'ai-connection-banner not-connected';
+      textEl.textContent = status.message || 'Edge Function reachable, but GEMINI_API_KEY secret is not set.';
+      if (helpLink) {
+        helpLink.innerHTML = `<span class="text-warning text-xs">Awaiting GEMINI_API_KEY in Supabase Secrets</span>`;
+      }
+      if (launchTag) launchTag.textContent = 'Key Not Set';
+    }
+  } catch (err) {
+    banner.className = 'ai-connection-banner not-connected';
+    textEl.textContent = 'Edge Function not reachable: ' + (err.message || 'Unknown error');
+    if (helpLink) helpLink.innerHTML = `<span class="text-danger text-xs">Deploy Function</span>`;
+  }
+}
+
+async function runAiMarketAnalysis() {
+  if (isAiAnalyzing) return;
+
+  const btnRun = document.getElementById('btnRunAiAnalysis');
+  const noticeEl = document.getElementById('aiAnalystNotice');
+  const emptyState = document.getElementById('aiEmptyState');
+  const loadingSpinner = document.getElementById('aiLoadingSpinner');
+  const responseContent = document.getElementById('aiFormattedResponse');
+  const consentCheckbox = document.getElementById('aiFounderConsentCheckbox');
+
+  if (!window.foundrySupabase || !window.foundrySupabase.isConfigured()) {
+    if (noticeEl) {
+      noticeEl.className = 'auth-notice error';
+      noticeEl.textContent = 'Supabase is not configured. The AI Analyst calls Gemini through a Supabase Edge Function to protect API keys. (Your local simulator remains 100% usable).';
+      noticeEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const latestRun = (state.history && state.history[0]) || null;
+  const countryCode = (state.campaign && state.campaign.country) || (latestRun && latestRun.countryCode) || 'USA';
+  const countryName = resolveCountryName(countryCode);
+  const industryDomain = (state.campaign && state.campaign.industry) || (latestRun && latestRun.industryDomain) || 'Mobile Applications';
+  const price = (state.campaign && state.campaign.price !== undefined) ? state.campaign.price : 10;
+  const budget = (state.campaign && state.campaign.budget !== undefined) ? state.campaign.budget : 300;
+  const channel = (state.campaign && state.campaign.channel) || 'social';
+  const sourcedIndicators = getIndicatorsForCountry(countryCode);
+
+  let targetGroupName = 'Target Audience';
+  if (state.campaign && state.campaign.targetGroupId && state.market && state.market.groups) {
+    const tg = state.market.groups.find(g => String(g.id) === String(state.campaign.targetGroupId));
+    if (tg) targetGroupName = tg.name;
+  }
+
+  const consentGiven = Boolean(consentCheckbox && consentCheckbox.checked);
+
+  isAiAnalyzing = true;
+  if (btnRun) {
+    btnRun.disabled = true;
+    btnRun.textContent = 'Analyzing with Gemini...';
+  }
+  if (noticeEl) noticeEl.classList.add('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+  if (responseContent) responseContent.classList.add('hidden');
+  if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+
+  try {
+    const result = await window.foundrySupabase.analyzeMarketWithAi({
+      mode: activeAiMode,
+      countryCode,
+      countryName,
+      industryDomain,
+      price,
+      budget,
+      channel,
+      targetGroupName,
+      startupDesc: state.profile ? state.profile.desc : '',
+      consentGiven,
+      sourcedIndicators
+    });
+
+    if (loadingSpinner) loadingSpinner.classList.add('hidden');
+
+    if (result && result.analysis) {
+      if (responseContent) {
+        responseContent.innerHTML = formatAiMarkdown(result.analysis, result.modelUsed);
+        responseContent.classList.remove('hidden');
+      }
+    } else {
+      throw new Error('No analysis text returned from Gemini edge function.');
+    }
+
+    startAiCooldown(10);
+  } catch (err) {
+    console.error('AI Analysis failed:', err);
+    if (loadingSpinner) loadingSpinner.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
+
+    if (noticeEl) {
+      noticeEl.className = 'auth-notice error';
+      if (err.message && err.message.includes('quota')) {
+        noticeEl.textContent = '⚠️ Google Gemini Free Tier Quota Exceeded (15 req/min). Please wait 60 seconds before retrying.';
+      } else if (err.message && err.message.includes('GEMINI_API_KEY')) {
+        noticeEl.textContent = '⚠️ Edge Function error: GEMINI_API_KEY secret is not set in Supabase Secrets. Please configure it in your Supabase project.';
+      } else {
+        noticeEl.textContent = '⚠️ ' + (err.message || 'Error executing AI analysis.') + ' (The deterministic simulation engine remains fully functional without AI).';
+      }
+      noticeEl.classList.remove('hidden');
+    }
+  } finally {
+    isAiAnalyzing = false;
+    if (btnRun) {
+      btnRun.disabled = false;
+      btnRun.textContent = '✨ Run AI Analysis with Gemini';
+    }
+  }
+}
+
+function startAiCooldown(seconds) {
+  const timerEl = document.getElementById('aiCooldownTimer');
+  if (!timerEl) return;
+
+  clearInterval(aiCooldownInterval);
+  aiCooldownRemaining = seconds;
+
+  aiCooldownInterval = setInterval(() => {
+    aiCooldownRemaining--;
+    if (aiCooldownRemaining <= 0) {
+      clearInterval(aiCooldownInterval);
+      timerEl.textContent = 'Gemini Free Tier Limit: 15 req/min';
+    } else {
+      timerEl.textContent = `Cooldown: wait ${aiCooldownRemaining}s`;
+    }
+  }, 1000);
+}
+
+function formatAiMarkdown(rawText, modelName) {
+  if (!rawText) return '<p>No content</p>';
+
+  let html = escapeHtml(rawText);
+
+  html = html.replace(/^### (.*$)/gim, '<h5>$1</h5>');
+  html = html.replace(/^## (.*$)/gim, '<h4>$1</h4>');
+  html = html.replace(/^# (.*$)/gim, '<h3>$1</h3>');
+
+  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+
+  html = html.replace(/\[(World Bank[^\]]*|ITU[^\]]*|UNCTAD[^\]]*|Eurostat[^\]]*|Global Findex[^\]]*)\]/gim, '<span class="ai-citation-tag">$1</span>');
+
+  html = html.replace(/(The available evidence does not support[^.\n]+(\.|\n))/gim, '<div class="ai-gap-callout">⚠️ <strong>Evidence Gap:</strong> $1</div>');
+
+  html = html.replace(/^\s*-\s+(.*$)/gim, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>)/gis, '<ul>$1</ul>');
+
+  html = html.replace(/\n\n/gim, '</p><p>');
+
+  return `
+    <div class="ai-analysis-header-badge" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px;">
+      <span class="sim-tag-fictional" style="color:#38bdf8; border-color:rgba(56,189,248,0.3); font-size:0.7rem;">
+        Model: ${escapeHtml(modelName || 'Gemini 3.5 Flash-Lite')} (Free Tier)
+      </span>
+      <span class="text-xs text-muted">Grounded in Supplied Indicators &bull; Zero AI Math</span>
+    </div>
+    <div class="ai-formatted-body">
+      <p>${html}</p>
+    </div>
+  `;
+}
+

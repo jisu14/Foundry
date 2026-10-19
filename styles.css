@@ -4469,3 +4469,207 @@ input[type="range"]::-webkit-slider-thumb {
   font-weight: 600;
 }
 
+/* ==========================================================
+   AI MARKET ANALYST (GOOGLE GEMINI FREE TIER) STYLES
+   ========================================================== */
+
+/* Launch Lab Callout Card */
+.ai-analyst-launch-card {
+  margin-top: 16px;
+}
+
+.ai-analyst-banner {
+  background: linear-gradient(135deg, rgba(6, 20, 28, 0.95) 0%, rgba(14, 165, 233, 0.1) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.ai-analyst-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ai-sparkle-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+/* Modal Connection Status Banner */
+.ai-connection-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+}
+
+.ai-connection-banner.connected {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+.ai-connection-banner.not-connected {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fde047;
+}
+
+.ai-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ai-connection-banner.connected .ai-status-dot {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.ai-connection-banner.not-connected .ai-status-dot {
+  background: #f59e0b;
+}
+
+/* Privacy Shield Box */
+.ai-privacy-shield-box {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-left: 3px solid #fbbf24;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+/* Analysis Mode Selector */
+.ai-mode-selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+}
+
+.ai-mode-selector-bar button.active {
+  background: rgba(56, 189, 248, 0.2) !important;
+  border-color: #38bdf8 !important;
+  color: #e0f2fe !important;
+  font-weight: 700;
+}
+
+/* AI Results Panel */
+.ai-results-panel {
+  background: #06110a;
+  border: 1px solid rgba(45, 212, 191, 0.25);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  min-height: 180px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.ai-response-content {
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  line-height: 1.6;
+}
+
+.ai-response-content h3,
+.ai-response-content h4 {
+  color: #38bdf8;
+  font-size: 0.95rem;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  padding-bottom: 4px;
+}
+
+.ai-response-content h5 {
+  color: #6ee7b7;
+  font-size: 0.86rem;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+.ai-response-content p {
+  margin: 6px 0;
+}
+
+.ai-response-content ul,
+.ai-response-content ol {
+  margin: 6px 0 10px 20px;
+  padding: 0;
+}
+
+.ai-response-content li {
+  margin-bottom: 5px;
+}
+
+.ai-response-content strong {
+  color: #f8fafc;
+}
+
+.ai-citation-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 1px 5px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.ai-gap-callout {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin: 8px 0;
+  font-size: 0.78rem;
+  color: #fca5a5;
+}
+
+/* Spinner Pulse */
+.spinner-pulse {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #38bdf8;
+  animation: spinnerPulse 1.4s infinite ease-in-out;
+}
+
+@keyframes spinnerPulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+  }
+  100% {
+    transform: scale(0.6);
+    opacity: 0.3;
+  }
+}
+
+

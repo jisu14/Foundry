@@ -123,7 +123,15 @@
             <span class="sidebar-badge" id="navEvaluationBadge">Admin</span>
           </button>
 
-          <button class="nav-item btn-report-issue" id="btnOpenFeedbackModal" type="button" style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+          <button class="nav-item" id="navItemAiAnalyst" type="button" style="margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
+            <span class="nav-svg-icon" style="color: #38bdf8;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            </span>
+            <span class="nav-label" style="color: #7dd3fc;">AI Analyst</span>
+            <span class="sidebar-badge" style="background: rgba(56,189,248,0.15); color: #38bdf8;">Gemini</span>
+          </button>
+
+          <button class="nav-item btn-report-issue" id="btnOpenFeedbackModal" type="button" style="margin-top: 4px; padding-top: 6px;">
             <span class="nav-svg-icon" style="color: #fbbf24;">
               <!-- Alert triangle / Flag icon -->
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -1041,6 +1049,38 @@
                   </div>
                   <div id="modelLogicDetails" class="model-logic-body hidden">
                     <!-- Populated dynamically -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Market Analyst Callout Card (Gemini Free Tier) -->
+              <div class="panel-section ai-analyst-launch-card" style="margin-top: 16px;">
+                <div class="ai-analyst-banner">
+                  <div class="ai-analyst-banner-header">
+                    <div class="flex-align-center gap-2">
+                      <span class="ai-sparkle-icon">✨</span>
+                      <div>
+                        <div class="flex-align-center gap-2">
+                          <h5 style="margin: 0; color: #f8fafc; font-size: 0.95rem;">AI Market Analyst (Gemini Free Tier)</h5>
+                          <span class="sim-tag-fictional" id="launchAiStatusTag" style="font-size: 0.65rem;">Gemini 3.5 Flash-Lite</span>
+                        </div>
+                        <p class="text-dim" style="font-size: 0.78rem; margin: 2px 0 0 0;">Examine pricing &amp; CAC assumptions against verified indicators, identify evidence gaps, and get research guidance.</p>
+                      </div>
+                    </div>
+                    <button class="btn btn-cyan btn-sm" id="btnOpenAiAnalystModal" type="button">
+                      ✨ Open AI Analyst →
+                    </button>
+                  </div>
+                  <div class="ai-analyst-quick-actions" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-outline-cyan btn-xs" id="btnQuickAiExamine" type="button">
+                      🔍 Examine Assumptions &amp; Pricing
+                    </button>
+                    <button class="btn btn-outline-cyan btn-xs" id="btnQuickAiIndicators" type="button">
+                      🌐 Explain Sourced Indicators
+                    </button>
+                    <button class="btn btn-outline-cyan btn-xs" id="btnQuickAiGaps" type="button">
+                      ⚠️ Audit Evidence Gaps
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2747,6 +2787,148 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: AI MARKET ANALYST (GOOGLE GEMINI FREE TIER)         -->
+  <!-- ========================================================== -->
+  <div id="aiAnalystModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-card-wide ai-analyst-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <div class="brand-icon-cyan">✨</div>
+          <div>
+            <div class="flex-align-center gap-2">
+              <h3 style="margin: 0;">Foundry AI Market Analyst</h3>
+              <span class="badge-status-neutral" id="aiAnalystModelBadge">Gemini 3.5 Flash-Lite</span>
+            </div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">Evidence-based reasoning over macroeconomic indicators. Dispatched server-side via Supabase Edge Function.</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btnCloseAiAnalystModal" type="button">✕</button>
+      </div>
+
+      <!-- Edge Function Connection Status Banner -->
+      <div id="aiConnectionStatusBanner" class="ai-connection-banner not-connected">
+        <div class="flex-align-center gap-2">
+          <span class="ai-status-dot" id="aiStatusDot"></span>
+          <span id="aiConnectionStatusText" style="font-size: 0.76rem; font-weight: 600;">Checking Edge Function connection...</span>
+        </div>
+        <div id="aiConnectionHelpLink" class="text-xs">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Provider Terms & Founder Consent Shield Notice -->
+      <div class="ai-privacy-shield-box">
+        <div style="display: flex; gap: 10px; align-items: flex-start;">
+          <span style="font-size: 1.2rem; line-height: 1;">⚠️</span>
+          <div style="flex: 1;">
+            <div class="flex-align-center justify-between" style="flex-wrap: wrap; gap: 6px;">
+              <strong style="color: #fde047; font-size: 0.82rem;">Google AI Studio Free Tier Privacy &amp; Terms Notice</strong>
+              <span class="text-xs text-muted" id="aiShieldStatusIndicator">Shield Active: Minimal Data Mode</span>
+            </div>
+            <p style="color: #cbd5e1; font-size: 0.74rem; line-height: 1.45; margin: 4px 0 8px 0;">
+              Under Google AI Studio's Free Tier terms, prompt text and responses may be processed and reviewed to improve Google products. 
+              Foundry enforces strict data minimization: <strong>only public macroeconomic indicators and your selected target country/industry are submitted by default</strong>. Your startup description and customer notes are withheld.
+            </p>
+            <label class="checkbox-label" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 4px; border: 1px solid rgba(251, 191, 36, 0.35);">
+              <input type="checkbox" id="aiFounderConsentCheckbox" style="margin-top: 3px;">
+              <span style="font-size: 0.76rem; color: #f8fafc; line-height: 1.4;">
+                <strong>Founder Consent:</strong> I agree to include my startup concept description and target customer group name in the prompt to receive tailored assumption critiques. <em>(Leave unchecked to withhold all startup description and private details).</em>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Context Snapshot (Data Minimization Preview) -->
+      <div class="sim-feedback-context-card" style="margin-top: 10px; margin-bottom: 12px;">
+        <div class="sim-feedback-context-header">
+          <span class="evidence-badge-lime" id="aiContextCountryBadge">Country: USA</span>
+          <span class="sim-tag-fictional" id="aiContextIndustryBadge">Industry: Tech</span>
+          <span class="text-xs text-muted">
+            <span class="badge-status-neutral" id="aiPrivacyStateTag">Shield: Description Withheld</span>
+          </span>
+        </div>
+        <div class="sim-feedback-context-grid" style="font-size: 0.76rem;">
+          <div>
+            <span class="text-xs text-muted">Stated Pricing &amp; Budget:</span>
+            <strong id="aiContextPricing" class="text-white block">Price: $10 | Budget: $300 | Social Ads</strong>
+          </div>
+          <div>
+            <span class="text-xs text-muted">Target Customer Segment:</span>
+            <strong id="aiContextTargetGroup" class="text-white block">Default Segment</strong>
+          </div>
+          <div>
+            <span class="text-xs text-muted">Deterministic Boundary:</span>
+            <strong class="text-lime block">100% Local Math Engine (Zero AI Math)</strong>
+          </div>
+        </div>
+        <div class="sim-feedback-sources-row">
+          <span class="text-xs text-muted">Sourced Macro Indicators to Ground Claims:</span>
+          <div id="aiContextIndicatorsList" class="flex-wrap gap-1 mt-1">
+            <!-- Dynamically populated tags -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis Mode Buttons -->
+      <div class="ai-mode-selector-bar">
+        <span class="text-xs text-muted" style="margin-right: 6px;">Select Analysis Mode:</span>
+        <button type="button" class="btn btn-outline-cyan btn-xs active" data-ai-mode="examine_assumptions" id="btnModeAssumptions">
+          🔍 Examine Assumptions &amp; Pricing
+        </button>
+        <button type="button" class="btn btn-outline-cyan btn-xs" data-ai-mode="explain_indicators" id="btnModeIndicators">
+          🌐 Explain Sourced Indicators
+        </button>
+        <button type="button" class="btn btn-outline-cyan btn-xs" data-ai-mode="audit_gaps" id="btnModeGaps">
+          ⚠️ Audit Evidence Gaps
+        </button>
+      </div>
+
+      <div id="aiAnalystNotice" class="auth-notice hidden" style="margin-top: 10px;"></div>
+
+      <!-- Action Button Row -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <button type="button" class="btn btn-cyan" id="btnRunAiAnalysis">
+          ✨ Run AI Analysis with Gemini
+        </button>
+        <span class="text-xs text-muted" id="aiCooldownTimer">Gemini Free Tier Limit: 15 req/min</span>
+      </div>
+
+      <!-- AI Response Output Container -->
+      <div class="ai-results-panel" id="aiResultsPanel">
+        <div id="aiEmptyState" class="empty-state" style="padding: 24px 16px;">
+          <div class="empty-icon-svg">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          </div>
+          <h4 style="margin-top: 8px; color: #f8fafc; font-size: 0.9rem;">Ready to Analyze Market Context</h4>
+          <p style="max-width: 480px; margin: 4px auto 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">
+            Choose an analysis mode above and click <em>Run AI Analysis</em>. Gemini will stress-test your assumptions against official macroeconomic indicators.
+          </p>
+        </div>
+
+        <div id="aiLoadingSpinner" class="hidden" style="text-align: center; padding: 36px 20px;">
+          <div class="spinner-pulse"></div>
+          <div style="margin-top: 12px; font-weight: 600; color: #38bdf8; font-size: 0.85rem;">Consulting Gemini AI Analyst via Supabase Edge Function...</div>
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">Grounding claims in World Bank &amp; ITU reference observations. Checking evidence boundaries.</div>
+        </div>
+
+        <div id="aiFormattedResponse" class="ai-response-content hidden">
+          <!-- Populated dynamically with formatted Markdown & citation badges -->
+        </div>
+      </div>
+
+      <!-- Footer Ethical & Deterministic Modeling Notice -->
+      <div class="modal-footer-actions" style="margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span style="font-size: 0.7rem; color: #94a3b8; line-height: 1.4; max-width: 600px;">
+          🛡️ <strong>Deterministic Modeling Guarantee:</strong> Simulation calculations, customer drop-off curves, and financial outcomes are computed deterministically in local code. AI outputs never predict real sales or invent personas.
+        </span>
+        <button type="button" class="btn btn-outline-cyan btn-xs" id="btnCloseAiModalBottom">Close Analyst</button>
+      </div>
+
     </div>
   </div>
 

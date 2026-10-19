@@ -1688,6 +1688,103 @@
         overallOperationalStatus
       };
     }
+
+    /* -------------------------------------------------------------
+       GEMINI AI ANALYST (VIA SUPABASE EDGE FUNCTION ONLY)
+       Never exposes GEMINI_API_KEY in frontend code.
+       ------------------------------------------------------------- */
+    async checkAiAnalystStatus() {
+      if (!this.client) {
+        return {
+          connected: false,
+          configured: false,
+          model: 'gemini-2.5-flash-lite',
+          message: 'Supabase is not connected. Configure your Supabase URL & Key in Cloud Settings to enable Edge Functions.'
+        };
+      }
+
+      try {
+        const { data, error } = await this.client.functions.invoke('gemini-market-analyst', {
+          body: { action: 'status' }
+        });
+
+        if (error) {
+          return {
+            connected: false,
+            configured: false,
+            model: 'gemini-2.5-flash-lite',
+            message: error.message || 'Edge function gemini-market-analyst returned an error.'
+          };
+        }
+
+        return {
+          connected: true,
+          configured: Boolean(data && data.configured),
+          model: (data && data.model) || 'gemini-2.5-flash-lite',
+          message: (data && data.configured)
+            ? 'Edge function active with Gemini Free Tier API key configured.'
+            : 'Edge function reachable, but GEMINI_API_KEY secret is not yet set in Supabase Secrets.'
+        };
+      } catch (err) {
+        return {
+          connected: false,
+          configured: false,
+          model: 'gemini-2.5-flash-lite',
+          message: err.message || 'Could not reach Edge Function.'
+        };
+      }
+    }
+
+    async analyzeMarketWithAi(params) {
+      if (!this.client) {
+        throw new Error('Supabase is not connected. The local simulation engine remains fully functional without AI.');
+      }
+
+      // Client-side rate-limiting / cooldown protection (minimum 4 seconds between requests)
+      const now = Date.now();
+      if (this._lastAiCallTime && (now - this._lastAiCallTime < 4000)) {
+        throw new Error('Please wait a moment before sending another AI analysis request (Gemini Free Tier cooldown).');
+      }
+      this._lastAiCallTime = now;
+
+      // Strict Data Minimization: Only send private startup details if affirmative consent was granted
+      const sanitizedPayload = {
+        mode: params.mode || 'examine_assumptions',
+        countryCode: params.countryCode || 'USA',
+        countryName: params.countryName || 'United States',
+        industryDomain: params.industryDomain || 'General Tech',
+        founderAssumptions: {
+          price: params.price !== undefined ? Number(params.price) : 10,
+          budget: params.budget !== undefined ? Number(params.budget) : 300,
+          channel: params.channel || 'social'
+        },
+        sourcedIndicators: params.sourcedIndicators || [],
+        consentGiven: Boolean(params.consentGiven),
+        // Only include startup details if consent is explicitly true
+        startupDesc: params.consentGiven ? (params.startupDesc || '') : null,
+        targetGroupName: params.consentGiven ? (params.targetGroupName || '') : null
+      };
+
+      const { data, error } = await this.client.functions.invoke('gemini-market-analyst', {
+        body: sanitizedPayload
+      });
+
+      if (error) {
+        if (error.message && error.message.includes('429')) {
+          throw new Error('Google Gemini Free Tier quota exceeded (15 RPM). Please wait 60 seconds before trying again.');
+        }
+        if (error.message && error.message.includes('503')) {
+          throw new Error('GEMINI_API_KEY secret is missing in Supabase. Please add your key to Supabase Secrets.');
+        }
+        throw new Error(error.message || 'Edge function execution failed.');
+      }
+
+      if (data && data.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
+    }
   }
 
   // Expose singleton instances on window

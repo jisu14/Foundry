@@ -19,3 +19,7 @@ port = 54323
 
 [functions.import-world-bank]
 verify_jwt = false # Protected internally via x-importer-secret or service role header
+
+[functions.gemini-market-analyst]
+verify_jwt = false # Protected by rate limiter and server-side secret validation
+
