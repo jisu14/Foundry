@@ -146,6 +146,15 @@ serve(async (req: Request) => {
     unit: String(ind.unit || "").slice(0, 30)
   }));
 
+  // Customer Group Traits (explicitly defined by founder, NEVER inferred from nationality)
+  const customerTraits = body.customerTraits || {};
+  const groupName = String(customerTraits.groupName || targetGroup).slice(0, 100);
+  const budgetRange = String(customerTraits.budgetRange || "$10 – $35/mo").slice(0, 60);
+  const priceSensitivity = String(customerTraits.priceSensitivity || "Moderate").slice(0, 60);
+  const buyingPriorities = String(customerTraits.buyingPriorities || "Immediate ROI & Ease of Use").slice(0, 120);
+  const preferredChannels = String(customerTraits.preferredChannels || founderAssumptions.channel || "social").slice(0, 80);
+  const customerNeeds = String(customerTraits.needs || startupDesc).slice(0, 300);
+
   // 6. Construct Strict System Prompt & Grounding Mandate
   const systemInstruction = `You are the Foundry AI Market Analyst, an evidence-based advisor for early-stage startup founders.
 You operate under strict scientific and ethical modeling boundaries:
@@ -154,13 +163,52 @@ PRIMARY OPERATING RULES:
 1. GROUND EVERY CLAIM: Ground all market assessments strictly in the supplied indicators. You MUST cite the source and reference year for each claim (e.g. "[World Bank WDI, 2023]" or "[ITU Connectivity, 2024]").
 2. CALL OUT EVIDENCE GAPS: If the supplied indicators do not contain data to support a claim (e.g. regarding enterprise software budgets, local B2B willingness-to-pay, or niche consumer demand), you MUST explicitly state: "The available evidence does not support this claim" or "No verified national indicator covers this vertical."
 3. EXAMINE FOUNDER ASSUMPTIONS: Critically evaluate the founder's assumptions (pricing, acquisition channel, budget) against the macroeconomic realities of the target country and industry. Highlight pricing resistance, infrastructure hurdles, and CAC inflation risks.
-4. ZERO FABRICATION: NEVER invent fake customer quotes, fake survey percentages, fake personas, or synthetic evidence.
+4. ZERO FABRICATION: NEVER invent fake real people, fake customer quotes presented as real individuals, fake survey percentages (e.g. "73% of customers will buy"), or synthetic evidence.
 5. NO SALES CLAIMS: NEVER claim that Foundry's simulation predicts real-world revenue, conversion, or sales. Emphasize that simulation is an educational scenario and founders must test assumptions with real human customers.
-6. CONCISE & ACTIONABLE: Deliver a structured, highly analytical report in GitHub Markdown with clear headers, bullet points, and specific research recommendations.`;
+6. HYPOTHETICAL SCENARIOS MANDATE:
+   - When generating customer scenarios, base them strictly on the founder's declared traits (budget range, price sensitivity, buying priorities, discovery channels).
+   - DO NOT infer customer traits or willingness-to-buy from nationality or demographic stereotypes.
+   - Every single generated reaction MUST be prominently labeled: "AI-generated simulation—not real customer feedback."
+   - Present a small set of 3 to 4 contrasting, plausible customer perspectives that capture genuine uncertainty and disagreement among potential buyers.
+   - Do NOT calculate reach, conversion, or revenue metrics; explain qualitative behavioral dynamics only.
+7. CONCISE & ACTIONABLE: Deliver a structured, highly analytical report in GitHub Markdown with clear headers, bullet points, and specific research recommendations.`;
 
   // Build the user prompt based on requested mode
   let userPrompt = "";
-  if (mode === "explain_indicators") {
+  if (mode === "hypothetical_scenarios") {
+    userPrompt = `Please generate hypothetical customer scenarios and simulated plausible reactions for this proposition.
+
+Founder Stated Customer Group Assumptions (Defined directly by founder, NOT inferred from nationality):
+- Customer Group: ${groupName}
+- Core Need / Pain Point: ${customerNeeds}
+- Declared Budget Range: ${budgetRange}
+- Price Sensitivity: ${priceSensitivity}
+- Declared Buying Priorities: ${buyingPriorities}
+- Preferred Discovery Channel: ${preferredChannels}
+
+Founder Proposition & Stated Economics:
+- Proposed Target Price: $${founderAssumptions.price ?? "10"}/mo
+- Campaign Channel: ${founderAssumptions.channel ?? "social"}
+- Marketing Budget: $${founderAssumptions.budget ?? "300"}
+- Target Country: ${countryName} (${countryCode})
+- Industry Sector: ${industryDomain}
+- Startup Description: ${startupDesc}
+
+Relevant Sourced Market Indicators (Macro Baseline Context):
+${JSON.stringify(sourcedIndicators, null, 2)}
+
+Please structure the report as follows:
+1. Scenario Assumptions Summary: Note that customer traits are founder-entered hypotheses, not inferred from nationality.
+2. 3 to 4 Distinct Hypothetical Customer Scenarios (Reflecting uncertainty and disagreement):
+   For each scenario:
+   - Scenario Title (e.g. "Scenario 1: Pragmatic Early Adopter", "Scenario 2: Price-Sensitive Drop-Off", "Scenario 3: Operational / Workflow Skeptic")
+   - Reaction Stance (e.g. Favorable / Skeptical / Price-Resistant / Hesitant)
+   - Simulated Reaction Text (Labeled: "AI-generated simulation—not real customer feedback.")
+   - Stated Reason & Trade-Off: (How this reaction connects to the founder's price of $${founderAssumptions.price ?? "10"} vs budget range ${budgetRange} and buying priorities ${buyingPriorities})
+   - Grounded Macro Context: (Citing [Source, Year] or stating "The available evidence does not support this claim.")
+3. Key Customer Disagreements & Uncertainty: Where will prospective buyers disagree most sharply?
+4. Assumption Validation Checklist: 3 specific discovery questions the founder should test in real customer interviews.`;
+  } else if (mode === "explain_indicators") {
     userPrompt = `Please explain the following verified macroeconomic and infrastructure indicators for ${countryName} (${countryCode}) in the context of the ${industryDomain} sector.
 For each indicator:
 1. Explain what it measures and what practical constraints it imposes on a digital startup.

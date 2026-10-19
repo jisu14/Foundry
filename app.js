@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBetaFeedback();
   initSimulationFeedback();
   initAiMarketAnalyst();
+  initHypotheticalScenarios();
   initSupabaseAuthAndModals();
   renderAllViews();
 });
@@ -840,6 +841,8 @@ function initMarketForms() {
   const nameInput = document.getElementById('groupName');
   const descInput = document.getElementById('groupDesc');
   const budgetSelect = document.getElementById('groupBudget');
+  const priceSensitivitySelect = document.getElementById('groupPriceSensitivity');
+  const buyingPrioritiesSelect = document.getElementById('groupBuyingPriorities');
   const channelSelect = document.getElementById('groupChannel');
 
   groupForm.addEventListener('submit', (e) => {
@@ -848,8 +851,10 @@ function initMarketForms() {
       id: 'grp_' + Date.now(),
       name: nameInput.value.trim(),
       desc: descInput.value.trim(),
-      budget: budgetSelect.value,
-      channel: channelSelect.value
+      budget: budgetSelect ? budgetSelect.value : 'medium',
+      priceSensitivity: priceSensitivitySelect ? priceSensitivitySelect.value : 'moderate',
+      buyingPriorities: buyingPrioritiesSelect ? buyingPrioritiesSelect.value : 'Immediate ROI & Cost Reduction',
+      channel: channelSelect ? channelSelect.value : 'social'
     };
 
     state.market.groups.push(newGroup);
@@ -871,8 +876,10 @@ function initMarketForms() {
 
     nameInput.value = '';
     descInput.value = '';
-    budgetSelect.value = 'medium';
-    channelSelect.value = 'social';
+    if (budgetSelect) budgetSelect.value = 'medium';
+    if (priceSensitivitySelect) priceSensitivitySelect.value = 'moderate';
+    if (buyingPrioritiesSelect) buyingPrioritiesSelect.value = 'Immediate ROI & Cost Reduction';
+    if (channelSelect) channelSelect.value = 'social';
 
     renderCustomerGroupsList();
     renderWorldView();
@@ -984,9 +991,16 @@ function renderCustomerGroupsList() {
   container.classList.remove('hidden');
 
   const budgetLabels = {
-    low: 'Low Budget ($0–$10)',
-    medium: 'Moderate Budget ($10–$35)',
-    high: 'Enterprise Budget ($35–$90)'
+    low: 'Budget: Low ($0–$15)',
+    medium: 'Budget: Mod ($15–$50)',
+    high: 'Budget: High ($50–$150)',
+    enterprise: 'Budget: Ent ($150+)'
+  };
+
+  const sensitivityLabels = {
+    high: 'Sensitivity: High',
+    moderate: 'Sensitivity: Mod',
+    low: 'Sensitivity: Low'
   };
 
   container.innerHTML = groups.map(grp => `
@@ -1000,6 +1014,12 @@ function renderCustomerGroupsList() {
       <p class="group-card-desc">${escapeHtml(grp.desc)}</p>
       <div class="group-tags">
         <span class="group-tag tag-budget">${budgetLabels[grp.budget] || grp.budget}</span>
+        <span class="group-tag" style="background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.68rem; padding: 2px 6px; border-radius: 4px;">
+          ${sensitivityLabels[grp.priceSensitivity] || 'Sensitivity: Mod'}
+        </span>
+        <span class="group-tag" style="background: rgba(168, 85, 247, 0.12); color: #e9d5ff; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 0.68rem; padding: 2px 6px; border-radius: 4px;" title="${escapeHtml(grp.buyingPriorities || '')}">
+          Priority: ${escapeHtml((grp.buyingPriorities || 'ROI').slice(0, 20))}...
+        </span>
         <span class="group-tag tag-channel">${channelLabel(grp.channel)}</span>
       </div>
     </div>
@@ -1663,6 +1683,34 @@ async function handleExecuteSimulation() {
       assumption_value: `$${budget.toLocaleString()} (${channelLabel(channel)})`,
       formula_applied: 'Raw reach = (Budget / Base CPM) * 1000',
       disclaimer: 'Budget declared by founder.'
+    },
+    {
+      indicator_code: null,
+      indicator_name: 'Customer Group Price Sensitivity',
+      indicator_value: null,
+      indicator_unit: 'elasticity tier',
+      reference_year: null,
+      country_code: countryCode,
+      country_name: countryName,
+      assumption_type: 'founder_hypothesis',
+      assumption_key: 'price_sensitivity',
+      assumption_value: `${(targetGroup.priceSensitivity || 'moderate').toUpperCase()} (${targetGroup.name})`,
+      formula_applied: 'Price pushback curve based on stated persona price tolerance',
+      disclaimer: 'Customer trait hypothesis declared by founder; never inferred from nationality.'
+    },
+    {
+      indicator_code: null,
+      indicator_name: 'Customer Group Primary Buying Priority',
+      indicator_value: null,
+      indicator_unit: 'priority category',
+      reference_year: null,
+      country_code: countryCode,
+      country_name: countryName,
+      assumption_type: 'founder_hypothesis',
+      assumption_key: 'buying_priority',
+      assumption_value: `${targetGroup.buyingPriorities || 'Immediate ROI & Cost Reduction'} (${targetGroup.name})`,
+      formula_applied: 'Key purchasing criterion guiding product evaluation and trade-offs',
+      disclaimer: 'Customer priority hypothesis declared by founder; never inferred from nationality.'
     }
   ];
 
@@ -1684,6 +1732,15 @@ async function handleExecuteSimulation() {
     });
 
     result.evidence = fullEvidence;
+    result.customerTraits = {
+      groupName: targetGroup.name,
+      needs: targetGroup.desc,
+      budgetRange: targetGroup.budget === 'low' ? 'Low ($0 – $15/mo)' : (targetGroup.budget === 'high' ? 'High ($50 – $150/mo)' : (targetGroup.budget === 'enterprise' ? 'Enterprise ($150+/mo)' : 'Moderate ($15 – $50/mo)')),
+      priceSensitivity: targetGroup.priceSensitivity || 'moderate',
+      buyingPriorities: targetGroup.buyingPriorities || 'Immediate ROI & Cost Reduction',
+      preferredChannels: channelLabel(targetGroup.channel)
+    };
+    result.hypotheticalCustomerScenarios = null;
 
     displayLaunchResults(result);
 
@@ -2350,6 +2407,10 @@ function displayLaunchResults(res) {
 
   // Update Private Beta Feedback Banner for this Run
   currentActiveSimulationRun = res;
+
+  // Render Hypothetical Customer Scenarios Section
+  renderHypotheticalScenariosSection(res);
+
   const fbBanner = document.getElementById('launchFeedbackBanner');
   const fbBtn = document.getElementById('btnOpenRunFeedbackModal');
   if (fbBanner) fbBanner.classList.remove('hidden');
@@ -6466,6 +6527,31 @@ async function runAiMarketAnalysis() {
     if (tg) targetGroupName = tg.name;
   }
 
+  let customerTraits = null;
+  if (state.campaign && state.campaign.targetGroupId && state.market && state.market.groups) {
+    const tg = state.market.groups.find(g => String(g.id) === String(state.campaign.targetGroupId));
+    if (tg) {
+      customerTraits = {
+        groupName: tg.name,
+        needs: tg.desc,
+        budgetRange: tg.budget === 'low' ? 'Low ($0 – $15/mo)' : (tg.budget === 'high' ? 'High ($50 – $150/mo)' : (tg.budget === 'enterprise' ? 'Enterprise ($150+/mo)' : 'Moderate ($15 – $50/mo)')),
+        priceSensitivity: tg.priceSensitivity || 'moderate',
+        buyingPriorities: tg.buyingPriorities || 'Immediate ROI & Cost Reduction',
+        preferredChannels: channelLabel(tg.channel)
+      };
+    }
+  }
+  if (!customerTraits) {
+    customerTraits = {
+      groupName: targetGroupName,
+      needs: state.profile ? state.profile.desc : 'General Workflow Automation',
+      budgetRange: 'Moderate ($15 – $50/mo)',
+      priceSensitivity: 'Moderate',
+      buyingPriorities: 'Immediate ROI & Cost Reduction',
+      preferredChannels: channelLabel(channel)
+    };
+  }
+
   const consentGiven = Boolean(consentCheckbox && consentCheckbox.checked);
 
   isAiAnalyzing = true;
@@ -6490,6 +6576,7 @@ async function runAiMarketAnalysis() {
       targetGroupName,
       startupDesc: state.profile ? state.profile.desc : '',
       consentGiven,
+      customerTraits,
       sourcedIndicators
     });
 
@@ -6499,6 +6586,32 @@ async function runAiMarketAnalysis() {
       if (responseContent) {
         responseContent.innerHTML = formatAiMarkdown(result.analysis, result.modelUsed);
         responseContent.classList.remove('hidden');
+      }
+
+      // If in hypothetical_scenarios mode, also save to latest simulation run
+      if (activeAiMode === 'hypothetical_scenarios' && latestRun) {
+        latestRun.hypotheticalCustomerScenarios = {
+          generatedAt: new Date().toISOString(),
+          modelVersion: latestRun.modelVersion || 'v2.0-grounded',
+          aiModel: result.modelUsed || 'gemini-2.5-flash-lite',
+          assumptions: {
+            price,
+            channel,
+            budget,
+            customerTraits
+          },
+          analysisMarkdown: result.analysis,
+          evidence: (latestRun.evidence || []).filter(e => e.assumption_type === 'macro_market_context')
+        };
+        saveState(STORAGE_HISTORY, state.history);
+        renderHypotheticalScenariosSection(latestRun);
+
+        // Sync to Supabase if authenticated
+        if (window.foundrySupabase && window.foundrySupabase.isAuthenticated() && latestRun.id) {
+          window.foundrySupabase.updateSimulationRunScenarios(latestRun.id, latestRun.hypotheticalCustomerScenarios).catch(err => {
+            console.warn('Could not sync scenarios from AI analyst modal to Supabase run:', err);
+          });
+        }
       }
     } else {
       throw new Error('No analysis text returned from Gemini edge function.');
@@ -6563,6 +6676,8 @@ function formatAiMarkdown(rawText, modelName) {
 
   html = html.replace(/(The available evidence does not support[^.\n]+(\.|\n))/gim, '<div class="ai-gap-callout">⚠️ <strong>Evidence Gap:</strong> $1</div>');
 
+  html = html.replace(/(AI-generated simulation—not real customer feedback)/gim, '<span class="ai-simulation-badge" style="padding:2px 8px; border-radius:4px; display:inline-block; margin:2px 0;">$1</span>');
+
   html = html.replace(/^\s*-\s+(.*$)/gim, '<li>$1</li>');
   html = html.replace(/(<li>.*<\/li>)/gis, '<ul>$1</ul>');
 
@@ -6580,4 +6695,420 @@ function formatAiMarkdown(rawText, modelName) {
     </div>
   `;
 }
+
+/* ==========================================================
+   15. HYPOTHETICAL CUSTOMER SCENARIOS ENGINE & TWEAK CONTROLS
+   ========================================================== */
+function initHypotheticalScenarios() {
+  const modal = document.getElementById('tweakScenariosModal');
+  const btnClose = document.getElementById('btnCloseTweakScenariosModal');
+  const btnCancel = document.getElementById('btnCancelTweakScenarios');
+  const form = document.getElementById('tweakScenariosForm');
+  const btnExplain = document.getElementById('btnExplainScenarioRerun');
+  const btnQuickScenarios = document.getElementById('btnQuickAiScenarios');
+
+  if (btnClose && modal) {
+    btnClose.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+  if (btnCancel && modal) {
+    btnCancel.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+  }
+
+  if (btnQuickScenarios) {
+    btnQuickScenarios.addEventListener('click', () => {
+      const sec = document.getElementById('simHypotheticalScenariosSection');
+      if (sec && !sec.classList.contains('hidden')) {
+        sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        openAiMarketAnalystModal('hypothetical_scenarios');
+      }
+    });
+  }
+
+  if (btnExplain) {
+    btnExplain.addEventListener('click', () => {
+      alert(
+        '💡 How Customer Assumptions Alter Simulated Reactions:\n\n' +
+        '1. Stated Traits are Founder Hypotheses: Traits like budget range, price sensitivity, and buying priorities are defined directly by you. Foundry strictly prohibits inferring purchasing intent or budget from nationality.\n\n' +
+        '2. Price Sensitivity Shift: If you increase price sensitivity from Low to High, simulated buyers push back more aggressively against upfront commitments and demand pilot programs or freemium tiers.\n\n' +
+        '3. Buying Priorities Pivot: Selecting "Security & Compliance" focuses buyer pushback on SOC2, encryption, and data sovereignty, while "Immediate ROI" shifts objections to payback timelines.\n\n' +
+        '4. Rerunning Scenarios: Click "Tweak Assumptions & Rerun" to adjust these traits and observe how simulated disagreement shifts—without altering deterministic revenue calculations.'
+      );
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const currentRun = currentActiveSimulationRun || (state.history && state.history[0]);
+      if (!currentRun) {
+        alert('Please run a simulation before adjusting scenario assumptions.');
+        return;
+      }
+
+      const nameInput = document.getElementById('tweakGroupName');
+      const priceInput = document.getElementById('tweakPrice');
+      const budgetSelect = document.getElementById('tweakBudget');
+      const sensitivitySelect = document.getElementById('tweakPriceSensitivity');
+      const prioritiesSelect = document.getElementById('tweakBuyingPriorities');
+      const channelSelect = document.getElementById('tweakChannel');
+      const needsTextarea = document.getElementById('tweakNeeds');
+
+      const overrideTraits = {
+        groupName: nameInput ? nameInput.value.trim() : (currentRun.targetGroupName || 'Target Group'),
+        price: priceInput ? parseInt(priceInput.value, 10) : (currentRun.price || 10),
+        budgetRange: budgetSelect ? budgetSelect.options[budgetSelect.selectedIndex].text : 'Moderate Budget ($15 – $50/mo tolerance)',
+        priceSensitivity: sensitivitySelect ? sensitivitySelect.options[sensitivitySelect.selectedIndex].text : 'Moderate',
+        buyingPriorities: prioritiesSelect ? prioritiesSelect.value : 'Immediate ROI & Cost Reduction',
+        channel: channelSelect ? channelSelect.value : (currentRun.channel || 'social'),
+        channelLabel: channelSelect ? channelSelect.options[channelSelect.selectedIndex].text : 'Social Media Ads',
+        needs: needsTextarea ? needsTextarea.value.trim() : (state.profile ? state.profile.desc : '')
+      };
+
+      if (modal) modal.classList.add('hidden');
+      generateHypotheticalScenariosForRun(currentRun, overrideTraits);
+    });
+  }
+}
+
+function openTweakScenariosModal(run) {
+  const modal = document.getElementById('tweakScenariosModal');
+  if (!modal) return;
+
+  const currentRun = run || currentActiveSimulationRun || (state.history && state.history[0]);
+  if (!currentRun) {
+    alert('Please execute a campaign simulation in the Launch Lab before adjusting customer traits.');
+    return;
+  }
+
+  const traits = currentRun.customerTraits || {};
+  const nameInput = document.getElementById('tweakGroupName');
+  const priceInput = document.getElementById('tweakPrice');
+  const budgetSelect = document.getElementById('tweakBudget');
+  const sensitivitySelect = document.getElementById('tweakPriceSensitivity');
+  const prioritiesSelect = document.getElementById('tweakBuyingPriorities');
+  const channelSelect = document.getElementById('tweakChannel');
+  const needsTextarea = document.getElementById('tweakNeeds');
+
+  if (nameInput) nameInput.value = traits.groupName || currentRun.targetGroupName || 'Early Adopters';
+  if (priceInput) priceInput.value = currentRun.price !== undefined ? currentRun.price : 10;
+  
+  if (budgetSelect) {
+    const b = (traits.budgetRange || '').toLowerCase();
+    if (b.includes('low') || b.includes('$0')) budgetSelect.value = 'low';
+    else if (b.includes('enterprise') || b.includes('$150')) budgetSelect.value = 'enterprise';
+    else if (b.includes('high') || b.includes('$50')) budgetSelect.value = 'high';
+    else budgetSelect.value = 'medium';
+  }
+
+  if (sensitivitySelect) {
+    const s = (traits.priceSensitivity || '').toLowerCase();
+    if (s.includes('high')) sensitivitySelect.value = 'high';
+    else if (s.includes('low')) sensitivitySelect.value = 'low';
+    else sensitivitySelect.value = 'moderate';
+  }
+
+  if (prioritiesSelect) {
+    const p = traits.buyingPriorities || '';
+    let matched = false;
+    for (let opt of prioritiesSelect.options) {
+      if (opt.value === p || p.includes(opt.value) || opt.value.includes(p)) {
+        prioritiesSelect.value = opt.value;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) prioritiesSelect.value = 'Immediate ROI & Cost Reduction';
+  }
+
+  if (channelSelect) {
+    channelSelect.value = currentRun.channel || 'social';
+  }
+
+  if (needsTextarea) {
+    needsTextarea.value = traits.needs || (state.profile ? state.profile.desc : '') || '';
+  }
+
+  const notice = document.getElementById('tweakModalNotice');
+  if (notice) notice.classList.add('hidden');
+
+  modal.classList.remove('hidden');
+}
+
+function renderHypotheticalScenariosSection(res) {
+  const container = document.getElementById('simHypotheticalScenariosSection');
+  if (!container) return;
+
+  const contextBar = document.getElementById('scenariosContextBar');
+  const dynamicContainer = document.getElementById('scenariosDynamicContainer');
+  const headerActions = document.getElementById('scenariosHeaderActions');
+
+  const traits = res.customerTraits || {
+    groupName: res.targetGroupName || 'Target Customer Group',
+    needs: state.profile ? state.profile.desc : 'Workflow optimization',
+    budgetRange: res.targetBudget ? `${res.targetBudget.toUpperCase()} Budget` : 'Moderate ($15 – $50/mo)',
+    priceSensitivity: 'Moderate',
+    buyingPriorities: 'Immediate ROI & Cost Reduction',
+    preferredChannels: channelLabel(res.channel || 'social')
+  };
+
+  // Populate context bar with founder stated assumptions
+  if (contextBar) {
+    contextBar.innerHTML = `
+      <span class="text-xs text-muted" style="margin-right: 4px;">Founder Stated Customer Traits:</span>
+      <span class="trait-pill"><strong>Persona:</strong> ${escapeHtml(traits.groupName)}</span>
+      <span class="trait-pill"><strong>Budget:</strong> ${escapeHtml(traits.budgetRange)}</span>
+      <span class="trait-pill"><strong>Sensitivity:</strong> ${escapeHtml(traits.priceSensitivity)}</span>
+      <span class="trait-pill"><strong>Priority:</strong> ${escapeHtml(traits.buyingPriorities)}</span>
+      <span class="trait-pill"><strong>Discovery:</strong> ${escapeHtml(traits.preferredChannels)}</span>
+      <span class="trait-pill trait-pill-macro"><strong>Macro Baseline:</strong> ${escapeHtml(res.countryName || 'United States')} (${escapeHtml(res.countryCode || 'USA')})</span>
+    `;
+  }
+
+  // Populate Header Actions
+  if (headerActions) {
+    if (res.hypotheticalCustomerScenarios) {
+      headerActions.innerHTML = `
+        <button type="button" class="btn btn-outline-cyan btn-xs" id="btnOpenTweakModal">
+          🔄 Tweak Assumptions &amp; Rerun
+        </button>
+      `;
+    } else {
+      headerActions.innerHTML = `
+        <button type="button" class="btn btn-cyan btn-xs" id="btnGenerateScenariosDirect" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); border-color: #8b5cf6;">
+          ✨ Generate Scenarios with Gemini
+        </button>
+      `;
+    }
+    const btnOpenTweak = document.getElementById('btnOpenTweakModal');
+    const btnGenerateDirect = document.getElementById('btnGenerateScenariosDirect');
+    if (btnOpenTweak) btnOpenTweak.addEventListener('click', () => openTweakScenariosModal(res));
+    if (btnGenerateDirect) btnGenerateDirect.addEventListener('click', () => generateHypotheticalScenariosForRun(res));
+  }
+
+  // If scenarios have not been generated yet, show informative callout
+  if (!res.hypotheticalCustomerScenarios) {
+    if (dynamicContainer) {
+      dynamicContainer.innerHTML = `
+        <div class="scenarios-prompt-card">
+          <div style="font-size: 1.8rem; margin-bottom: 8px;">🔮</div>
+          <h5 style="color: #f8fafc; margin: 0 0 6px 0; font-size: 0.95rem;">Simulate Plausible Customer Disagreements &amp; Hesitations</h5>
+          <p style="color: #cbd5e1; font-size: 0.77rem; max-width: 580px; margin: 0 auto 14px auto; line-height: 1.5;">
+            Use Google Gemini (via Supabase Edge Function) to simulate 3–4 contrasting hypothetical buyer perspectives for <strong>${escapeHtml(traits.groupName)}</strong>. Scenarios stress-test your proposed price of <strong>$${res.price}/mo</strong> against declared budget thresholds, price sensitivity, and macro market context.
+          </p>
+          <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-cyan btn-sm" id="btnGenerateScenariosPrompt" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); border-color: #8b5cf6;">
+              ✨ Generate Hypothetical Scenarios
+            </button>
+            <button type="button" class="btn btn-outline-cyan btn-sm" id="btnOpenTweakModalPrompt">
+              ⚙️ Adjust Customer Traits First
+            </button>
+          </div>
+          <div style="margin-top: 12px; font-size: 0.7rem; color: #fbbf24;">
+            ⚠️ <em>AI-generated simulation—not real customer feedback. Do not infer purchasing intent from nationality.</em>
+          </div>
+        </div>
+      `;
+
+      const btnGen = document.getElementById('btnGenerateScenariosPrompt');
+      const btnTweak = document.getElementById('btnOpenTweakModalPrompt');
+      if (btnGen) btnGen.addEventListener('click', () => generateHypotheticalScenariosForRun(res));
+      if (btnTweak) btnTweak.addEventListener('click', () => openTweakScenariosModal(res));
+    }
+    return;
+  }
+
+  // Render generated scenarios
+  const scenData = res.hypotheticalCustomerScenarios;
+  const formattedHtml = formatHypotheticalScenariosMarkdown(scenData.analysisMarkdown || '', scenData.aiModel || 'Gemini 3.5 Flash-Lite');
+
+  if (dynamicContainer) {
+    dynamicContainer.innerHTML = `
+      <div class="scenarios-rendered-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div class="flex-align-center gap-2">
+            <span class="sim-tag-fictional" style="color: #c084fc; border-color: rgba(168, 85, 247, 0.4); font-size: 0.7rem;">
+              Model: ${escapeHtml(scenData.aiModel || 'gemini-2.5-flash-lite')} (Free Tier)
+            </span>
+            <span class="text-xs text-muted">Generated: ${new Date(scenData.generatedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          <div class="flex-align-center gap-2">
+            <span class="ai-simulation-badge" style="padding: 2px 8px; border-radius: 4px;">
+              AI-generated simulation—not real customer feedback
+            </span>
+            <button type="button" class="btn btn-outline-cyan btn-xs" id="btnRerunDirect">
+              🔄 Tweak &amp; Rerun
+            </button>
+          </div>
+        </div>
+
+        <div class="scenarios-formatted-output">
+          ${formattedHtml}
+        </div>
+      </div>
+    `;
+
+    const btnRerunDirect = document.getElementById('btnRerunDirect');
+    if (btnRerunDirect) btnRerunDirect.addEventListener('click', () => openTweakScenariosModal(res));
+  }
+}
+
+async function generateHypotheticalScenariosForRun(run, overrideTraits = null) {
+  if (!run) return;
+
+  const dynamicContainer = document.getElementById('scenariosDynamicContainer');
+  if (dynamicContainer) {
+    dynamicContainer.innerHTML = `
+      <div style="text-align: center; padding: 36px 18px;">
+        <div class="spinner-pulse" style="background: #a855f7;"></div>
+        <div style="margin-top: 14px; font-weight: 600; color: #c084fc; font-size: 0.88rem;">
+          Generating Hypothetical Customer Scenarios with Gemini...
+        </div>
+        <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 4px; max-width: 480px; margin-left: auto; margin-right: auto;">
+          Analyzing stated budget tolerance ($${overrideTraits && overrideTraits.price !== undefined ? overrideTraits.price : run.price}/mo), price sensitivity, and primary buying priorities against macroeconomic indicators.
+        </div>
+      </div>
+    `;
+  }
+
+  const countryCode = run.countryCode || run.country?.code || 'USA';
+  const countryName = run.countryName || run.country?.name || resolveCountryName(countryCode);
+  const industryDomain = run.industryDomain || run.industry || 'Mobile Applications';
+  const price = overrideTraits && overrideTraits.price !== undefined ? overrideTraits.price : run.price;
+  const budget = overrideTraits && overrideTraits.budget !== undefined ? overrideTraits.budget : run.budget;
+  const channel = overrideTraits && overrideTraits.channel ? overrideTraits.channel : run.channel;
+  const sourcedIndicators = getIndicatorsForCountry(countryCode);
+
+  const customerTraits = overrideTraits ? {
+    groupName: overrideTraits.groupName || run.targetGroupName,
+    needs: overrideTraits.needs || (run.customerTraits && run.customerTraits.needs) || (state.profile ? state.profile.desc : ''),
+    budgetRange: overrideTraits.budgetRange || (run.customerTraits && run.customerTraits.budgetRange) || 'Moderate ($15 – $50/mo)',
+    priceSensitivity: overrideTraits.priceSensitivity || (run.customerTraits && run.customerTraits.priceSensitivity) || 'Moderate',
+    buyingPriorities: overrideTraits.buyingPriorities || (run.customerTraits && run.customerTraits.buyingPriorities) || 'Immediate ROI & Cost Reduction',
+    preferredChannels: overrideTraits.channelLabel || channelLabel(channel)
+  } : (run.customerTraits || {
+    groupName: run.targetGroupName || 'Target Customer Group',
+    needs: state.profile ? state.profile.desc : '',
+    budgetRange: 'Moderate ($15 – $50/mo)',
+    priceSensitivity: 'Moderate',
+    buyingPriorities: 'Immediate ROI & Cost Reduction',
+    preferredChannels: channelLabel(channel)
+  });
+
+  try {
+    const result = await window.foundrySupabase.analyzeMarketWithAi({
+      mode: 'hypothetical_scenarios',
+      countryCode,
+      countryName,
+      industryDomain,
+      price,
+      budget,
+      channel,
+      targetGroupName: customerTraits.groupName,
+      startupDesc: state.profile ? state.profile.desc : '',
+      consentGiven: true,
+      customerTraits,
+      sourcedIndicators
+    });
+
+    if (result && result.analysis) {
+      const scenariosPayload = {
+        generatedAt: new Date().toISOString(),
+        modelVersion: run.modelVersion || 'v2.0-grounded',
+        aiModel: result.modelUsed || 'gemini-2.5-flash-lite',
+        assumptions: {
+          price,
+          channel,
+          budget,
+          customerTraits
+        },
+        analysisMarkdown: result.analysis,
+        evidence: (run.evidence || []).filter(e => e.assumption_type === 'macro_market_context')
+      };
+
+      run.hypotheticalCustomerScenarios = scenariosPayload;
+      if (overrideTraits) {
+        run.customerTraits = customerTraits;
+        run.price = price;
+        run.channel = channel;
+      }
+
+      // Update state.history
+      const histIdx = state.history.findIndex(h => String(h.id) === String(run.id));
+      if (histIdx !== -1) {
+        state.history[histIdx] = run;
+      } else if (state.history[0]) {
+        state.history[0] = run;
+      }
+      saveState(STORAGE_HISTORY, state.history);
+
+      // Sync update to Supabase
+      if (window.foundrySupabase && window.foundrySupabase.isAuthenticated() && run.id) {
+        window.foundrySupabase.updateSimulationRunScenarios(run.id, scenariosPayload).catch(err => {
+          console.warn('Could not sync scenarios to Supabase run:', err);
+        });
+      }
+
+      renderHypotheticalScenariosSection(run);
+    } else {
+      throw new Error('No scenarios text returned from Gemini Edge Function.');
+    }
+  } catch (err) {
+    console.error('Scenario generation failed:', err);
+    if (dynamicContainer) {
+      dynamicContainer.innerHTML = `
+        <div class="auth-notice error" style="margin: 14px 0;">
+          <strong>Error generating scenarios:</strong> ${escapeHtml(err.message || 'Edge function error')}.
+          <div style="margin-top: 8px;">
+            <button type="button" class="btn btn-outline-cyan btn-xs" onclick="renderHypotheticalScenariosSection(currentActiveSimulationRun)">
+              Return to Scenarios Overview
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+
+function formatHypotheticalScenariosMarkdown(rawText, modelName) {
+  if (!rawText) return '<p>No scenario content available.</p>';
+
+  let html = escapeHtml(rawText);
+
+  // Markdown headers
+  html = html.replace(/^### (.*$)/gim, '<h5 style="color:#c084fc; margin-top:14px; margin-bottom:6px; font-size:0.9rem;">$1</h5>');
+  html = html.replace(/^## (.*$)/gim, '<h4 style="color:#e9d5ff; margin-top:16px; margin-bottom:8px; font-size:1.02rem; border-bottom:1px solid rgba(168,85,247,0.2); padding-bottom:4px;">$1</h4>');
+  html = html.replace(/^# (.*$)/gim, '<h3 style="color:#f8fafc; font-size:1.15rem; margin-bottom:10px;">$1</h3>');
+
+  // Bold text
+  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong style="color:#f8fafc;">$1</strong>');
+
+  // Grounding Citation Badges [World Bank...] or [ITU...]
+  html = html.replace(/\[(World Bank[^\]]*|ITU[^\]]*|UNCTAD[^\]]*|Eurostat[^\]]*|Global Findex[^\]]*)\]/gim, '<span class="ai-citation-tag">$1</span>');
+
+  // Evidence Gap Callout
+  html = html.replace(/(The available evidence does not support[^.\n]+(\.|\n))/gim, '<div class="ai-gap-callout">⚠️ <strong>Evidence Gap:</strong> $1</div>');
+
+  // Prominent simulation tag
+  html = html.replace(/(AI-generated simulation—not real customer feedback)/gim, '<span class="ai-simulation-badge" style="padding:2px 8px; border-radius:4px; display:inline-block; margin:2px 0;">$1</span>');
+
+  // Lists
+  html = html.replace(/^\s*-\s+(.*$)/gim, '<li style="margin-bottom:4px; color:#cbd5e1; font-size:0.77rem;">$1</li>');
+  html = html.replace(/(<li.*<\/li>)/gis, '<ul style="margin:6px 0 10px 18px; padding:0;">$1</ul>');
+
+  // Double newlines to paragraphs
+  html = html.replace(/\n\n/gim, '</p><p style="margin:6px 0; color:#cbd5e1; font-size:0.77rem; line-height:1.5;">');
+
+  return `
+    <div class="ai-formatted-body" style="line-height:1.55;">
+      <p style="margin:6px 0; color:#cbd5e1; font-size:0.77rem; line-height:1.5;">${html}</p>
+    </div>
+  `;
+}
+
 

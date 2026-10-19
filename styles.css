@@ -4672,4 +4672,231 @@ input[type="range"]::-webkit-slider-thumb {
   }
 }
 
+/* ==========================================================
+   HYPOTHETICAL CUSTOMER SCENARIOS (AI ANALYST SIMULATION)
+   ========================================================== */
+.hypothetical-scenarios-section {
+  background: linear-gradient(135deg, rgba(20, 14, 38, 0.75) 0%, rgba(13, 21, 32, 0.85) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-top: 18px;
+  position: relative;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.scenarios-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.scenarios-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 8px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-simulation-badge {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  color: #fbbf24 !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.4px;
+}
+
+.scenarios-context-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 14px;
+}
+
+.trait-pill {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #e9d5ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trait-pill-macro {
+  background: rgba(6, 182, 212, 0.12);
+  border-color: rgba(6, 182, 212, 0.3);
+  color: #67e8f9;
+}
+
+.scenarios-prompt-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px dashed rgba(168, 85, 247, 0.35);
+  border-radius: 8px;
+  padding: 24px 18px;
+  text-align: center;
+}
+
+.scenario-reaction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 14px;
+}
+
+.scenario-card {
+  background: rgba(12, 17, 28, 0.85);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.scenario-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.15);
+}
+
+.scenario-card.stance-favorable {
+  border-left: 3px solid #34d399;
+}
+
+.scenario-card.stance-skeptical {
+  border-left: 3px solid #fbbf24;
+}
+
+.scenario-card.stance-resistant {
+  border-left: 3px solid #f87171;
+}
+
+.scenario-card.stance-hesitant {
+  border-left: 3px solid #38bdf8;
+}
+
+.scenario-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.scenario-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.scenario-stance-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.badge-stance-favorable {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.badge-stance-skeptical {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.badge-stance-resistant {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.badge-stance-hesitant {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.scenario-reaction-quote {
+  font-size: 0.77rem;
+  color: #e2e8f0;
+  line-height: 1.45;
+  font-style: italic;
+  margin: 0;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+.scenario-reason-box {
+  font-size: 0.73rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.scenario-macro-context {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.scenario-fiction-tag {
+  font-size: 0.65rem;
+  color: #fbbf24;
+  font-style: italic;
+}
+
+.disagreement-callout-card {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.interview-checklist-card {
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.scenarios-provenance-footer {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 10px;
+}
+
+.tweak-scenarios-modal-card {
+  max-width: 680px;
+}
+
+
 

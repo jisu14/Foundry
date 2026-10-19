@@ -551,6 +551,36 @@
       return insertedRun;
     }
 
+    // 5b. Update Simulation Run with Generated Hypothetical Scenarios
+    async updateSimulationRunScenarios(runId, scenariosPayload) {
+      if (!this.isAuthenticated() || !runId) return null;
+      try {
+        const { data, error } = await this.client
+          .from('founder_simulation_runs')
+          .update({
+            hypothetical_scenarios: scenariosPayload
+          })
+          .eq('id', runId)
+          .select()
+          .maybeSingle();
+
+        if (error) {
+          // If hypothetical_scenarios column is not yet present, store in founder_inputs
+          const { error: fallbackErr } = await this.client
+            .from('founder_simulation_runs')
+            .update({
+              founder_inputs: scenariosPayload
+            })
+            .eq('id', runId);
+          if (fallbackErr) console.warn('Supabase fallback scenarios update error:', fallbackErr);
+        }
+        return data;
+      } catch (err) {
+        console.warn('Could not update simulation run scenarios in Supabase:', err);
+        return null;
+      }
+    }
+
     // 6. Load History with Evidence
     async loadSimulationHistory() {
       if (!this.isAuthenticated()) return [];
@@ -1760,6 +1790,7 @@
         },
         sourcedIndicators: params.sourcedIndicators || [],
         consentGiven: Boolean(params.consentGiven),
+        customerTraits: params.customerTraits || null,
         // Only include startup details if consent is explicitly true
         startupDesc: params.consentGiven ? (params.startupDesc || '') : null,
         targetGroupName: params.consentGiven ? (params.targetGroupName || '') : null
