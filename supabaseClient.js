@@ -603,6 +603,216 @@
     }
 
     /* -------------------------------------------------------------
+       REAL MARKET EVIDENCE (PRIMARY FIELD RESEARCH & SECONDARY STUDIES)
+       Strictly private to founder by default via Row Level Security.
+       Explicit opt-in required for de-identified benchmarking.
+       ------------------------------------------------------------- */
+
+    async saveRealEvidence(record) {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const payload = {
+        workspace_id: ws.id,
+        user_id: this.currentUser.id,
+        research_method: record.researchMethod || 'customer_interviews',
+        evidence_type: record.evidenceType === 'published_source' ? 'published_source' : 'firsthand',
+        source_citation: record.sourceCitation || (record.evidenceType === 'published_source' ? 'Published Study' : 'Primary Founder Research'),
+        country_code: record.countryCode || this.resolveIso3(record.countryName || 'USA'),
+        country_name: record.countryName || 'United States',
+        industry_domain: record.industryDomain || 'General Technology',
+        customer_group_id: record.customerGroupId || null,
+        customer_group_name: record.customerGroupName || null,
+        collection_start_date: record.collectionStartDate || null,
+        collection_end_date: record.collectionEndDate || null,
+        sample_size: Math.max(1, parseInt(record.sampleSize, 10) || 1),
+        sample_description: record.sampleDescription || null,
+        research_question: record.researchQuestion || 'Hypothesis validation inquiry',
+        results_summary: record.resultsSummary || '',
+        quantitative_metrics: record.quantitativeMetrics || {},
+        limitations_and_biases: record.limitationsAndBiases || 'Small sample size. Findings are directional and not representative of entire market.',
+        is_representative_sample: Boolean(record.isRepresentativeSample),
+        privacy_status: record.privacyStatus === 'opted_in_shared' ? 'opted_in_shared' : 'private',
+        opted_in_at: record.privacyStatus === 'opted_in_shared' ? (record.optedInAt || new Date().toISOString()) : null,
+        updated_at: new Date().toISOString()
+      };
+
+      if (record.id) {
+        const { data, error } = await this.client
+          .from('founder_real_evidence')
+          .update(payload)
+          .eq('id', record.id)
+          .eq('workspace_id', ws.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return this.formatRealEvidenceRecord(data);
+      } else {
+        const { data, error } = await this.client
+          .from('founder_real_evidence')
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        return this.formatRealEvidenceRecord(data);
+      }
+    }
+
+    async loadRealEvidence() {
+      if (!this.isAuthenticated()) return [];
+      const ws = await this.ensureWorkspace();
+      if (!ws) return [];
+
+      const { data, error } = await this.client
+        .from('founder_real_evidence')
+        .select('*')
+        .eq('workspace_id', ws.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map(row => this.formatRealEvidenceRecord(row));
+    }
+
+    async deleteRealEvidence(recordId) {
+      if (!this.isAuthenticated()) return false;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return false;
+
+      const { error } = await this.client
+        .from('founder_real_evidence')
+        .delete()
+        .eq('id', recordId)
+        .eq('workspace_id', ws.id);
+
+      if (error) throw error;
+      return true;
+    }
+
+    async deleteAllRealEvidence() {
+      if (!this.isAuthenticated()) return false;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return false;
+
+      const { error } = await this.client
+        .from('founder_real_evidence')
+        .delete()
+        .eq('workspace_id', ws.id);
+
+      if (error) throw error;
+      return true;
+    }
+
+    async updateEvidencePrivacy(recordId, isOptedIn) {
+      if (!this.isAuthenticated()) return null;
+      const ws = await this.ensureWorkspace();
+      if (!ws) return null;
+
+      const privacyStatus = isOptedIn ? 'opted_in_shared' : 'private';
+      const optedInAt = isOptedIn ? new Date().toISOString() : null;
+
+      const { data, error } = await this.client
+        .from('founder_real_evidence')
+        .update({
+          privacy_status: privacyStatus,
+          opted_in_at: optedInAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', recordId)
+        .eq('workspace_id', ws.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return this.formatRealEvidenceRecord(data);
+    }
+
+    formatRealEvidenceRecord(row) {
+      if (!row) return null;
+      return {
+        id: row.id,
+        researchMethod: row.research_method,
+        evidenceType: row.evidence_type,
+        sourceCitation: row.source_citation,
+        countryCode: row.country_code,
+        countryName: row.country_name,
+        industryDomain: row.industry_domain,
+        customerGroupId: row.customer_group_id,
+        customerGroupName: row.customer_group_name,
+        collectionStartDate: row.collection_start_date,
+        collectionEndDate: row.collection_end_date,
+        sampleSize: Number(row.sample_size),
+        sampleDescription: row.sample_description,
+        researchQuestion: row.research_question,
+        resultsSummary: row.results_summary,
+        quantitativeMetrics: row.quantitative_metrics || {},
+        limitationsAndBiases: row.limitations_and_biases,
+        isRepresentativeSample: Boolean(row.is_representative_sample),
+        privacyStatus: row.privacy_status,
+        optedInAt: row.opted_in_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    }
+
+    exportRealEvidenceData(records, format = 'json') {
+      if (!records || records.length === 0) {
+        return format === 'csv' ? 'id,research_method,sample_size,results_summary\n' : '[]';
+      }
+
+      if (format === 'csv') {
+        const headers = [
+          'ID',
+          'Evidence Type',
+          'Research Method',
+          'Country',
+          'Industry',
+          'Customer Group',
+          'Sample Size (N)',
+          'Collection Period',
+          'Research Question / Hypothesis',
+          'Results Summary',
+          'Limitations and Biases',
+          'Representative of Country',
+          'Privacy Status',
+          'Source Citation',
+          'Created Date'
+        ];
+
+        const escapeCsvField = (val) => {
+          if (val === null || val === undefined) return '""';
+          const str = String(val).replace(/"/g, '""');
+          return `"${str}"`;
+        };
+
+        const rows = records.map(r => [
+          r.id,
+          r.evidenceType,
+          r.researchMethod,
+          r.countryName || r.countryCode || 'N/A',
+          r.industryDomain,
+          r.customerGroupName || 'All',
+          r.sampleSize,
+          `${r.collectionStartDate || ''} to ${r.collectionEndDate || ''}`.trim(),
+          r.researchQuestion,
+          r.resultsSummary,
+          r.limitationsAndBiases,
+          r.isRepresentativeSample ? 'Yes (Verified)' : 'No (Directional/Biased)',
+          r.privacyStatus === 'opted_in_shared' ? 'Opted-In (De-Identified)' : 'Strictly Private',
+          r.sourceCitation || '',
+          r.createdAt ? new Date(r.createdAt).toISOString() : ''
+        ].map(escapeCsvField).join(','));
+
+        return [headers.map(escapeCsvField).join(','), ...rows].join('\n');
+      }
+
+      return JSON.stringify(records, null, 2);
+    }
+
+
+    /* -------------------------------------------------------------
        MARKET DATA LIBRARY (PUBLIC READ VIA RLS)
        ------------------------------------------------------------- */
     async getMarketSources() {

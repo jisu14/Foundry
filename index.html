@@ -104,6 +104,15 @@
             <span class="nav-label">Simulation history</span>
             <span class="sidebar-badge" id="navHistoryCount">0</span>
           </button>
+
+          <button class="nav-item" data-view="real-evidence">
+            <span class="nav-svg-icon">
+              <!-- Clipboard / Evidence Check icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+            </span>
+            <span class="nav-label">Real evidence</span>
+            <span class="sidebar-badge" id="navRealEvidenceCount">0</span>
+          </button>
         </nav>
       </div>
 
@@ -870,6 +879,20 @@
                 </div>
               </div>
 
+              <!-- Real Empirical Field Evidence Comparison Box -->
+              <div id="simRealEvidenceBox" class="launch-real-evidence-box hidden">
+                <div class="launch-real-evidence-header">
+                  <span class="launch-real-evidence-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+                    Real Empirical Evidence Comparison
+                  </span>
+                  <span class="badge-status-neutral" id="simRealEvidenceBadge">0 Field Studies</span>
+                </div>
+                <div id="simRealEvidenceContent" class="text-xs text-muted">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+
               <!-- Funnel & Drop-off Breakdown -->
               <div class="panel-section">
                 <h4 class="section-title">
@@ -1464,6 +1487,344 @@
 
       </section>
 
+      <!-- ========================================================== -->
+      <!-- VIEW 8: REAL MARKET EVIDENCE & FIELD RESEARCH               -->
+      <!-- ========================================================== -->
+      <section id="view-real-evidence" class="page-view">
+        <div class="view-header">
+          <div>
+            <h2>Real Market Evidence &amp; Field Research</h2>
+            <p class="view-desc">Record, organize, and analyze empirical findings gathered outside the simulation — including customer interviews, surveys, landing-page smoke tests, and actual pre-orders/sales.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline-cyan btn-sm" id="btnToggleEvidenceForm" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Record New Evidence
+            </button>
+            <button class="btn btn-lime-outline btn-sm" id="btnExportEvidenceDropdown" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Data
+            </button>
+          </div>
+        </div>
+
+        <!-- Three-Pillar Intelligence Architecture -->
+        <div class="evidence-trio-grid">
+          <div class="intelligence-pillar-card macro-pillar">
+            <span class="pillar-badge macro">Tier 1 &bull; Sourced Macro Data</span>
+            <h4 class="pillar-title">Verified Official Statistics</h4>
+            <p class="pillar-desc">National telecommunications, digital finance, and enterprise infrastructure metrics sourced from the World Bank, ITU, UNCTAD, and Eurostat. Sets total addressable infrastructure boundaries.</p>
+            <div class="pillar-footer-note">Source: International Agencies &bull; Scope: Sovereign Nation</div>
+          </div>
+
+          <div class="intelligence-pillar-card sim-pillar">
+            <span class="pillar-badge sim">Tier 2 &bull; Simulated Sandbox</span>
+            <h4 class="pillar-title">Virtual Persona Projections</h4>
+            <p class="pillar-desc">Algorithmic sandbox reactions derived from founder hypotheses, pricing elasticity curves, and channel CPM benchmarks. Labeled fictional practice outputs for stress-testing positioning.</p>
+            <div class="pillar-footer-note">Source: Mathematical Engine &bull; Scope: Synthetic Simulation</div>
+          </div>
+
+          <div class="intelligence-pillar-card real-pillar">
+            <span class="pillar-badge real">Tier 3 &bull; Real Field Evidence</span>
+            <h4 class="pillar-title">Empirical Human Discovery</h4>
+            <p class="pillar-desc">Primary research collected directly by founders with real customers: in-depth interviews, landing-page traffic conversions, prototype usability feedback, and actual committed dollars.</p>
+            <div class="pillar-footer-note">Source: Firsthand Founder Research &bull; Scope: Observed Cohort</div>
+          </div>
+        </div>
+
+        <!-- Privacy, Security & RLS Sovereign Architecture Banner -->
+        <div class="privacy-pledge-banner">
+          <div class="privacy-pledge-header">
+            <div class="privacy-pledge-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Private by Default &bull; Row Level Security &bull; Explicit Opt-In Controls</span>
+            </div>
+            <button class="btn btn-outline-cyan btn-xs" id="btnExplainPrivacyDetails" type="button">Privacy Architecture</button>
+          </div>
+          <div class="privacy-features-grid">
+            <div class="privacy-feature-item">
+              <strong>🔒 Strict Multi-Tenant Isolation</strong>
+              <span>Protected by PostgreSQL Row Level Security (RLS). Only your authenticated session can query or modify your records.</span>
+            </div>
+            <div class="privacy-feature-item">
+              <strong>🛡️ Zero Shared Training Without Opt-In</strong>
+              <span>Your research is never shared, benchmarked, or seen by other founders unless you provide explicit affirmative consent.</span>
+            </div>
+            <div class="privacy-feature-item">
+              <strong>👁️‍🗨️ Guaranteed De-Identification</strong>
+              <span>If you opt in, findings are aggregated anonymously (k-anonymity >= 3). Raw interview quotes and customer identities are NEVER exposed.</span>
+            </div>
+            <div class="privacy-feature-item">
+              <strong>🗑️ Instant Export &amp; Hard Deletion</strong>
+              <span>Export your raw research anytime in JSON or CSV, or permanently purge individual records or your full archive with zero retention.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form: Record New Market Evidence -->
+        <div class="evidence-form-card" id="evidenceFormContainer">
+          <div class="evidence-form-title-row">
+            <div class="flex-align-center gap-2">
+              <div class="brand-icon-lime">✚</div>
+              <h3 id="evidenceFormHeading">Record Field Research Evidence</h3>
+            </div>
+            <span class="badge-status-neutral">Empirical Intake</span>
+          </div>
+
+          <form id="realEvidenceForm">
+            <input type="hidden" id="evidenceRecordId" value="">
+
+            <div class="evidence-form-grid">
+              <!-- Research Method -->
+              <div class="form-group">
+                <label for="evidenceMethod">Research Method *</label>
+                <select id="evidenceMethod" class="form-select" required>
+                  <option value="customer_interviews">In-depth Customer Interviews</option>
+                  <option value="quantitative_survey">Quantitative User Survey</option>
+                  <option value="landing_page_smoke_test">Landing Page / Smoke Test</option>
+                  <option value="actual_sales_orders">Actual Sales / Pre-orders / Paid Pilots</option>
+                  <option value="prototype_usability_test">Prototype Usability Session</option>
+                  <option value="pricing_conjoint_test">Pricing Conjoint / Elasticity Test</option>
+                  <option value="b2b_pilot_program">B2B Enterprise Pilot Program</option>
+                  <option value="other_field_experiment">Other Field Experiment</option>
+                </select>
+              </div>
+
+              <!-- Evidence Type: Firsthand vs Published -->
+              <div class="form-group">
+                <label for="evidenceType">Evidence Source Type *</label>
+                <select id="evidenceType" class="form-select" required>
+                  <option value="firsthand">Firsthand Research (Conducted directly by you/team)</option>
+                  <option value="published_source">Published Secondary Source (Report/Study)</option>
+                </select>
+              </div>
+
+              <!-- Source Citation / Conductor -->
+              <div class="form-group">
+                <label for="evidenceCitation">Conductor or Citation *</label>
+                <input type="text" id="evidenceCitation" class="form-input" placeholder="e.g. Conducted by Founder or Gartner DevSecOps 2024" required>
+              </div>
+
+              <!-- Country / Geography -->
+              <div class="form-group">
+                <label for="evidenceCountry">Target Country / Geography *</label>
+                <select id="evidenceCountry" class="form-select" required>
+                  <option value="USA">United States (USA)</option>
+                  <option value="DEU">Germany (DEU)</option>
+                  <option value="GBR">United Kingdom (GBR)</option>
+                  <option value="FRA">France (FRA)</option>
+                  <option value="IND">India (IND)</option>
+                  <option value="BRA">Brazil (BRA)</option>
+                  <option value="KEN">Kenya (KEN)</option>
+                  <option value="JPN">Japan (JPN)</option>
+                  <option value="SGP">Singapore (SGP)</option>
+                  <option value="NGA">Nigeria (NGA)</option>
+                  <option value="CAN">Canada (CAN)</option>
+                  <option value="GLOBAL">Global / Multi-National</option>
+                  <option value="OTHER">Other Geography</option>
+                </select>
+              </div>
+
+              <!-- Industry Vertical -->
+              <div class="form-group">
+                <label for="evidenceIndustry">Industry / Domain Vertical *</label>
+                <select id="evidenceIndustry" class="form-select" required>
+                  <option value="Mobile Applications">Mobile Applications</option>
+                  <option value="B2B SaaS / Developer Tools">B2B SaaS / Developer Tools</option>
+                  <option value="Consumer E-Commerce">Consumer E-Commerce</option>
+                  <option value="Fintech &amp; Digital Banking">Fintech &amp; Digital Banking</option>
+                  <option value="Healthcare &amp; MedTech">Healthcare &amp; MedTech</option>
+                  <option value="CleanTech &amp; Energy">CleanTech &amp; Energy</option>
+                  <option value="EdTech &amp; Learning">EdTech &amp; Learning</option>
+                  <option value="Other Technology Domain">Other Technology Domain</option>
+                </select>
+              </div>
+
+              <!-- Customer Group Studied -->
+              <div class="form-group">
+                <label for="evidenceCustomerGroup">Target Customer Group Studied *</label>
+                <input type="text" id="evidenceCustomerGroup" class="form-input" placeholder="e.g. Series A Tech Leads, Remote Freelancers" required>
+              </div>
+
+              <!-- Collection Start Date -->
+              <div class="form-group">
+                <label for="evidenceStartDate">Collection Start Date</label>
+                <input type="date" id="evidenceStartDate" class="form-input">
+              </div>
+
+              <!-- Collection End Date -->
+              <div class="form-group">
+                <label for="evidenceEndDate">Collection End Date</label>
+                <input type="date" id="evidenceEndDate" class="form-input">
+              </div>
+
+              <!-- Sample Size (N) -->
+              <div class="form-group">
+                <label for="evidenceSampleSize">Sample Size (N Participants / Respondents) *</label>
+                <input type="number" id="evidenceSampleSize" class="form-input" min="1" max="10000000" placeholder="e.g. 25 interviews, 300 visitors" required>
+                <small class="field-help-text">Exact count of actual people, organizations, or test visits observed.</small>
+              </div>
+
+              <!-- Sample Demographics Description -->
+              <div class="form-group evidence-full-width">
+                <label for="evidenceSampleDescription">Sample Description &amp; Recruitment Method</label>
+                <input type="text" id="evidenceSampleDescription" class="form-input" placeholder="e.g. Recruited via LinkedIn InMail and Hacker News, engineering leads with &gt;5 direct reports in Germany">
+              </div>
+
+              <!-- Question or Test Used -->
+              <div class="form-group evidence-full-width">
+                <label for="evidenceQuestion">Specific Question or Test Used (Hypothesis) *</label>
+                <textarea id="evidenceQuestion" class="form-textarea" rows="2" placeholder="e.g. What is your current workflow for database schema migrations, and would you purchase an automated rollback tool at $79/month?" required></textarea>
+              </div>
+
+              <!-- Summary of Results -->
+              <div class="form-group evidence-full-width">
+                <label for="evidenceResults">Summary of Findings &amp; Outcomes *</label>
+                <textarea id="evidenceResults" class="form-textarea" rows="3" placeholder="e.g. 19 out of 25 stated manual migrations are their #1 blocker. 6 signed up for immediate beta testing at $79/mo. 4 requested GitHub Actions integration." required></textarea>
+              </div>
+
+              <!-- Quantitative Metrics (Optional) -->
+              <div class="form-group">
+                <label for="evidenceConversionRate">Observed Conversion Rate (%)</label>
+                <input type="number" step="0.1" min="0" max="100" id="evidenceConversionRate" class="form-input" placeholder="e.g. 14.5">
+              </div>
+
+              <div class="form-group">
+                <label for="evidenceWillingPrice">Observed Price / ACV ($)</label>
+                <input type="number" step="1" min="0" id="evidenceWillingPrice" class="form-input" placeholder="e.g. 79">
+              </div>
+
+              <!-- Sample Limitations & Biases (Mandatory & Prominently Highlighted) -->
+              <div class="form-group evidence-full-width">
+                <label for="evidenceLimitations" style="color: #fbbf24;">
+                  ⚠️ Documented Sample Limitations &amp; Biases (Mandatory Disclosure) *
+                </label>
+                <div class="helper-pills-row">
+                  <span class="helper-pill" onclick="window.appendEvidenceLimitation('Small sample size (N < 30). Findings provide directional qualitative signals only and are not statistically representative of the overall national market.')">➕ Small Sample (N &lt; 30)</span>
+                  <span class="helper-pill" onclick="window.appendEvidenceLimitation('Convenience sample derived from founder personal network and warm introductions; subject to courtesy bias.')">➕ Founder Network Bias</span>
+                  <span class="helper-pill" onclick="window.appendEvidenceLimitation('Early adopter skew: participants were highly tech-savvy and more tolerant of prototype bugs than mainstream buyers.')">➕ Early Adopter Skew</span>
+                  <span class="helper-pill" onclick="window.appendEvidenceLimitation('Geographically confined to one metropolitan region; cannot be generalized across other territories or cultures.')">➕ Geographic Confinement</span>
+                  <span class="helper-pill" onclick="window.appendEvidenceLimitation('Self-reported intention: respondents stated willingness to buy, but no signed contracts or credit cards were captured.')">➕ Stated vs Revealed Intent</span>
+                </div>
+                <textarea id="evidenceLimitations" class="form-textarea" rows="3" placeholder="Detail known biases, small sample limits, recruitment constraints, and why this sample cannot be presented as representative of the entire country or industry." required></textarea>
+                <small class="field-help-text" style="color: #fbbf24;">Ethical safeguard: Never present a small or biased sample as representative of an entire country or industry.</small>
+              </div>
+
+              <!-- Statistical Representativeness Checkbox -->
+              <div class="form-group evidence-full-width">
+                <label class="checkbox-container">
+                  <input type="checkbox" id="evidenceIsRepresentative">
+                  <span class="checkmark"></span>
+                  <span class="checkbox-label-text">
+                    <strong>Statistically Representative of National Market</strong> (Leave UNCHECKED unless you conducted a randomized, probability-sampled national study with appropriate margin of error).
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Opt-In Sharing Box -->
+            <div class="optin-consent-card">
+              <label class="optin-checkbox-label">
+                <input type="checkbox" id="evidenceOptInShare">
+                <span>Opt-in to contribute de-identified, aggregated findings to improve Foundry's benchmark curves</span>
+              </label>
+              <p class="optin-explanation">
+                <strong>Privacy Guarantee:</strong> Evidence is strictly private to your workspace by default. If checked, Foundry only includes anonymized aggregate statistics (e.g. median conversion rates by industry domain) in <code>public.shared_evidence_benchmarks</code>. Your raw notes, interview quotes, customer names, and startup details are <strong>NEVER exposed</strong> to other founders or model outputs.
+              </p>
+            </div>
+
+            <div class="flex-align-center justify-between mt-3 flex-wrap gap-2">
+              <div class="flex-align-center gap-2">
+                <button type="submit" class="btn btn-lime" id="btnSaveEvidence">
+                  Save Evidence Record
+                </button>
+                <button type="button" class="btn btn-outline-cyan" id="btnResetEvidenceForm">
+                  Reset Form
+                </button>
+              </div>
+              <span class="text-xs text-muted" id="evidenceFormStatus">All data saved locally and synced to workspace</span>
+            </div>
+          </form>
+        </div>
+
+        <!-- Evidence Repository & Filter Toolbar -->
+        <div class="city-panel">
+          <div class="evidence-repository-header">
+            <div>
+              <h3 class="panel-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+                </span>
+                Recorded Field Evidence Repository
+              </h3>
+              <p class="coverage-section-desc">Audited empirical research studies recorded for this venture. Filter by method, market, or sourcing.</p>
+            </div>
+            <div class="flex-align-center gap-2">
+              <span class="badge-status-neutral" id="evidenceTotalCountBadge">0 Studies</span>
+              <span class="badge-status-neutral" id="evidenceTotalSampleSizeBadge">N = 0 People</span>
+            </div>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="evidence-filter-bar">
+            <div class="flex-align-center gap-2">
+              <label for="filterEvidenceMethod" class="text-xs text-muted">Method:</label>
+              <select id="filterEvidenceMethod" class="form-select form-select-xs" style="width: auto;">
+                <option value="ALL">All Methods</option>
+                <option value="customer_interviews">Customer Interviews</option>
+                <option value="quantitative_survey">Quantitative Surveys</option>
+                <option value="landing_page_smoke_test">Landing Page / Smoke Tests</option>
+                <option value="actual_sales_orders">Actual Sales / Orders</option>
+                <option value="prototype_usability_test">Usability Tests</option>
+                <option value="pricing_conjoint_test">Pricing Tests</option>
+                <option value="b2b_pilot_program">Pilot Programs</option>
+              </select>
+            </div>
+
+            <div class="flex-align-center gap-2">
+              <label for="filterEvidenceType" class="text-xs text-muted">Source:</label>
+              <select id="filterEvidenceType" class="form-select form-select-xs" style="width: auto;">
+                <option value="ALL">All Sources</option>
+                <option value="firsthand">Firsthand Research</option>
+                <option value="published_source">Published Secondary</option>
+              </select>
+            </div>
+
+            <div class="flex-align-center gap-2">
+              <label for="filterEvidencePrivacy" class="text-xs text-muted">Privacy:</label>
+              <select id="filterEvidencePrivacy" class="form-select form-select-xs" style="width: auto;">
+                <option value="ALL">All Privacy States</option>
+                <option value="private">Private to Me</option>
+                <option value="opted_in_shared">Opted-In (Shared Aggregate)</option>
+              </select>
+            </div>
+
+            <div class="flex-align-center gap-2 ml-auto">
+              <input type="text" id="filterEvidenceSearch" class="form-input form-input-xs" placeholder="Search questions, notes..." style="width: 180px;">
+            </div>
+          </div>
+
+          <!-- Evidence Cards Container -->
+          <div class="evidence-cards-list" id="evidenceCardsContainer">
+            <!-- Dynamically populated or empty state rendered here -->
+          </div>
+
+          <!-- Data Sovereignty Toolbar -->
+          <div class="data-sovereignty-toolbar">
+            <div class="sovereignty-info">
+              <span class="sovereignty-title">Founder Data Sovereignty &amp; Compliance</span>
+              <span class="sovereignty-desc">Your evidence is stored with Row Level Security. You own your data in full.</span>
+            </div>
+            <div class="flex-align-center gap-2 flex-wrap">
+              <button class="btn btn-outline-cyan btn-xs" id="btnExportEvidenceJson" type="button">Export JSON</button>
+              <button class="btn btn-outline-cyan btn-xs" id="btnExportEvidenceCsv" type="button">Export CSV</button>
+              <button class="btn btn-danger-outline btn-xs" id="btnDeleteAllEvidence" type="button">Purge All Evidence</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
     </main>
 
   </div>
@@ -1770,6 +2131,80 @@
         <div class="evidence-section" id="logModalErrorsSection">
           <h4 class="evidence-section-title text-danger">Errors &amp; Exceptions</h4>
           <pre class="log-modal-pre text-danger" id="logModalErrors">None</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: REAL EVIDENCE PRIVACY ARCHITECTURE & RLS POLICY     -->
+  <!-- ========================================================== -->
+  <div id="evidencePrivacyModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <div class="brand-icon-lime">🔒</div>
+          <h3>Real Evidence Privacy &amp; Data Security Architecture</h3>
+        </div>
+        <button class="modal-close-btn" id="btnCloseEvidencePrivacyModal" type="button">✕</button>
+      </div>
+
+      <div class="coverage-modal-body">
+        <div class="privacy-pledge-banner" style="margin-bottom: 16px;">
+          <h4 style="color: #6ee7b7; font-size: 0.92rem; margin-bottom: 6px;">How Foundry Protects Your Field Discoveries</h4>
+          <p style="color: #d1fae5; font-size: 0.8rem; line-height: 1.5; margin: 0;">
+            Customer interviews, pricing elasticity responses, and unreleased product feedback are confidential startup assets. Foundry treats your field research with institutional database isolation.
+          </p>
+        </div>
+
+        <div class="coverage-modal-meta-grid">
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Storage Backend:</span>
+            <strong class="text-lime">PostgreSQL + RLS</strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Tenant Isolation:</span>
+            <strong><code>auth.uid() = user_id</code></strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Shared Model Opt-In:</span>
+            <strong class="text-cyan">Explicit Affirmative</strong>
+          </div>
+          <div class="cov-meta-box">
+            <span class="cov-meta-label">Raw Notes Exposure:</span>
+            <strong class="text-danger">0% (Strictly Blocked)</strong>
+          </div>
+        </div>
+
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">1. Row Level Security (RLS) Isolation</h4>
+          <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
+            Every record in <code>public.founder_real_evidence</code> is tagged with your <code>user_id</code> and <code>workspace_id</code>. PostgreSQL executes policies at the database engine level, guaranteeing that queries from any other user or anonymous caller will return zero rows.
+          </p>
+        </div>
+
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">2. De-Identification &amp; Aggregation Firewall</h4>
+          <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
+            If you explicitly check the opt-in box, Foundry's shared benchmark model accesses your record exclusively via <code>public.shared_evidence_benchmarks</code>. This SQL view strips:
+          </p>
+          <ul style="font-size: 0.78rem; color: #94a3b8; margin-left: 20px; line-height: 1.6; margin-top: 6px;">
+            <li>Founder and Startup Identity (<code>user_id</code>, <code>workspace_id</code>)</li>
+            <li>Customer Group Names &amp; Participant Demographics</li>
+            <li>Specific Research Questions &amp; Test Inquiries</li>
+            <li>All Qualitative Quotes, Raw Interview Transcripts &amp; Notes</li>
+            <li>Source Citations &amp; Conductor Names</li>
+          </ul>
+          <p style="font-size: 0.78rem; color: #a7f3d0; margin-top: 6px;">
+            Only high-level numeric distributions (e.g., median conversion rate by industry vertical across &ge;3 independent contributors) are retained to protect k-anonymity.
+          </p>
+        </div>
+
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">3. Export &amp; Hard Deletion Sovereignty</h4>
+          <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
+            You retain 100% intellectual property ownership. You can download your entire dataset at any time via JSON or CSV export, or permanently delete records via <code>ON DELETE CASCADE</code> with zero lingering retention or backup copies.
+          </p>
         </div>
       </div>
     </div>

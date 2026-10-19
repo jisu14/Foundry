@@ -9,6 +9,7 @@ const STORAGE_MARKET = 'vsw_market_v2';
 const STORAGE_CAMPAIGN = 'vsw_campaign_v2';
 const STORAGE_HISTORY = 'vsw_history_v2';
 const STORAGE_WORLD = 'vsw_world_v2';
+const STORAGE_REAL_EVIDENCE = 'vsw_real_evidence_v2';
 
 // Global State
 let state = {
@@ -32,6 +33,7 @@ let state = {
     industry: 'Mobile Applications'
   },
   history: [],
+  realEvidence: [],
   world: {
     cycle: 1,
     day: 1,
@@ -51,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initHistoryView();
   initLibraryView();
   initCoverageView();
+  initRealEvidenceView();
   initSupabaseAuthAndModals();
   renderAllViews();
 });
@@ -144,6 +147,8 @@ function navigateToView(viewId) {
     renderLibraryView();
   } else if (viewId === 'coverage') {
     renderCoverageView();
+  } else if (viewId === 'real-evidence') {
+    renderRealEvidenceView();
   }
 }
 
@@ -163,6 +168,9 @@ function loadStateFromStorage() {
 
     const savedHistory = localStorage.getItem(STORAGE_HISTORY);
     if (savedHistory) state.history = JSON.parse(savedHistory);
+
+    const savedEvidence = localStorage.getItem(STORAGE_REAL_EVIDENCE);
+    if (savedEvidence) state.realEvidence = JSON.parse(savedEvidence);
 
     const savedWorld = localStorage.getItem(STORAGE_WORLD);
     if (savedWorld) state.world = JSON.parse(savedWorld);
@@ -206,6 +214,7 @@ function handleResetWorld() {
   localStorage.removeItem(STORAGE_MARKET);
   localStorage.removeItem(STORAGE_CAMPAIGN);
   localStorage.removeItem(STORAGE_HISTORY);
+  localStorage.removeItem(STORAGE_REAL_EVIDENCE);
   localStorage.removeItem(STORAGE_WORLD);
 
   state = {
@@ -224,9 +233,12 @@ function handleResetWorld() {
       targetGroupId: '',
       price: 10,
       channel: 'social',
-      budget: 300
+      budget: 300,
+      country: 'USA',
+      industry: 'Mobile Applications'
     },
     history: [],
+    realEvidence: [],
     world: {
       cycle: 1,
       day: 1,
@@ -2268,6 +2280,61 @@ function displayLaunchResults(res) {
       </div>
     `;
   }
+
+  // Empirical Real Evidence Cross-Reference
+  const realEvidenceBox = document.getElementById('simRealEvidenceBox');
+  const realEvidenceBadge = document.getElementById('simRealEvidenceBadge');
+  const realEvidenceContent = document.getElementById('simRealEvidenceContent');
+
+  if (realEvidenceBox && realEvidenceContent) {
+    const matchingEvidence = (state.realEvidence || []).filter(ev => {
+      const matchCountry = !ev.countryCode || ev.countryCode === 'GLOBAL' || ev.countryCode === (res.countryCode || res.country?.code);
+      const matchIndustry = !ev.industryDomain || ev.industryDomain === 'All' || ev.industryDomain === (res.industryDomain || res.industry);
+      return matchCountry && matchIndustry;
+    });
+
+    if (matchingEvidence.length > 0) {
+      realEvidenceBox.classList.remove('hidden');
+      if (realEvidenceBadge) realEvidenceBadge.textContent = `${matchingEvidence.length} Field ${matchingEvidence.length > 1 ? 'Studies' : 'Study'}`;
+      
+      realEvidenceContent.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <p style="color:#d1fae5; margin:0; font-size:0.76rem;">
+            Foundry identified <strong>${matchingEvidence.length} recorded empirical research ${matchingEvidence.length > 1 ? 'studies' : 'study'}</strong> in your workspace for <strong>${escapeHtml(res.countryCode || 'USA')} &bull; ${escapeHtml(res.industryDomain || 'Mobile Applications')}</strong>. Comparing empirical customer findings against simulated projections:
+          </p>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px;">
+            ${matchingEvidence.map(ev => `
+              <div style="background:rgba(0,0,0,0.35); border:1px solid rgba(16,185,129,0.3); border-radius:6px; padding:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <span style="font-weight:700; color:#34d399; font-size:0.74rem; text-transform:uppercase;">${escapeHtml(formatMethodLabel(ev.researchMethod))}</span>
+                  <span style="font-family:var(--font-mono); font-size:0.72rem; color:#cbd5e1; background:rgba(255,255,255,0.06); padding:1px 5px; border-radius:3px;">N = ${ev.sampleSize}</span>
+                </div>
+                <div style="font-size:0.76rem; color:#f1f5f3; font-weight:600; margin-bottom:4px;">"${escapeHtml(ev.researchQuestion)}"</div>
+                <div style="font-size:0.74rem; color:#94a3b8; margin-bottom:6px;">${escapeHtml(ev.resultsSummary)}</div>
+                <div style="background:rgba(251,191,36,0.1); border-left:2px solid #fbbf24; padding:5px 7px; font-size:0.7rem; color:#fef3c7;">
+                  <strong style="color:#fbbf24;">Limitation:</strong> ${escapeHtml(ev.limitationsAndBiases)}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <p style="font-size:0.7rem; color:#94a3b8; margin:0;">
+            <em>Ethical guideline: Directional findings from small or biased samples (N &lt; 50) provide qualitative problem-space signals, but cannot be presented as representative of an entire country or industry.</em>
+          </p>
+        </div>
+      `;
+    } else {
+      realEvidenceBox.classList.remove('hidden');
+      if (realEvidenceBadge) realEvidenceBadge.textContent = '0 Matching Studies';
+      realEvidenceContent.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:0.76rem; color:#94a3b8;">No firsthand customer research recorded yet for <strong>${escapeHtml(res.countryCode || 'USA')} &bull; ${escapeHtml(res.industryDomain || 'Mobile Applications')}</strong>.</span>
+          <button class="btn btn-lime-outline btn-xs" type="button" onclick="navigateToView('real-evidence')">
+            + Record Field Evidence
+          </button>
+        </div>
+      `;
+    }
+  }
 }
 
 /* ==========================================================
@@ -2690,6 +2757,7 @@ function renderAllViews() {
   renderSourcedMarketData();
   renderLibraryView();
   renderCoverageView();
+  renderRealEvidenceView();
   updateCloudStatusUI();
   updateBadges();
 }
@@ -2704,8 +2772,10 @@ function renderHeader() {
 function updateBadges() {
   const groupBadge = document.getElementById('navGroupCount');
   const historyBadge = document.getElementById('navHistoryCount');
+  const evidenceBadge = document.getElementById('navRealEvidenceCount');
   if (groupBadge) groupBadge.textContent = state.market.groups.length;
   if (historyBadge) historyBadge.textContent = state.history.length;
+  if (evidenceBadge) evidenceBadge.textContent = (state.realEvidence || []).length;
 }
 
 function channelLabel(channel) {
@@ -3983,6 +4053,535 @@ window.openSourceLogModal = function(sourceId) {
 };
 
 /* ==========================================================
+   12B. REAL MARKET EVIDENCE & FIELD RESEARCH CONTROLLER
+   Empirical research collected outside the simulation.
+   Strictly private by default; explicit opt-in only.
+   Guards against conflating small samples with national populations.
+   ========================================================== */
+
+function formatMethodLabel(method) {
+  const map = {
+    customer_interviews: 'In-depth Customer Interviews',
+    quantitative_survey: 'Quantitative User Survey',
+    landing_page_smoke_test: 'Landing Page / Smoke Test',
+    actual_sales_orders: 'Actual Sales / Pre-orders',
+    prototype_usability_test: 'Prototype Usability Test',
+    pricing_conjoint_test: 'Pricing Conjoint Test',
+    b2b_pilot_program: 'B2B Enterprise Pilot',
+    other_field_experiment: 'Field Experiment'
+  };
+  return map[method] || method;
+}
+
+window.appendEvidenceLimitation = function(text) {
+  const textarea = document.getElementById('evidenceLimitations');
+  if (!textarea) return;
+  const current = textarea.value.trim();
+  if (!current) {
+    textarea.value = text;
+  } else if (!current.includes(text)) {
+    textarea.value = current + ' ' + text;
+  }
+  textarea.focus();
+};
+
+function initRealEvidenceView() {
+  const form = document.getElementById('realEvidenceForm');
+  if (form) {
+    form.addEventListener('submit', handleSaveRealEvidence);
+  }
+
+  const btnReset = document.getElementById('btnResetEvidenceForm');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      if (form) form.reset();
+      document.getElementById('evidenceRecordId').value = '';
+      const heading = document.getElementById('evidenceFormHeading');
+      if (heading) heading.textContent = 'Record Field Research Evidence';
+      const status = document.getElementById('evidenceFormStatus');
+      if (status) status.textContent = 'All data saved locally and synced to workspace';
+    });
+  }
+
+  const btnToggle = document.getElementById('btnToggleEvidenceForm');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => {
+      const container = document.getElementById('evidenceFormContainer');
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth' });
+        const firstInput = document.getElementById('evidenceMethod');
+        if (firstInput) firstInput.focus();
+      }
+    });
+  }
+
+  // Export buttons
+  const btnExportDropdown = document.getElementById('btnExportEvidenceDropdown');
+  if (btnExportDropdown) {
+    btnExportDropdown.addEventListener('click', () => {
+      handleExportRealEvidence('json');
+    });
+  }
+
+  const btnExportJson = document.getElementById('btnExportEvidenceJson');
+  if (btnExportJson) {
+    btnExportJson.addEventListener('click', () => {
+      handleExportRealEvidence('json');
+    });
+  }
+
+  const btnExportCsv = document.getElementById('btnExportEvidenceCsv');
+  if (btnExportCsv) {
+    btnExportCsv.addEventListener('click', () => {
+      handleExportRealEvidence('csv');
+    });
+  }
+
+  // Purge button
+  const btnDeleteAll = document.getElementById('btnDeleteAllEvidence');
+  if (btnDeleteAll) {
+    btnDeleteAll.addEventListener('click', handleClearAllRealEvidence);
+  }
+
+  // Privacy Explanation Modal
+  const btnExplain = document.getElementById('btnExplainPrivacyDetails');
+  const modalPrivacy = document.getElementById('evidencePrivacyModal');
+  const btnClosePrivacy = document.getElementById('btnCloseEvidencePrivacyModal');
+
+  if (btnExplain && modalPrivacy) {
+    btnExplain.addEventListener('click', () => {
+      modalPrivacy.classList.remove('hidden');
+    });
+  }
+
+  if (btnClosePrivacy && modalPrivacy) {
+    btnClosePrivacy.addEventListener('click', () => {
+      modalPrivacy.classList.add('hidden');
+    });
+  }
+
+  if (modalPrivacy) {
+    modalPrivacy.addEventListener('click', (e) => {
+      if (e.target === modalPrivacy) {
+        modalPrivacy.classList.add('hidden');
+      }
+    });
+  }
+
+  // Filter Toolbar listeners
+  const filterMethod = document.getElementById('filterEvidenceMethod');
+  const filterType = document.getElementById('filterEvidenceType');
+  const filterPrivacy = document.getElementById('filterEvidencePrivacy');
+  const filterSearch = document.getElementById('filterEvidenceSearch');
+
+  if (filterMethod) filterMethod.addEventListener('change', renderRealEvidenceView);
+  if (filterType) filterType.addEventListener('change', renderRealEvidenceView);
+  if (filterPrivacy) filterPrivacy.addEventListener('change', renderRealEvidenceView);
+  if (filterSearch) filterSearch.addEventListener('input', renderRealEvidenceView);
+}
+
+async function handleSaveRealEvidence(e) {
+  e.preventDefault();
+
+  const recordId = document.getElementById('evidenceRecordId').value.trim();
+  const method = document.getElementById('evidenceMethod').value;
+  const evidenceType = document.getElementById('evidenceType').value;
+  const citation = document.getElementById('evidenceCitation').value.trim();
+  const country = document.getElementById('evidenceCountry').value;
+  const industry = document.getElementById('evidenceIndustry').value;
+  const customerGroup = document.getElementById('evidenceCustomerGroup').value.trim();
+  const startDate = document.getElementById('evidenceStartDate').value || null;
+  const endDate = document.getElementById('evidenceEndDate').value || null;
+  const sampleSize = parseInt(document.getElementById('evidenceSampleSize').value, 10);
+  const sampleDesc = document.getElementById('evidenceSampleDescription').value.trim() || null;
+  const question = document.getElementById('evidenceQuestion').value.trim();
+  const results = document.getElementById('evidenceResults').value.trim();
+  const limitations = document.getElementById('evidenceLimitations').value.trim();
+  const isRepresentative = document.getElementById('evidenceIsRepresentative').checked;
+  const optInShare = document.getElementById('evidenceOptInShare').checked;
+
+  const convRateVal = document.getElementById('evidenceConversionRate').value;
+  const willingPriceVal = document.getElementById('evidenceWillingPrice').value;
+
+  const quantitativeMetrics = {};
+  if (convRateVal !== '') quantitativeMetrics.conversion_rate = parseFloat(convRateVal) / 100;
+  if (willingPriceVal !== '') quantitativeMetrics.price_willing_to_pay = parseFloat(willingPriceVal);
+
+  const countryNamesMap = {
+    USA: 'United States',
+    DEU: 'Germany',
+    GBR: 'United Kingdom',
+    FRA: 'France',
+    IND: 'India',
+    BRA: 'Brazil',
+    KEN: 'Kenya',
+    JPN: 'Japan',
+    SGP: 'Singapore',
+    NGA: 'Nigeria',
+    CAN: 'Canada',
+    GLOBAL: 'Global / Multi-National',
+    OTHER: 'Other Country'
+  };
+
+  const record = {
+    id: recordId || ('ev_' + Date.now() + '_' + Math.floor(Math.random() * 1000)),
+    researchMethod: method,
+    evidenceType: evidenceType,
+    sourceCitation: citation,
+    countryCode: country,
+    countryName: countryNamesMap[country] || country,
+    industryDomain: industry,
+    customerGroupName: customerGroup,
+    collectionStartDate: startDate,
+    collectionEndDate: endDate,
+    sampleSize: Math.max(1, sampleSize || 1),
+    sampleDescription: sampleDesc,
+    researchQuestion: question,
+    resultsSummary: results,
+    quantitativeMetrics: quantitativeMetrics,
+    limitationsAndBiases: limitations,
+    isRepresentativeSample: isRepresentative,
+    privacyStatus: optInShare ? 'opted_in_shared' : 'private',
+    optedInAt: optInShare ? new Date().toISOString() : null,
+    createdAt: recordId ? (state.realEvidence.find(r => r.id === recordId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  // Update or insert into local state
+  const existingIdx = state.realEvidence.findIndex(r => r.id === record.id);
+  if (existingIdx >= 0) {
+    state.realEvidence[existingIdx] = record;
+  } else {
+    state.realEvidence.unshift(record);
+  }
+  saveState(STORAGE_REAL_EVIDENCE, state.realEvidence);
+
+  // Sync to Supabase if authenticated
+  const statusEl = document.getElementById('evidenceFormStatus');
+  if (window.foundrySupabase && window.foundrySupabase.isAuthenticated()) {
+    try {
+      if (statusEl) statusEl.textContent = 'Syncing to private database with Row Level Security...';
+      const synced = await window.foundrySupabase.saveRealEvidence(record);
+      if (synced && synced.id) {
+        record.id = synced.id;
+        state.realEvidence[existingIdx >= 0 ? existingIdx : 0] = synced;
+        saveState(STORAGE_REAL_EVIDENCE, state.realEvidence);
+      }
+      if (statusEl) statusEl.textContent = 'Saved to database & isolated by Row Level Security.';
+    } catch (err) {
+      console.error('[Foundry] Supabase saveRealEvidence error:', err);
+      if (statusEl) statusEl.textContent = 'Saved to local workspace. Cloud sync pending.';
+    }
+  } else {
+    if (statusEl) statusEl.textContent = 'Saved to local storage. Sign in to sync across devices.';
+  }
+
+  // Reset form
+  document.getElementById('realEvidenceForm').reset();
+  document.getElementById('evidenceRecordId').value = '';
+  const heading = document.getElementById('evidenceFormHeading');
+  if (heading) heading.textContent = 'Record Field Research Evidence';
+
+  updateBadges();
+  renderRealEvidenceView();
+
+  setTimeout(() => {
+    if (statusEl) statusEl.textContent = 'All data saved locally and synced to workspace';
+  }, 4000);
+}
+
+function renderRealEvidenceView() {
+  const container = document.getElementById('evidenceCardsContainer');
+  if (!container) return;
+
+  const records = state.realEvidence || [];
+  const countBadge = document.getElementById('evidenceTotalCountBadge');
+  const sampleBadge = document.getElementById('evidenceTotalSampleSizeBadge');
+
+  const filterMethod = document.getElementById('filterEvidenceMethod')?.value || 'ALL';
+  const filterType = document.getElementById('filterEvidenceType')?.value || 'ALL';
+  const filterPrivacy = document.getElementById('filterEvidencePrivacy')?.value || 'ALL';
+  const filterSearch = (document.getElementById('filterEvidenceSearch')?.value || '').trim().toLowerCase();
+
+  const filtered = records.filter(r => {
+    if (filterMethod !== 'ALL' && r.researchMethod !== filterMethod) return false;
+    if (filterType !== 'ALL' && r.evidenceType !== filterType) return false;
+    if (filterPrivacy !== 'ALL' && r.privacyStatus !== filterPrivacy) return false;
+    if (filterSearch) {
+      const matchQ = (r.researchQuestion || '').toLowerCase().includes(filterSearch);
+      const matchR = (r.resultsSummary || '').toLowerCase().includes(filterSearch);
+      const matchC = (r.customerGroupName || '').toLowerCase().includes(filterSearch);
+      const matchL = (r.limitationsAndBiases || '').toLowerCase().includes(filterSearch);
+      const matchInd = (r.industryDomain || '').toLowerCase().includes(filterSearch);
+      if (!matchQ && !matchR && !matchC && !matchL && !matchInd) return false;
+    }
+    return true;
+  });
+
+  const totalN = records.reduce((acc, curr) => acc + (curr.sampleSize || 0), 0);
+  if (countBadge) countBadge.textContent = `${records.length} ${records.length === 1 ? 'Study' : 'Studies'}`;
+  if (sampleBadge) sampleBadge.textContent = `N = ${totalN.toLocaleString()} Studied`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding: 36px 20px;">
+        <div class="empty-icon-svg">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </div>
+        <h4 style="margin-top: 10px; color: #f8fafc;">No Field Evidence Recorded Yet</h4>
+        <p style="max-width: 540px; margin: 8px auto 16px; font-size: 0.82rem; color: #94a3b8; line-height: 1.5;">
+          Ground your startup simulation in reality. Record customer discovery interviews, landing page conversion tests, smoke tests, or actual customer pre-orders using the intake form above.
+        </p>
+        <button class="btn btn-lime btn-sm" type="button" onclick="document.getElementById('evidenceFormContainer').scrollIntoView({behavior:'smooth'})">
+          + Record First Research Study
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(r => {
+    const isFirsthand = r.evidenceType !== 'published_source';
+    const isSmallSample = r.sampleSize < 50;
+    const isShared = r.privacyStatus === 'opted_in_shared';
+
+    // Quantitative metrics pills
+    const metricsList = [];
+    if (r.quantitativeMetrics && r.quantitativeMetrics.conversion_rate !== undefined) {
+      metricsList.push(`<div class="metric-pill">Conversion Rate: <strong>${(r.quantitativeMetrics.conversion_rate * 100).toFixed(1)}%</strong></div>`);
+    }
+    if (r.quantitativeMetrics && r.quantitativeMetrics.price_willing_to_pay !== undefined) {
+      metricsList.push(`<div class="metric-pill">Observed Price: <strong>$${r.quantitativeMetrics.price_willing_to_pay}</strong></div>`);
+    }
+
+    const dateStr = (r.collectionStartDate || r.collectionEndDate)
+      ? `${r.collectionStartDate || 'Start'} to ${r.collectionEndDate || 'End'}`
+      : 'Date unspecified';
+
+    return `
+      <div class="evidence-card ${isFirsthand ? 'firsthand' : 'published'}" id="card_${r.id}">
+        <div class="evidence-card-top">
+          <div class="evidence-badges-row">
+            <span class="evidence-badge ${isFirsthand ? 'primary' : 'secondary'}">
+              ${isFirsthand ? 'Primary Field Research (Real Humans)' : 'Published Secondary Study'}
+            </span>
+            <span class="evidence-badge sample-size">N = ${r.sampleSize.toLocaleString()}</span>
+            ${isSmallSample
+              ? `<span class="evidence-badge sample-warning" title="Small sample sizes are directional only and cannot be presented as representative of an entire country.">⚠️ Small Sample (Directional Only)</span>`
+              : (r.isRepresentativeSample
+                ? `<span class="evidence-badge sample-valid">✓ Representative Study</span>`
+                : `<span class="evidence-badge sample-warning">ℹ️ Non-Representative Sample</span>`)
+            }
+            <span class="evidence-badge" style="background: rgba(255,255,255,0.06); color: #cbd5e1;">${escapeHtml(formatMethodLabel(r.researchMethod))}</span>
+            <span class="evidence-badge" style="background: rgba(45, 212, 191, 0.12); color: var(--cyan);">${escapeHtml(r.countryCode || 'USA')}</span>
+            <span class="evidence-badge" style="background: rgba(212, 249, 56, 0.08); color: var(--lime);">${escapeHtml(r.industryDomain || 'Tech')}</span>
+          </div>
+
+          <span class="evidence-badge ${isShared ? 'privacy-shared' : 'privacy-private'}">
+            ${isShared ? '🌐 Opted-in Benchmark (Anonymized)' : '🔒 Private to You'}
+          </span>
+        </div>
+
+        <div class="evidence-question-title">
+          "${escapeHtml(r.researchQuestion)}"
+        </div>
+
+        <div class="evidence-summary-text">
+          <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:4px; font-weight:600;">
+            Target: <strong>${escapeHtml(r.customerGroupName || 'General Segment')}</strong> &bull; Period: ${escapeHtml(dateStr)} &bull; Citation: <em>${escapeHtml(r.sourceCitation || 'Firsthand')}</em>
+          </div>
+          <div>${escapeHtml(r.resultsSummary)}</div>
+        </div>
+
+        ${metricsList.length > 0 ? `<div class="evidence-metrics-pills">${metricsList.join('')}</div>` : ''}
+
+        <!-- Documented Sample Limitations & Biases Box -->
+        <div class="evidence-limitations-box">
+          <div class="evidence-limitations-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Documented Sample Limitations &amp; Biases (Methodological Guardrail)
+          </div>
+          <div class="evidence-limitations-content">
+            ${escapeHtml(r.limitationsAndBiases)}
+          </div>
+          <div style="font-size: 0.68rem; color: #fde68a; margin-top: 2px;">
+            <em>Notice: Small, convenience, or localized founder samples must never be extrapolated as representative of an entire country or total addressable market.</em>
+          </div>
+        </div>
+
+        <div class="evidence-card-actions">
+          <span class="evidence-meta-note">
+            Record ID: <code>${escapeHtml(r.id)}</code> &bull; Saved: ${new Date(r.createdAt || Date.now()).toLocaleDateString()}
+          </span>
+
+          <div class="evidence-action-buttons">
+            <button class="btn btn-outline-cyan btn-xs" type="button" onclick="window.handleToggleEvidencePrivacy('${r.id}')" title="Toggle privacy sharing status">
+              ${isShared ? 'Make Private' : 'Opt-In Benchmark'}
+            </button>
+            <button class="btn btn-outline-cyan btn-xs" type="button" onclick="window.editRealEvidence('${r.id}')" title="Edit this record in the intake form">
+              Edit
+            </button>
+            <button class="btn btn-outline-cyan btn-xs" type="button" onclick="window.exportSingleEvidence('${r.id}')" title="Export this record as JSON">
+              Export JSON
+            </button>
+            <button class="btn btn-danger-outline btn-xs" type="button" onclick="window.handleDeleteRealEvidence('${r.id}')" title="Permanently delete this record">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.editRealEvidence = function(id) {
+  const record = (state.realEvidence || []).find(r => r.id === id);
+  if (!record) return;
+
+  document.getElementById('evidenceRecordId').value = record.id;
+  document.getElementById('evidenceMethod').value = record.researchMethod;
+  document.getElementById('evidenceType').value = record.evidenceType;
+  document.getElementById('evidenceCitation').value = record.sourceCitation || '';
+  document.getElementById('evidenceCountry').value = record.countryCode || 'USA';
+  document.getElementById('evidenceIndustry').value = record.industryDomain || 'Mobile Applications';
+  document.getElementById('evidenceCustomerGroup').value = record.customerGroupName || '';
+  document.getElementById('evidenceStartDate').value = record.collectionStartDate || '';
+  document.getElementById('evidenceEndDate').value = record.collectionEndDate || '';
+  document.getElementById('evidenceSampleSize').value = record.sampleSize;
+  document.getElementById('evidenceSampleDescription').value = record.sampleDescription || '';
+  document.getElementById('evidenceQuestion').value = record.researchQuestion;
+  document.getElementById('evidenceResults').value = record.resultsSummary;
+  document.getElementById('evidenceLimitations').value = record.limitationsAndBiases;
+  document.getElementById('evidenceIsRepresentative').checked = Boolean(record.isRepresentativeSample);
+  document.getElementById('evidenceOptInShare').checked = (record.privacyStatus === 'opted_in_shared');
+
+  if (record.quantitativeMetrics) {
+    if (record.quantitativeMetrics.conversion_rate !== undefined) {
+      document.getElementById('evidenceConversionRate').value = (record.quantitativeMetrics.conversion_rate * 100).toFixed(1);
+    }
+    if (record.quantitativeMetrics.price_willing_to_pay !== undefined) {
+      document.getElementById('evidenceWillingPrice').value = record.quantitativeMetrics.price_willing_to_pay;
+    }
+  }
+
+  const heading = document.getElementById('evidenceFormHeading');
+  if (heading) heading.textContent = `Edit Field Evidence (ID: ${record.id})`;
+
+  const formContainer = document.getElementById('evidenceFormContainer');
+  if (formContainer) formContainer.scrollIntoView({ behavior: 'smooth' });
+};
+
+window.handleToggleEvidencePrivacy = async function(id) {
+  const record = (state.realEvidence || []).find(r => r.id === id);
+  if (!record) return;
+
+  const newStatus = record.privacyStatus === 'opted_in_shared' ? 'private' : 'opted_in_shared';
+  record.privacyStatus = newStatus;
+  record.optedInAt = newStatus === 'opted_in_shared' ? new Date().toISOString() : null;
+  record.updatedAt = new Date().toISOString();
+
+  saveState(STORAGE_REAL_EVIDENCE, state.realEvidence);
+
+  if (window.foundrySupabase && window.foundrySupabase.isAuthenticated()) {
+    try {
+      await window.foundrySupabase.updateEvidencePrivacy(id, newStatus === 'opted_in_shared');
+    } catch (err) {
+      console.error('[Foundry] Supabase updateEvidencePrivacy error:', err);
+    }
+  }
+
+  renderRealEvidenceView();
+};
+
+window.handleDeleteRealEvidence = async function(id) {
+  const confirmed = confirm('Are you sure you want to permanently delete this field research record? This action cannot be undone.');
+  if (!confirmed) return;
+
+  state.realEvidence = (state.realEvidence || []).filter(r => r.id !== id);
+  saveState(STORAGE_REAL_EVIDENCE, state.realEvidence);
+
+  if (window.foundrySupabase && window.foundrySupabase.isAuthenticated()) {
+    try {
+      await window.foundrySupabase.deleteRealEvidence(id);
+    } catch (err) {
+      console.error('[Foundry] Supabase deleteRealEvidence error:', err);
+    }
+  }
+
+  updateBadges();
+  renderRealEvidenceView();
+};
+
+window.exportSingleEvidence = function(id) {
+  const record = (state.realEvidence || []).find(r => r.id === id);
+  if (!record) return;
+
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(record, null, 2));
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute('href', dataStr);
+  dlAnchor.setAttribute('download', `foundry_evidence_${id}.json`);
+  document.body.appendChild(dlAnchor);
+  dlAnchor.click();
+  dlAnchor.remove();
+};
+
+window.handleExportRealEvidence = function(format = 'json') {
+  const records = state.realEvidence || [];
+  if (records.length === 0) {
+    alert('No real evidence records available to export.');
+    return;
+  }
+
+  let content = '';
+  let filename = '';
+  let mimeType = '';
+
+  if (format === 'csv') {
+    if (window.foundrySupabase && typeof window.foundrySupabase.exportRealEvidenceData === 'function') {
+      content = window.foundrySupabase.exportRealEvidenceData(records, 'csv');
+    } else {
+      content = 'id,evidence_type,research_method,country,industry,sample_size,results\n' +
+        records.map(r => `"${r.id}","${r.evidenceType}","${r.researchMethod}","${r.countryCode}","${r.industryDomain}",${r.sampleSize},"${(r.resultsSummary||'').replace(/"/g, '""')}"`).join('\n');
+    }
+    filename = 'foundry_real_market_evidence.csv';
+    mimeType = 'text/csv;charset=utf-8;';
+  } else {
+    content = JSON.stringify(records, null, 2);
+    filename = 'foundry_real_market_evidence.json';
+    mimeType = 'application/json;charset=utf-8;';
+  }
+
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const dlAnchor = document.createElement('a');
+  dlAnchor.href = url;
+  dlAnchor.download = filename;
+  document.body.appendChild(dlAnchor);
+  dlAnchor.click();
+  dlAnchor.remove();
+  URL.revokeObjectURL(url);
+};
+
+window.handleClearAllRealEvidence = async function() {
+  const confirmed = confirm('DANGER: This will permanently purge ALL recorded market evidence from your workspace. Are you sure you wish to proceed?');
+  if (!confirmed) return;
+
+  state.realEvidence = [];
+  localStorage.removeItem(STORAGE_REAL_EVIDENCE);
+
+  if (window.foundrySupabase && window.foundrySupabase.isAuthenticated()) {
+    try {
+      await window.foundrySupabase.deleteAllRealEvidence();
+    } catch (err) {
+      console.error('[Foundry] Supabase deleteAllRealEvidence error:', err);
+    }
+  }
+
+  updateBadges();
+  renderRealEvidenceView();
+};
+
+/* ==========================================================
    13. SUPABASE AUTH & MODALS INTEGRATION
    ========================================================== */
 function initSupabaseAuthAndModals() {
@@ -4314,6 +4913,17 @@ async function handleUserSignedIn() {
     if (history && history.length > 0) {
       state.history = history;
       saveState(STORAGE_HISTORY, state.history);
+    }
+
+    // 6. Real Market Evidence
+    const evidence = await window.foundrySupabase.loadRealEvidence();
+    if (evidence && evidence.length > 0) {
+      state.realEvidence = evidence;
+      saveState(STORAGE_REAL_EVIDENCE, state.realEvidence);
+    } else if (state.realEvidence && state.realEvidence.length > 0) {
+      for (const rec of state.realEvidence) {
+        await window.foundrySupabase.saveRealEvidence(rec);
+      }
     }
 
     renderAllViews();
