@@ -707,6 +707,39 @@
 
             <form id="launchForm" onsubmit="return false;">
               
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="campaignCountry">Target Market Geography <span class="required">*</span></label>
+                  <select id="campaignCountry" required>
+                    <option value="USA">United States (USA)</option>
+                    <option value="DEU">Germany (DEU)</option>
+                    <option value="GBR">United Kingdom (GBR)</option>
+                    <option value="FRA">France (FRA)</option>
+                    <option value="IND">India (IND)</option>
+                    <option value="BRA">Brazil (BRA)</option>
+                    <option value="KEN">Kenya (KEN)</option>
+                    <option value="JPN">Japan (JPN)</option>
+                    <option value="SGP">Singapore (SGP)</option>
+                    <option value="NGA">Nigeria (NGA)</option>
+                    <option value="CAN">Canada (CAN)</option>
+                  </select>
+                  <span class="field-hint">Country-level macroeconomic context only.</span>
+                </div>
+
+                <div class="form-group flex-1">
+                  <label for="campaignIndustry">Industry Domain <span class="required">*</span></label>
+                  <select id="campaignIndustry" required>
+                    <option value="Mobile Applications" selected>Mobile Applications</option>
+                    <option value="B2B SaaS / Business Software">B2B SaaS / Business Software</option>
+                    <option value="Developer Tools / Cloud">Developer Tools / Cloud</option>
+                    <option value="E-Commerce & Retail">E-Commerce & Retail</option>
+                    <option value="FinTech / Financial Software">FinTech / Financial Software</option>
+                    <option value="Consumer Internet">Consumer Internet</option>
+                  </select>
+                  <span class="field-hint">Filters relevant market indicators.</span>
+                </div>
+              </div>
+
               <div class="form-group">
                 <label for="campaignTargetGroup">Target Customer Group <span class="required">*</span></label>
                 <select id="campaignTargetGroup" required>
@@ -1010,6 +1043,7 @@
                 <tr>
                   <th>Run</th>
                   <th>Startup</th>
+                  <th>Market / Domain</th>
                   <th>Target Group</th>
                   <th>Price</th>
                   <th>Channel</th>

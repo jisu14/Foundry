@@ -8,6 +8,7 @@ const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json',
+  '.csv': 'text/csv; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml'

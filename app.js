@@ -27,7 +27,9 @@ let state = {
     targetGroupId: '',
     price: 10,
     channel: 'social',
-    budget: 300
+    budget: 300,
+    country: 'USA',
+    industry: 'Mobile Applications'
   },
   history: [],
   world: {
@@ -989,36 +991,496 @@ window.deleteCustomerGroup = function(groupId) {
 };
 
 /* ==========================================================
-   7. LAUNCH LAB (SIMULATION ENGINE)
+   7. LAUNCH LAB (SIMULATION ENGINE & GROUNDED DATA CONNECTOR)
    ========================================================== */
+
+const SOURCED_OBSERVATIONS_BASELINE = {
+  USA: {
+    'SP.POP.TOTL': { value: 334914895, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 81695, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 91.8, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 110.2, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 38.6, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 84.5, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 99.6, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 172.9, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 96.5, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 95.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 93.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 82.8, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 66.7, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 91.3, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 89.8, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 66.8, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 33.1, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 86.5, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 78.4, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': null
+  },
+  DEU: {
+    'SP.POP.TOTL': { value: 84482267, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 52824, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 93.3, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 128.5, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 44.5, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 91.4, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 99.1, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 104.2, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 94.8, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 99.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 96.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 88.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 57.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 94.5, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 88.4, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 58.2, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 32.5, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 89.2, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 81.2, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': { value: 71.2, year: 2023, unit: '% of individuals (age 16–74)', source_id: 'eurostat', source_name: 'Eurostat (European Commission)' }
+  },
+  GBR: {
+    'SP.POP.TOTL': { value: 68350000, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 48912, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 96.7, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 119.0, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 41.2, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 96.5, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 99.2, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 122.5, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 97.4, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 98.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 97.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 93.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 65.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 95.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 92.1, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 72.4, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 35.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 87.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 86.0, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': { value: 72.8, year: 2023, unit: '% of individuals (age 16–74)', source_id: 'eurostat', source_name: 'Eurostat (European Commission)' }
+  },
+  FRA: {
+    'SP.POP.TOTL': { value: 68170228, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 44460, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 92.0, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 115.3, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 47.1, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 93.2, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 99.3, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 109.8, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 96.2, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 99.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 96.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 86.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 42.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 94.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 87.6, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 59.0, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 28.4, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 84.1, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 79.5, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': { value: 69.5, year: 2023, unit: '% of individuals (age 16–74)', source_id: 'eurostat', source_name: 'Eurostat (European Commission)' }
+  },
+  IND: {
+    'SP.POP.TOTL': { value: 1428627663, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 2484, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 52.4, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 82.6, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 2.6, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 55.0, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 98.2, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 62.4, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 85.0, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 77.5, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 35.1, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 30.6, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 4.8, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 28.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 54.2, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 76.5, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 14.2, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 42.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 38.0, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': null
+  },
+  BRA: {
+    'SP.POP.TOTL': { value: 215313498, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 10043, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 80.7, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 102.4, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 21.0, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 81.3, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 98.8, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 98.2, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 89.4, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 84.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 77.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 65.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 40.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 70.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 64.5, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 48.2, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 22.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 61.2, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 52.4, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': null
+  },
+  KEN: {
+    'SP.POP.TOTL': { value: 55100586, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 2099, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 42.0, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 115.0, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 1.8, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 32.5, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 96.5, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 61.2, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 74.0, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 79.2, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 78.4, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 35.2, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 6.2, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 75.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 48.0, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 42.0, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 11.5, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 31.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 24.5, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': null
+  },
+  JPN: {
+    'SP.POP.TOTL': { value: 124516650, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 33834, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 93.0, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 162.0, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 35.8, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 91.2, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 99.9, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 198.5, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 99.1, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 98.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 92.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 85.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 69.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 90.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 89.0, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 52.4, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 38.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 91.5, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 76.8, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': null
+  },
+  SGP: {
+    'SP.POP.TOTL': { value: 5917600, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 84734, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 96.0, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 160.5, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 29.5, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 98.4, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 99.9, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 172.1, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 99.5, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 98.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 94.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 90.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 49.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 92.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 94.5, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 68.0, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 36.5, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 93.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 82.0, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': null
+  },
+  NGA: {
+    'SP.POP.TOTL': { value: 223804632, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 1688, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 38.7, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 98.2, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 0.1, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 22.8, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 85.0, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 46.5, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 62.0, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 45.3, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 34.6, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 35.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 3.1, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 32.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 39.2, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 28.0, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 8.5, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 22.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 18.0, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': null
+  },
+  CAN: {
+    'SP.POP.TOTL': { value: 40097761, year: 2023, unit: 'people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'NY.GDP.PCAP.CD': { value: 53371, year: 2023, unit: 'current US$', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.USER.ZS': { value: 94.0, year: 2023, unit: '% of population', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.CEL.SETS.P2': { value: 92.5, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'IT.NET.BBND.P2': { value: 42.1, year: 2023, unit: 'subscriptions per 100 people', source_id: 'world_bank_wdi', source_name: 'World Bank World Development Indicators' },
+    'ITU.ICT.HH.INET': { value: 94.6, year: 2023, unit: '% of households', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.MOB.4G': { value: 99.4, year: 2023, unit: '% of population', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.ACT.MBB': { value: 106.8, year: 2023, unit: 'subscriptions per 100 inhabitants', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'ITU.ICT.FBB.10M': { value: 96.2, year: 2023, unit: '% of fixed broadband subscriptions', source_id: 'itu_datahub', source_name: 'International Telecommunication Union (ITU)' },
+    'account.t.d': { value: 99.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.any': { value: 96.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin2.t.d': { value: 92.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'fin10': { value: 82.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'g20.made': { value: 94.0, year: 2021, unit: '% of population age 15+', source_id: 'world_bank_findex', source_name: 'World Bank Global Findex Database' },
+    'UNCTAD.ECOMM.B2C.IDX': { value: 88.0, year: 2023, unit: 'Index (0–100)', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.DDS.SHR': { value: 58.4, year: 2023, unit: '% of total services exports', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.RCV': { value: 30.2, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.ENT.WEB': { value: 86.0, year: 2023, unit: '% of enterprises', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'UNCTAD.ECOMM.IND.BUY': { value: 77.0, year: 2023, unit: '% of individuals', source_id: 'unctadstat', source_name: 'UN Trade and Development (UNCTADstat)' },
+    'EUROSTAT.APP.INSTALL': null
+  }
+};
+
+function getCountryNameByIso(iso) {
+  const map = {
+    'USA': 'United States',
+    'DEU': 'Germany',
+    'GBR': 'United Kingdom',
+    'FRA': 'France',
+    'IND': 'India',
+    'BRA': 'Brazil',
+    'KEN': 'Kenya',
+    'JPN': 'Japan',
+    'SGP': 'Singapore',
+    'NGA': 'Nigeria',
+    'CAN': 'Canada'
+  };
+  return map[iso ? iso.toUpperCase() : 'USA'] || iso || 'United States';
+}
+
+function updateSimContextBar() {
+  const countryEl = document.getElementById('simContextCountry');
+  const industryEl = document.getElementById('simContextIndustry');
+  const modelEl = document.getElementById('simContextModel');
+  const code = state.campaign.country || 'USA';
+  if (countryEl) {
+    countryEl.textContent = `${getCountryNameByIso(code)} (${code})`;
+  }
+  if (industryEl) {
+    industryEl.textContent = state.campaign.industry || 'Mobile Applications';
+  }
+  if (modelEl) {
+    modelEl.textContent = 'v2.0-grounded';
+  }
+}
+
+function getRelevantIndicatorsForRun({ countryCode, countryName, industryDomain, channel, liveObservations = [] }) {
+  const normIndustry = (industryDomain || '').toLowerCase();
+  const normChannel = (channel || '').toLowerCase();
+
+  let targetCodes = [];
+
+  if (normIndustry.includes('mobile') || normChannel === 'social') {
+    targetCodes = [
+      'EUROSTAT.APP.INSTALL',
+      'ITU.ICT.ACT.MBB',
+      'ITU.ICT.MOB.4G',
+      'IT.CEL.SETS.P2',
+      'IT.NET.USER.ZS',
+      'NY.GDP.PCAP.CD'
+    ];
+  } else if (normIndustry.includes('saas') || normIndustry.includes('software') || normIndustry.includes('developer') || normIndustry.includes('cloud') || normChannel === 'outreach') {
+    targetCodes = [
+      'UNCTAD.ECOMM.ENT.WEB',
+      'UNCTAD.ECOMM.ENT.RCV',
+      'IT.NET.BBND.P2',
+      'ITU.ICT.FBB.10M',
+      'UNCTAD.ECOMM.DDS.SHR',
+      'NY.GDP.PCAP.CD'
+    ];
+  } else if (normIndustry.includes('commerce') || normIndustry.includes('market') || normIndustry.includes('retail')) {
+    targetCodes = [
+      'UNCTAD.ECOMM.IND.BUY',
+      'UNCTAD.ECOMM.B2C.IDX',
+      'g20.any',
+      'fin10',
+      'IT.NET.USER.ZS',
+      'NY.GDP.PCAP.CD'
+    ];
+  } else if (normIndustry.includes('fintech') || normIndustry.includes('financial')) {
+    targetCodes = [
+      'account.t.d',
+      'g20.any',
+      'fin2.t.d',
+      'fin10',
+      'IT.NET.USER.ZS',
+      'NY.GDP.PCAP.CD'
+    ];
+  } else {
+    targetCodes = [
+      'IT.NET.USER.ZS',
+      'ITU.ICT.HH.INET',
+      'g20.any',
+      'SP.POP.TOTL',
+      'NY.GDP.PCAP.CD'
+    ];
+  }
+
+  const liveMap = new Map();
+  if (Array.isArray(liveObservations)) {
+    for (const obs of liveObservations) {
+      if (!liveMap.has(obs.indicator_code)) {
+        liveMap.set(obs.indicator_code, obs);
+      }
+    }
+  }
+
+  const baselineCountry = SOURCED_OBSERVATIONS_BASELINE[countryCode] || SOURCED_OBSERVATIONS_BASELINE['USA'] || {};
+  const relevantIndicators = [];
+  const dataGaps = [];
+
+  for (const code of targetCodes) {
+    const catalogItem = SOURCED_INDICATOR_CATALOG.find(i => i.code === code) || {
+      code,
+      name: code,
+      unit: '',
+      publisher: 'International Statistical Agency',
+      limitations: 'National-level indicator.'
+    };
+
+    let obsValue = null;
+    let obsYear = null;
+    let obsSourceId = null;
+    let obsSourceName = catalogItem.publisher;
+    let obsUnit = catalogItem.unit;
+
+    if (liveMap.has(code)) {
+      const liveObs = liveMap.get(code);
+      obsValue = liveObs.value !== undefined ? liveObs.value : null;
+      obsYear = liveObs.year || null;
+      obsSourceId = liveObs.source_id || null;
+      obsUnit = liveObs.unit || catalogItem.unit;
+    } else if (baselineCountry[code]) {
+      const bObs = baselineCountry[code];
+      obsValue = bObs.value !== undefined ? bObs.value : null;
+      obsYear = bObs.year || null;
+      obsSourceId = bObs.source_id || null;
+      obsSourceName = bObs.source_name || catalogItem.publisher;
+      obsUnit = bObs.unit || catalogItem.unit;
+    }
+
+    const isReported = obsValue !== null && obsValue !== undefined;
+    const dataStatus = isReported ? 'reported' : 'missing_unreported';
+
+    let uncertaintyNote = '';
+    if (isReported) {
+      uncertaintyNote = `Official baseline observation from ${obsSourceName} (${obsYear || '2023'}).`;
+    } else {
+      if (code === 'EUROSTAT.APP.INSTALL') {
+        uncertaintyNote = `Eurostat mobile application survey is restricted to EU/EEA member states; unreported for ${countryName}. European telemetry only.`;
+      } else {
+        uncertaintyNote = `Unreported / missing in official ${obsSourceName} release for ${countryName}.`;
+      }
+      dataGaps.push({
+        code,
+        name: catalogItem.name,
+        source: obsSourceName,
+        reason: uncertaintyNote
+      });
+    }
+
+    relevantIndicators.push({
+      indicator_code: code,
+      indicator_name: catalogItem.name,
+      indicator_value: obsValue,
+      indicator_unit: obsUnit,
+      reference_year: obsYear,
+      country_code: countryCode,
+      country_name: countryName,
+      source_id: obsSourceId,
+      source_name: obsSourceName,
+      data_status: dataStatus,
+      uncertainty_note: uncertaintyNote,
+      limitations: catalogItem.limitations,
+      assumption_type: 'macro_market_context',
+      assumption_key: code,
+      assumption_value: isReported ? `${Number(obsValue).toLocaleString()} ${obsUnit}` : 'Missing / Unreported for this Geography',
+      formula_applied: 'National infrastructure & macroeconomic scale baseline',
+      disclaimer: 'National macroeconomic and infrastructure statistics describe aggregate territorial adoption. They do not predict individual willingness to buy or forecast customer-level decisions.'
+    });
+  }
+
+  return { relevantIndicators, dataGaps };
+}
+
 function initLaunchLab() {
   const priceInput = document.getElementById('campaignPrice');
   const priceDisplay = document.getElementById('campaignPriceDisplay');
   const budgetInput = document.getElementById('campaignBudget');
   const budgetDisplay = document.getElementById('campaignBudgetDisplay');
   const channelSelect = document.getElementById('campaignChannel');
+  const countrySelect = document.getElementById('campaignCountry');
+  const industrySelect = document.getElementById('campaignIndustry');
   const executeBtn = document.getElementById('executeSimulationBtn');
 
-  priceInput.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value, 10);
-    priceDisplay.textContent = val === 0 ? 'Free ($0)' : `$${val} / mo`;
-    state.campaign.price = val;
-    saveCampaignState();
-  });
+  if (priceInput) {
+    priceInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      priceDisplay.textContent = val === 0 ? 'Free ($0)' : `$${val} / mo`;
+      state.campaign.price = val;
+      saveCampaignState();
+    });
+  }
 
-  budgetInput.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value, 10);
-    budgetDisplay.textContent = `$${val.toLocaleString()}`;
-    state.campaign.budget = val;
-    saveCampaignState();
-  });
+  if (budgetInput) {
+    budgetInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      budgetDisplay.textContent = `$${val.toLocaleString()}`;
+      state.campaign.budget = val;
+      saveCampaignState();
+    });
+  }
 
-  channelSelect.addEventListener('change', (e) => {
-    state.campaign.channel = e.target.value;
-    saveCampaignState();
-  });
+  if (channelSelect) {
+    channelSelect.addEventListener('change', (e) => {
+      state.campaign.channel = e.target.value;
+      saveCampaignState();
+    });
+  }
 
-  executeBtn.addEventListener('click', handleExecuteSimulation);
+  if (countrySelect) {
+    const defaultIso = state.campaign.country || (window.foundrySupabase ? window.foundrySupabase.resolveIso3(state.profile.country) : 'USA') || 'USA';
+    countrySelect.value = defaultIso;
+    state.campaign.country = defaultIso;
+    countrySelect.addEventListener('change', (e) => {
+      state.campaign.country = e.target.value;
+      updateSimContextBar();
+      saveCampaignState();
+    });
+  }
+
+  if (industrySelect) {
+    const defaultInd = state.campaign.industry || state.profile.type || 'Mobile Applications';
+    let matched = false;
+    for (let opt of industrySelect.options) {
+      if (opt.value === defaultInd || defaultInd.includes(opt.value)) {
+        industrySelect.value = opt.value;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) industrySelect.value = 'Mobile Applications';
+    state.campaign.industry = industrySelect.value;
+    industrySelect.addEventListener('change', (e) => {
+      state.campaign.industry = e.target.value;
+      updateSimContextBar();
+      saveCampaignState();
+    });
+  }
+
+  updateSimContextBar();
+
+  if (executeBtn) {
+    executeBtn.addEventListener('click', handleExecuteSimulation);
+  }
 }
 
 function populateTargetGroupDropdown() {
@@ -1027,11 +1489,14 @@ function populateTargetGroupDropdown() {
   const executeBtn = document.getElementById('executeSimulationBtn');
   const groups = state.market.groups;
 
+  updateSimContextBar();
+
+  if (!groupSelect) return;
   groupSelect.innerHTML = '';
 
   if (groups.length === 0) {
-    noGroupWarning.classList.remove('hidden');
-    executeBtn.disabled = true;
+    if (noGroupWarning) noGroupWarning.classList.remove('hidden');
+    if (executeBtn) executeBtn.disabled = true;
     const opt = document.createElement('option');
     opt.value = '';
     opt.textContent = '-- No custom customer groups available --';
@@ -1039,8 +1504,8 @@ function populateTargetGroupDropdown() {
     return;
   }
 
-  noGroupWarning.classList.add('hidden');
-  executeBtn.disabled = false;
+  if (noGroupWarning) noGroupWarning.classList.add('hidden');
+  if (executeBtn) executeBtn.disabled = false;
 
   groups.forEach((grp, idx) => {
     const opt = document.createElement('option');
@@ -1073,57 +1538,50 @@ async function handleExecuteSimulation() {
   const channel = document.getElementById('campaignChannel').value;
   const budget = parseInt(document.getElementById('campaignBudget').value, 10);
 
+  const countrySelect = document.getElementById('campaignCountry');
+  const industrySelect = document.getElementById('campaignIndustry');
+  const countryCode = (countrySelect ? countrySelect.value : state.campaign.country) || 'USA';
+  const countryName = getCountryNameByIso(countryCode);
+  const industryDomain = (industrySelect ? industrySelect.value : state.campaign.industry) || 'Mobile Applications';
+  const modelVersion = 'v2.0-grounded';
+
   const executeBtn = document.getElementById('executeSimulationBtn');
   const statusBadge = document.getElementById('simLabStatusBadge');
 
-  executeBtn.disabled = true;
-  executeBtn.textContent = 'Simulating Market...';
-  statusBadge.className = 'status-badge badge-running';
-  statusBadge.textContent = 'Simulating Outcomes...';
+  if (executeBtn) {
+    executeBtn.disabled = true;
+    executeBtn.textContent = 'Simulating Market...';
+  }
+  if (statusBadge) {
+    statusBadge.className = 'status-badge badge-running';
+    statusBadge.textContent = 'Simulating Outcomes...';
+  }
 
-  // Gather macro indicators context
-  const targetCountry = state.profile.country || 'United States';
-  const iso3 = (window.foundrySupabase && window.foundrySupabase.resolveIso3(targetCountry)) || 'USA';
-
-  let macroEvidence = [];
+  // 1. Fetch live observations if Supabase is connected
+  let liveObservations = [];
   if (window.foundrySupabase && window.foundrySupabase.isConfigured()) {
     try {
-      const observations = await window.foundrySupabase.getCountryObservations({ countryCode: iso3, limit: 10 });
-      if (observations && observations.length > 0) {
-        macroEvidence = observations.map(obs => ({
-          indicator_code: obs.indicator_code,
-          indicator_name: obs.market_indicators?.name || obs.indicator_code,
-          indicator_value: obs.value,
-          indicator_unit: obs.unit,
-          reference_year: obs.year,
-          country_code: obs.country_code,
-          assumption_type: 'macro_market_context',
-          assumption_key: obs.indicator_code,
-          assumption_value: obs.value !== null ? `${Number(obs.value).toLocaleString()} ${obs.unit}` : 'Missing/Not Reported',
-          formula_applied: 'National macro scale & infrastructure context',
-          disclaimer: 'Country-level macroeconomic context. Does not forecast individual willingness to pay.'
-        }));
-      }
+      liveObservations = await window.foundrySupabase.getCountryObservations({ countryCode, limit: 100 });
     } catch (e) {
-      console.warn('Could not fetch live country observations for evidence:', e);
+      console.warn('Could not query live Supabase country observations:', e);
     }
   }
 
-  if (macroEvidence.length === 0) {
-    macroEvidence = SOURCED_INDICATOR_CATALOG.map(ind => ({
-      indicator_code: ind.code,
-      indicator_name: ind.name,
-      indicator_value: null,
-      indicator_unit: ind.unit,
-      reference_year: 2023,
-      country_code: iso3,
-      assumption_type: 'macro_market_context',
-      assumption_key: ind.code,
-      assumption_value: `Catalog Benchmark (${ind.unit})`,
-      formula_applied: 'Standard WDI baseline reference',
-      disclaimer: 'Country-level macroeconomic context. Does not forecast individual willingness to pay.'
-    }));
-  }
+  // 2. Select only relevant indicators for this run
+  const { relevantIndicators, dataGaps } = getRelevantIndicatorsForRun({
+    countryCode,
+    countryName,
+    industryDomain,
+    channel,
+    liveObservations
+  });
+
+  // 3. Document explicit Founder Hypotheses
+  let channelAffinity = 1.0;
+  if (channel === 'social') channelAffinity = targetGroup.channel === 'social' ? 1.4 : 0.75;
+  else if (channel === 'search') channelAffinity = targetGroup.channel === 'search' ? 1.35 : 0.85;
+  else if (channel === 'community') channelAffinity = targetGroup.channel === 'community' ? 1.45 : 0.7;
+  else if (channel === 'outreach') channelAffinity = targetGroup.channel === 'outreach' ? 1.5 : 0.6;
 
   const founderAssumptions = [
     {
@@ -1132,25 +1590,27 @@ async function handleExecuteSimulation() {
       indicator_value: null,
       indicator_unit: 'budget tier',
       reference_year: null,
-      country_code: iso3,
+      country_code: countryCode,
+      country_name: countryName,
       assumption_type: 'founder_hypothesis',
       assumption_key: 'budget_tier',
       assumption_value: `${targetGroup.budget.toUpperCase()} (${targetGroup.name})`,
-      formula_applied: 'Sensitivity threshold: low ($7), medium ($28), high ($55)',
+      formula_applied: 'Sensitivity threshold: low ($7/mo), medium ($28/mo), high ($55/mo)',
       disclaimer: 'Hypothesis declared by founder.'
     },
     {
       indicator_code: null,
-      indicator_name: 'Marketing Channel Affinity',
-      indicator_value: null,
-      indicator_unit: 'channel',
+      indicator_name: 'Marketing Channel Preference Multiplier',
+      indicator_value: channelAffinity,
+      indicator_unit: 'multiplier',
       reference_year: null,
-      country_code: iso3,
+      country_code: countryCode,
+      country_name: countryName,
       assumption_type: 'founder_hypothesis',
       assumption_key: 'channel_selection',
-      assumption_value: `${channelLabel(channel)} (Group preference: ${channelLabel(targetGroup.channel)})`,
-      formula_applied: targetGroup.channel === channel ? '1.35x-1.5x affinity multiplier' : '0.6x-0.85x penalty multiplier',
-      disclaimer: 'Channel fit assumption.'
+      assumption_value: `${channelLabel(channel)} (${channelAffinity}x affinity for ${targetGroup.name})`,
+      formula_applied: targetGroup.channel === channel ? '1.35x-1.5x affinity multiplier' : '0.6x-0.85x channel mismatch penalty',
+      disclaimer: 'Hypothesis declared by founder based on persona behavior assumption.'
     },
     {
       indicator_code: null,
@@ -1158,16 +1618,31 @@ async function handleExecuteSimulation() {
       indicator_value: price,
       indicator_unit: 'US$/mo',
       reference_year: null,
-      country_code: iso3,
+      country_code: countryCode,
+      country_name: countryName,
       assumption_type: 'founder_hypothesis',
       assumption_key: 'subscription_price',
       assumption_value: price === 0 ? 'Free ($0)' : `$${price}/mo`,
       formula_applied: 'Price fit curve applied against customer budget tier',
-      disclaimer: 'Stated subscription tier.'
+      disclaimer: 'Stated subscription tier hypothesis.'
+    },
+    {
+      indicator_code: null,
+      indicator_name: 'Ad Spend Allocation & CPM Baseline',
+      indicator_value: budget,
+      indicator_unit: 'US$',
+      reference_year: null,
+      country_code: countryCode,
+      country_name: countryName,
+      assumption_type: 'founder_hypothesis',
+      assumption_key: 'ad_budget',
+      assumption_value: `$${budget.toLocaleString()} (${channelLabel(channel)})`,
+      formula_applied: 'Raw reach = (Budget / Base CPM) * 1000',
+      disclaimer: 'Budget declared by founder.'
     }
   ];
 
-  const fullEvidence = [...macroEvidence, ...founderAssumptions];
+  const fullEvidence = [...relevantIndicators, ...founderAssumptions];
 
   setTimeout(async () => {
     const result = runLaunchSimulationEngine({
@@ -1175,7 +1650,13 @@ async function handleExecuteSimulation() {
       targetGroup,
       price,
       channel,
-      budget
+      budget,
+      countryCode,
+      countryName,
+      industryDomain,
+      modelVersion,
+      relevantIndicators,
+      dataGaps
     });
 
     result.evidence = fullEvidence;
@@ -1193,7 +1674,7 @@ async function handleExecuteSimulation() {
         event_type: 'campaign_broadcast',
         day: currentDayLabel,
         title: `1. Campaign Transmitted from Launch Lab`,
-        body: `Broadcasted campaign to ${targetGroup.name} via ${channelLabel(channel)}. Generated ${result.impressions.toLocaleString()} reach and ${result.clicks.toLocaleString()} marketplace visitors.`,
+        body: `Broadcasted campaign to ${targetGroup.name} in ${countryName} via ${channelLabel(channel)}. Generated ~${result.impressions.toLocaleString()} reach and ~${result.clicks.toLocaleString()} marketplace visitors.`,
         metrics: { impressions: result.impressions, clicks: result.clicks }
       },
       {
@@ -1237,14 +1718,30 @@ async function handleExecuteSimulation() {
     renderWorldView();
     updateBadges();
 
-    executeBtn.disabled = false;
-    executeBtn.textContent = 'Run Simulated Launch';
-    statusBadge.className = 'status-badge badge-done';
-    statusBadge.textContent = 'Simulation Complete';
+    if (executeBtn) {
+      executeBtn.disabled = false;
+      executeBtn.textContent = 'Run Simulated Launch';
+    }
+    if (statusBadge) {
+      statusBadge.className = 'status-badge badge-done';
+      statusBadge.textContent = 'Simulation Complete';
+    }
   }, 400);
 }
 
-function runLaunchSimulationEngine({ appName, targetGroup, price, channel, budget }) {
+function runLaunchSimulationEngine({
+  appName,
+  targetGroup,
+  price,
+  channel,
+  budget,
+  countryCode = 'USA',
+  countryName = 'United States',
+  industryDomain = 'Mobile Applications',
+  modelVersion = 'v2.0-grounded',
+  relevantIndicators = [],
+  dataGaps = []
+}) {
   let baseCPM = 18;
   let channelAffinity = 1.0;
 
@@ -1306,10 +1803,64 @@ function runLaunchSimulationEngine({ appName, targetGroup, price, channel, budge
 
   const reviews = generateDynamicSimulatedReviews(targetGroup, appName, price, avgRating);
 
+  // Compute Sensitivity / Uncertainty Ranges
+  const lowPaid = price === 0 ? 0 : Math.max(0, Math.round(paidUsers * 0.60));
+  const highPaid = price === 0 ? 0 : Math.max(paidUsers, Math.round(paidUsers * 1.40));
+  const uncertaintyRange = {
+    impressions: {
+      low: Math.round(impressions * 0.85),
+      expected: impressions,
+      high: Math.round(impressions * 1.15)
+    },
+    clicks: {
+      low: Math.round(clicks * 0.75),
+      expected: clicks,
+      high: Math.round(clicks * 1.25)
+    },
+    installs: {
+      low: Math.max(1, Math.round(installs * 0.70)),
+      expected: installs,
+      high: Math.round(installs * 1.30)
+    },
+    paidUsers: {
+      low: lowPaid,
+      expected: paidUsers,
+      high: highPaid
+    },
+    netProfit: {
+      low: (lowPaid * price) - budget,
+      expected: netProfit,
+      high: (highPaid * price) - budget
+    }
+  };
+
+  const modelLogicExplanation = `
+1. Reach & Impressions: Sourced ad channel CPM baseline ($${baseCPM} for ${channelLabel(channel)}) applied against test budget ($${budget.toLocaleString()}), resulting in ~${impressions.toLocaleString()} impressions (sensitivity range: ${uncertaintyRange.impressions.low.toLocaleString()} – ${uncertaintyRange.impressions.high.toLocaleString()} based on ad auction bid volatility).
+2. Traffic & Click-Through: Sourced marketing channel baseline CTR modified by founder's assumed persona channel affinity (${channelAffinity}x for ${targetGroup.name}), resulting in ~${clicks.toLocaleString()} clicks (${((clicks / impressions) * 100).toFixed(1)}% CTR, sensitivity range: ${uncertaintyRange.clicks.low.toLocaleString()} – ${uncertaintyRange.clicks.high.toLocaleString()}).
+3. Installs & Trials: Landing page trial conversion evaluated at ${(installRate * 100).toFixed(0)}% based on persona budget tier (${targetGroup.budget.toUpperCase()}), producing ~${installs.toLocaleString()} trials/installs (sensitivity range: ${uncertaintyRange.installs.low.toLocaleString()} – ${uncertaintyRange.installs.high.toLocaleString()}).
+4. Paid Conversions & Financials: Elasticity model evaluated stated price ($${price}/mo) against persona budget ceiling. Result: ${paidUsers.toLocaleString()} paid conversions (${price === 0 ? 'Free Product' : ((paidUsers / installs) * 100).toFixed(1) + '% conversion'}), producing $${revenue.toLocaleString()} revenue and ${netProfit >= 0 ? '+' : ''}$${netProfit.toLocaleString()} net financial outcome (sensitivity range: $${uncertaintyRange.netProfit.low.toLocaleString()} to $${uncertaintyRange.netProfit.high.toLocaleString()}).
+Ethical Guardrail Enforced: National macroeconomic statistics (e.g. GDP per capita, internet penetration) establish regional baseline infrastructure scale. They are NOT used to infer an individual customer's willingness to buy, nor are macro statistics conflated with individual behavior.
+  `.trim();
+
+  const assumptionsAndLimitations = `
+• Boundary: Macroeconomic, connectivity, and digital payment statistics reflect aggregate national infrastructure, NOT individual willingness to pay, corporate purchasing budgets, or customer interest.
+• Assumption: Channel affinity multiplier (${channelAffinity}x) and persona budget tier (${targetGroup.budget}) are hypotheses declared by the founder, not empirically validated live conversion rates.
+• Variance: Customer acquisition metrics carry structural uncertainty (CTR: ±25%, Signups: ±30%, Paid Conversion: ±40%). Sensitivity ranges illustrate the potential variance.
+• Fictional Simulation: All simulated customer reactions, reviews, and personas are 100% fictional simulation outputs generated algorithmically for educational practice. No real human feedback or real persons are represented.
+  `.trim();
+
+  const researchRecommendations = `
+1. Qualitative Problem Discovery: Conduct 5–10 structured discovery interviews with real users matching the "${targetGroup.name}" persona to validate whether the problem is urgent and whether pricing at $${price}/mo is perceived as fair.
+2. Landing Page Smoke Test: Deploy a simple landing page with ad creatives on ${channelLabel(channel)} with a $50–$100 test budget to capture real CTR and waitlist signups rather than relying on theoretical model baselines.
+3. Willingness-to-Pay Validation: Secure letters of intent (LOIs), advance deposits, or pre-orders before committing capital to engineering or scaling paid ads.
+4. Commercial Category Telemetry: For sector-specific retention, churn, and ARPU benchmarks, subscribe to licensed databases (e.g., Sensor Tower, data.ai for mobile apps; Keyplay or Gartner for enterprise software).
+  `.trim();
+
   return {
     id: 'run_' + Date.now(),
     runNumber: state.history.length + 1,
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    dateStr: new Date().toLocaleDateString(),
     appName,
     targetGroupName: targetGroup.name,
     targetGroupId: targetGroup.id,
@@ -1317,6 +1868,23 @@ function runLaunchSimulationEngine({ appName, targetGroup, price, channel, budge
     price,
     channel,
     budget,
+    countryCode,
+    countryName,
+    industryDomain,
+    modelVersion,
+    founderInputs: {
+      appName,
+      targetGroupName: targetGroup.name,
+      targetGroupId: targetGroup.id,
+      targetBudget: targetGroup.budget,
+      targetChannelPreference: targetGroup.channel,
+      channel,
+      price,
+      budget,
+      countryCode,
+      countryName,
+      industryDomain
+    },
     impressions,
     clicks,
     installs,
@@ -1324,7 +1892,12 @@ function runLaunchSimulationEngine({ appName, targetGroup, price, channel, budge
     revenue,
     netProfit,
     avgRating,
-    reviews
+    reviews,
+    uncertaintyRange,
+    modelLogicExplanation,
+    assumptionsAndLimitations,
+    dataGaps,
+    researchRecommendations
   };
 }
 
@@ -1335,142 +1908,142 @@ function generateDynamicSimulatedReviews(targetGroup, appName, price, avgRating)
   if (targetGroup.budget === 'low') {
     if (price === 0) {
       reviews.push({
-        name: 'Alex M.',
+        name: 'Simulated Persona Alex M.',
         initials: 'AM',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 5,
-        quote: `Incredible that ${appName} is free. Perfect fit for our workflow without burning any budget.`
+        quote: `Incredible that ${appName} offers a free tier. Ideal match for our budget-conscious workflow.`
       });
       reviews.push({
-        name: 'Jordan K.',
+        name: 'Simulated Persona Jordan K.',
         initials: 'JK',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 4,
-        quote: `Found this through an ad. Clean utility. Hope you keep a generous free plan!`
+        quote: `Discovered this through ads. Clean functionality. Hope you preserve the free tier as you scale!`
       });
     } else if (price <= 8) {
       reviews.push({
-        name: 'Taylor S.',
+        name: 'Simulated Persona Taylor S.',
         initials: 'TS',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 5,
-        quote: `At $${price}/mo it is well within our budget. ${appName} pays for itself by saving us hours.`
+        quote: `At $${price}/mo it fits within our tight monthly budget. Saves enough time to justify the cost.`
       });
       reviews.push({
-        name: 'Morgan P.',
+        name: 'Simulated Persona Morgan P.',
         initials: 'MP',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 4,
-        quote: `Fair price ($${price}) for what it offers. Good core features.`
+        quote: `Fair price ($${price}/mo) for the basic features offered.`
       });
     } else {
       reviews.push({
-        name: 'Casey R.',
+        name: 'Simulated Persona Casey R.',
         initials: 'CR',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 2,
-        quote: `$${price} a month is way beyond our spending limit. Uninstalled as soon as the paywall appeared.`
+        quote: `$${price}/mo exceeds our spending threshold for this tool type. Uninstalled when the paywall appeared.`
       });
       reviews.push({
-        name: 'Riley B.',
+        name: 'Simulated Persona Riley B.',
         initials: 'RB',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 3,
-        quote: `Interesting tool, but for ${groupName}, $${price} is too steep for our margins.`
+        quote: `Promising concept, but for ${groupName}, $${price}/mo is too expensive given alternative options.`
       });
     }
   } else if (targetGroup.budget === 'medium') {
     if (price < 10) {
       reviews.push({
-        name: 'Sam V.',
+        name: 'Simulated Persona Sam V.',
         initials: 'SV',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 3,
-        quote: `It's cheap ($${price}), but makes me wonder about reliability and long-term roadmap.`
+        quote: `At $${price}/mo it is inexpensive, but makes our team wonder about product stability and security.`
       });
       reviews.push({
-        name: 'Pat D.',
+        name: 'Simulated Persona Pat D.',
         initials: 'PD',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 4,
-        quote: `Good value. Saves our team time every day. Worth more than $${price}.`
+        quote: `Solid tool that saves our team valuable hours. Worth more than $${price}/mo.`
       });
     } else if (price <= 35) {
       reviews.push({
-        name: 'Devon L.',
+        name: 'Simulated Persona Devon L.',
         initials: 'DL',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 5,
-        quote: `${appName} fits directly into our operations. $${price}/mo is an easy purchase decision.`
+        quote: `${appName} integrates well into our day-to-day workflow. $${price}/mo is an easy purchase approval.`
       });
       reviews.push({
-        name: 'Robin H.',
+        name: 'Simulated Persona Robin H.',
         initials: 'RH',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 4,
-        quote: `Smooth experience. Delivered the core functionality we needed as ${groupName}.`
+        quote: `Dependable performance. Delivered what we were expecting for ${groupName}.`
       });
     } else {
       reviews.push({
-        name: 'Chris T.',
+        name: 'Simulated Persona Chris T.',
         initials: 'CT',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 2,
-        quote: `$${price}/mo is too expensive unless you include enterprise compliance and team sharing.`
+        quote: `$${price}/mo is hard to justify without enterprise team controls, SSO, and compliance certificates.`
       });
       reviews.push({
-        name: 'Dana W.',
+        name: 'Simulated Persona Dana W.',
         initials: 'DW',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 3,
-        quote: `Good baseline, but competitor tools offer more for this price tier.`
+        quote: `Decent baseline, but competitor tools offer broader capabilities at this price tier.`
       });
     }
   } else {
     if (price < 20) {
       reviews.push({
-        name: 'Evelyn G.',
+        name: 'Simulated Persona Evelyn G.',
         initials: 'EG',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 3,
-        quote: `Priced at $${price}? Feels too lightweight for serious business workloads.`
+        quote: `Priced at only $${price}/mo? Feels lightweight for critical business operations.`
       });
       reviews.push({
-        name: 'Quinn N.',
+        name: 'Simulated Persona Quinn N.',
         initials: 'QN',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 4,
-        quote: `Snappy UI in ${appName}. Expand the API endpoints and team administration tools.`
+        quote: `Fast UI. Would appreciate dedicated account management and enterprise SLA guarantees.`
       });
     } else if (price <= 60) {
       reviews.push({
-        name: 'Marcus E.',
+        name: 'Simulated Persona Marcus E.',
         initials: 'ME',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 5,
-        quote: `Exactly what we were looking for. $${price}/mo is justified by the operational speedup.`
+        quote: `Exactly what we needed. $${price}/mo is fully justified by the productivity gains.`
       });
       reviews.push({
-        name: 'Avery Z.',
+        name: 'Simulated Persona Avery Z.',
         initials: 'AZ',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 4,
-        quote: `High quality tool for ${groupName}. Good fit for our workflows.`
+        quote: `High quality tool tailored for ${groupName}. Solid fit for our operational requirements.`
       });
     } else {
       reviews.push({
-        name: 'Logan C.',
+        name: 'Simulated Persona Logan C.',
         initials: 'LC',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 2,
-        quote: `$${price}/mo requires executive committee sign-off and custom security audits.`
+        quote: `$${price}/mo requires department VP approval and formal security questionnaire reviews.`
       });
       reviews.push({
-        name: 'Reese F.',
+        name: 'Simulated Persona Reese F.',
         initials: 'RF',
-        role: groupName,
+        role: `${groupName} [Simulated Persona - Fictional]`,
         rating: 3,
-        quote: `Overpriced for an early product. Wait until v2 or when integrations improve.`
+        quote: `High price point for an early offering. We will re-evaluate once the roadmap matures.`
       });
     }
   }
@@ -1482,69 +2055,219 @@ function displayLaunchResults(res) {
   const emptyState = document.getElementById('launchEmptyState');
   const resultsArea = document.getElementById('launchResultsArea');
 
-  emptyState.classList.add('hidden');
-  resultsArea.classList.remove('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+  if (resultsArea) resultsArea.classList.remove('hidden');
 
-  document.getElementById('resImpressions').textContent = res.impressions.toLocaleString();
+  // Key metrics with uncertainty sensitivity ranges
+  const impElem = document.getElementById('resImpressions');
+  const impRangeElem = document.getElementById('resImpressionsRange');
+  if (impElem) impElem.textContent = res.impressions.toLocaleString();
+  if (impRangeElem && res.uncertaintyRange?.impressions) {
+    impRangeElem.textContent = `Range: ${res.uncertaintyRange.impressions.low.toLocaleString()} – ${res.uncertaintyRange.impressions.high.toLocaleString()} (±15% CPM variance)`;
+  }
+
+  const clicksElem = document.getElementById('resClicks');
   const ctr = ((res.clicks / res.impressions) * 100).toFixed(1);
-  document.getElementById('resClicks').textContent = `${res.clicks.toLocaleString()} clicks (${ctr}% CTR)`;
+  if (clicksElem) clicksElem.textContent = `${res.clicks.toLocaleString()} clicks (${ctr}% CTR)`;
 
-  document.getElementById('resInstalls').textContent = res.installs.toLocaleString();
+  const installsElem = document.getElementById('resInstalls');
+  const installsRangeElem = document.getElementById('resInstallsRange');
   const conv = ((res.installs / res.clicks) * 100).toFixed(1);
-  document.getElementById('resConversion').textContent = `${conv}% of clicks installed`;
+  if (installsElem) installsElem.textContent = res.installs.toLocaleString();
+  if (installsRangeElem && res.uncertaintyRange?.installs) {
+    installsRangeElem.textContent = `Range: ${res.uncertaintyRange.installs.low.toLocaleString()} – ${res.uncertaintyRange.installs.high.toLocaleString()} (±30% funnel variance)`;
+  }
+  const convElem = document.getElementById('resConversion');
+  if (convElem) convElem.textContent = `${conv}% of clicks installed`;
 
-  document.getElementById('resPaidUsers').textContent = res.paidUsers.toLocaleString();
+  const paidElem = document.getElementById('resPaidUsers');
+  const paidRangeElem = document.getElementById('resPaidUsersRange');
   const paidPct = res.installs > 0 ? ((res.paidUsers / res.installs) * 100).toFixed(1) : 0;
-  document.getElementById('resPaidRate').textContent = res.price === 0 ? 'Free Tier (0 paid)' : `${paidPct}% conversion to paid`;
+  if (paidElem) paidElem.textContent = res.paidUsers.toLocaleString();
+  if (paidRangeElem && res.uncertaintyRange?.paidUsers) {
+    paidRangeElem.textContent = res.price === 0
+      ? 'Free Tier (0 paid)'
+      : `Range: ${res.uncertaintyRange.paidUsers.low.toLocaleString()} – ${res.uncertaintyRange.paidUsers.high.toLocaleString()} (±40% price sensitivity variance)`;
+  }
+  const paidRateElem = document.getElementById('resPaidRate');
+  if (paidRateElem) paidRateElem.textContent = res.price === 0 ? 'Free Tier (0 paid)' : `${paidPct}% conversion to paid`;
 
   const isProfit = res.netProfit >= 0;
   const profitElem = document.getElementById('resNetProfit');
-  profitElem.textContent = `${isProfit ? '+' : ''}$${res.netProfit.toLocaleString()}`;
-  profitElem.className = `metric-val ${isProfit ? 'text-lime' : 'text-danger'}`;
-  document.getElementById('resRevenueBreakdown').textContent = `Rev: $${res.revenue.toLocaleString()} | Budget: $${res.budget.toLocaleString()}`;
+  const profitRangeElem = document.getElementById('resProfitRange');
+  if (profitElem) {
+    profitElem.textContent = `${isProfit ? '+' : ''}$${res.netProfit.toLocaleString()}`;
+    profitElem.className = `metric-val ${isProfit ? 'text-lime' : 'text-danger'}`;
+  }
+  if (profitRangeElem && res.uncertaintyRange?.netProfit) {
+    const lowNet = res.uncertaintyRange.netProfit.low;
+    const highNet = res.uncertaintyRange.netProfit.high;
+    profitRangeElem.textContent = `Range: ${lowNet >= 0 ? '+' : ''}$${lowNet.toLocaleString()} to ${highNet >= 0 ? '+' : ''}$${highNet.toLocaleString()}`;
+  }
+  const revElem = document.getElementById('resRevenueBreakdown');
+  if (revElem) revElem.textContent = `Rev: $${res.revenue.toLocaleString()} | Budget: $${res.budget.toLocaleString()}`;
 
-  document.getElementById('barImpCount').textContent = res.impressions.toLocaleString();
-  document.getElementById('barClickCount').textContent = res.clicks.toLocaleString();
-  document.getElementById('barInstallCount').textContent = res.installs.toLocaleString();
-  document.getElementById('barPaidCount').textContent = res.paidUsers.toLocaleString();
+  // Funnel bars
+  const barImp = document.getElementById('barImpCount');
+  const barClick = document.getElementById('barClickCount');
+  const barInstall = document.getElementById('barInstallCount');
+  const barPaid = document.getElementById('barPaidCount');
+  if (barImp) barImp.textContent = res.impressions.toLocaleString();
+  if (barClick) barClick.textContent = res.clicks.toLocaleString();
+  if (barInstall) barInstall.textContent = res.installs.toLocaleString();
+  if (barPaid) barPaid.textContent = res.paidUsers.toLocaleString();
 
   const clickPercent = Math.max(3, (res.clicks / res.impressions) * 100);
   const installPercent = Math.max(2, (res.installs / res.impressions) * 100 * 4);
   const paidPercent = res.price === 0 ? 0 : Math.max(1, (res.paidUsers / res.impressions) * 100 * 12);
 
-  document.getElementById('barImpFill').style.width = '100%';
-  document.getElementById('barClickFill').style.width = `${Math.min(100, clickPercent * 8)}%`;
-  document.getElementById('barInstallFill').style.width = `${Math.min(85, installPercent * 6)}%`;
-  document.getElementById('barPaidFill').style.width = `${Math.min(70, paidPercent * 5)}%`;
+  const fillImp = document.getElementById('barImpFill');
+  const fillClick = document.getElementById('barClickFill');
+  const fillInstall = document.getElementById('barInstallFill');
+  const fillPaid = document.getElementById('barPaidFill');
+  if (fillImp) fillImp.style.width = '100%';
+  if (fillClick) fillClick.style.width = `${Math.min(100, clickPercent * 8)}%`;
+  if (fillInstall) fillInstall.style.width = `${Math.min(85, installPercent * 6)}%`;
+  if (fillPaid) fillPaid.style.width = `${Math.min(70, paidPercent * 5)}%`;
 
   const dropClick = (100 - (res.clicks / res.impressions) * 100).toFixed(1);
   const dropInstall = (100 - (res.installs / res.clicks) * 100).toFixed(1);
   const dropPaid = res.price === 0 ? '0 (Free Product)' : (100 - (res.paidUsers / res.installs) * 100).toFixed(1);
 
-  document.getElementById('dropClickText').textContent = `Ad Drop-off: -${dropClick}% (Did not click ad)`;
-  document.getElementById('dropInstallText').textContent = `Landing Page Drop-off: -${dropInstall}% (Did not install/signup)`;
-  document.getElementById('dropPaidText').textContent = res.price === 0 ? 'Free Product' : `Paywall Drop-off: -${dropPaid}% (Did not purchase)`;
+  const dropClickEl = document.getElementById('dropClickText');
+  const dropInstallEl = document.getElementById('dropInstallText');
+  const dropPaidEl = document.getElementById('dropPaidText');
+  if (dropClickEl) dropClickEl.textContent = `Ad Drop-off: -${dropClick}% (Did not click ad)`;
+  if (dropInstallEl) dropInstallEl.textContent = `Landing Page Drop-off: -${dropInstall}% (Did not install/signup)`;
+  if (dropPaidEl) dropPaidEl.textContent = res.price === 0 ? 'Free Product' : `Paywall Drop-off: -${dropPaid}% (Did not purchase)`;
 
-  document.getElementById('resAvgRating').textContent = `${res.avgRating.toFixed(1)} / 5.0`;
-  const starCount = Math.round(res.avgRating);
-  document.getElementById('resStars').textContent = `${'★'.repeat(starCount)}${'☆'.repeat(5 - starCount)}`;
+  // Uncertainty Box & Data Gaps
+  const uncSubtitle = document.getElementById('simUncertaintySubtitle');
+  const uncContent = document.getElementById('simUncertaintyContent');
+  if (uncSubtitle) {
+    uncSubtitle.textContent = `Data audit for ${res.countryName} (${res.countryCode}) • ${res.industryDomain}`;
+  }
+  if (uncContent) {
+    const evidence = res.evidence || [];
+    const macroItems = evidence.filter(e => e.assumption_type === 'macro_market_context');
+    const reportedCount = macroItems.filter(e => e.data_status === 'reported').length;
+    const missingCount = macroItems.filter(e => e.data_status !== 'reported').length;
 
-  const reviewsListElem = document.getElementById('resReviewsList');
-  reviewsListElem.innerHTML = res.reviews.map(r => `
-    <div class="review-card">
-      <div class="review-meta">
-        <div class="reviewer-profile">
-          <span class="reviewer-avatar-svg">${getSimulatedAvatarSvg(r.initials)}</span>
-          <div>
-            <div class="reviewer-name">${escapeHtml(r.name)}</div>
-            <div class="sim-user-tag">${escapeHtml(r.role)} [Simulated]</div>
+    let gapsHtml = '';
+    if (res.dataGaps && res.dataGaps.length > 0) {
+      gapsHtml = `
+        <div class="mt-2">
+          <strong style="color: #f87171;">Identified Data Gaps for ${escapeHtml(res.countryName)}:</strong>
+          <div class="data-gap-tag-list mt-1">
+            ${res.dataGaps.map(g => `<span class="data-gap-tag">${escapeHtml(g.name)} (${escapeHtml(g.reason)})</span>`).join('')}
           </div>
         </div>
-        <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+      `;
+    }
+
+    uncContent.innerHTML = `
+      <div>
+        <strong>Baseline Grounding:</strong> ${reportedCount} of ${macroItems.length} industry-relevant indicators were officially reported for <strong>${escapeHtml(res.countryName)}</strong>. ${missingCount > 0 ? `${missingCount} metric(s) have data gaps.` : 'All primary contextual baselines present.'}
       </div>
-      <p class="review-text">"${escapeHtml(r.quote)}"</p>
-    </div>
-  `).join('');
+      ${gapsHtml}
+      <div class="mt-2">
+        <strong>Why Sensitivity Ranges Are Applied:</strong> Macroeconomic statistics provide regional population volume and payment infrastructure, but cannot predict microeconomic conversion or price elasticity. We apply sensitivity bounds (±15% CPM, ±25% CTR, ±30% signup conversion, ±40% willingness-to-pay) because real customer outcomes vary based on messaging, positioning, and competitive offerings.
+      </div>
+      <div class="factor-disclaimer mt-2">
+        <strong>Ethical Guardrail Applied:</strong> Country-level statistics describe general territorial infrastructure. They are <em>not</em> used to infer an individual customer's willingness to buy, nor is purchasing intent stereotyping allowed by nationality.
+      </div>
+    `;
+  }
+
+  // Provenance Factors Comparison
+  const scopeEl = document.getElementById('factorSourcedScope');
+  if (scopeEl) scopeEl.textContent = `National Context (${res.countryName})`;
+
+  const sourcedListEl = document.getElementById('simSourcedFactorsList');
+  const founderListEl = document.getElementById('simFounderFactorsList');
+  const evidence = res.evidence || [];
+  const macroItems = evidence.filter(e => e.assumption_type === 'macro_market_context');
+  const founderItems = evidence.filter(e => e.assumption_type !== 'macro_market_context');
+
+  if (sourcedListEl) {
+    sourcedListEl.innerHTML = macroItems.map(item => `
+      <div class="factor-item-row">
+        <div class="factor-item-details">
+          <span class="factor-item-name">${escapeHtml(item.indicator_name)}</span>
+          <span class="factor-item-meta">
+            ${item.data_status === 'reported' ? `Ref Year: ${item.reference_year || '2023'} • ${escapeHtml(item.source_name || '')}` : `<span style="color:#f87171;">${escapeHtml(item.uncertainty_note || 'Unreported Gap')}</span>`}
+          </span>
+        </div>
+        <div class="factor-item-val" style="color: ${item.data_status === 'reported' ? 'var(--cyan)' : '#f87171'};">
+          ${item.indicator_value !== null && item.indicator_value !== undefined ? `${Number(item.indicator_value).toLocaleString()} ${escapeHtml(item.indicator_unit || '')}` : 'Missing/Unreported'}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  if (founderListEl) {
+    founderListEl.innerHTML = founderItems.map(item => `
+      <div class="factor-item-row">
+        <div class="factor-item-details">
+          <span class="factor-item-name">${escapeHtml(item.indicator_name || item.assumption_key)}</span>
+          <span class="factor-item-meta">Rule: ${escapeHtml(item.formula_applied || 'Founder stated choice')}</span>
+        </div>
+        <div class="factor-item-val text-lime">
+          ${escapeHtml(item.assumption_value)}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Fictional Customer Feedback & Reviews
+  const avgRatingEl = document.getElementById('resAvgRating');
+  const starsEl = document.getElementById('resStars');
+  if (avgRatingEl) avgRatingEl.textContent = `${res.avgRating.toFixed(1)} / 5.0`;
+  const starCount = Math.round(res.avgRating);
+  if (starsEl) starsEl.textContent = `${'★'.repeat(starCount)}${'☆'.repeat(5 - starCount)}`;
+
+  const reviewsListElem = document.getElementById('resReviewsList');
+  if (reviewsListElem) {
+    reviewsListElem.innerHTML = `
+      ${res.reviews.map(r => `
+        <div class="review-card">
+          <div class="review-meta">
+            <div class="reviewer-profile">
+              <span class="reviewer-avatar-svg">${getSimulatedAvatarSvg(r.initials)}</span>
+              <div>
+                <div class="reviewer-name">${escapeHtml(r.name)}</div>
+                <div class="sim-user-tag">${escapeHtml(r.role)}</div>
+              </div>
+            </div>
+            <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+          </div>
+          <p class="review-text">"${escapeHtml(r.quote)}"</p>
+          <div class="review-fiction-disclaimer">Fictional persona reaction generated algorithmically for founder practice. Not a real person.</div>
+        </div>
+      `).join('')}
+    `;
+  }
+
+  // Model Logic & De-risking Guidance
+  const logicDetailsEl = document.getElementById('modelLogicDetails');
+  if (logicDetailsEl) {
+    logicDetailsEl.innerHTML = `
+      <div class="model-logic-step">
+        <strong>1. Plain Language Model Walkthrough:</strong>
+        <p style="margin:2px 0 0 0; white-space:pre-line;">${escapeHtml(res.modelLogicExplanation || '')}</p>
+      </div>
+
+      <div class="model-logic-step">
+        <strong>2. Documented Model Assumptions &amp; Limitations:</strong>
+        <p style="margin:2px 0 0 0; white-space:pre-line;">${escapeHtml(res.assumptionsAndLimitations || '')}</p>
+      </div>
+
+      <div class="research-checklist">
+        <h6>🔬 Real-World Research Checklist to Validate This Simulation:</h6>
+        <p style="margin:2px 0 0 0; white-space:pre-line; color:#e2e8f0; font-size:0.75rem;">${escapeHtml(res.researchRecommendations || '')}</p>
+      </div>
+    `;
+  }
 }
 
 /* ==========================================================
@@ -1597,6 +2320,7 @@ function renderHistoryTable() {
     <tr>
       <td>#${history.length - idx}</td>
       <td><strong>${escapeHtml(h.appName)}</strong></td>
+      <td><span class="badge-cadence" style="font-size:0.68rem;">${escapeHtml(h.countryCode || 'USA')}</span> <span style="font-size:0.72rem; color:#94a3b8; display:block;">${escapeHtml(h.industryDomain || 'Mobile Applications')}</span></td>
       <td>${escapeHtml(h.targetGroupName)}</td>
       <td>${h.price === 0 ? 'Free' : `$${h.price}/mo`}</td>
       <td>${channelLabel(h.channel)}</td>
@@ -2067,6 +2791,20 @@ function saveCampaignState() {
 /* ==========================================================
    11. SIMULATION AUDIT EVIDENCE INSPECTOR MODAL
    ========================================================== */
+window.toggleModelLogicAccordion = function() {
+  const body = document.getElementById('modelLogicDetails');
+  const arrow = document.getElementById('logicAccordionToggle');
+  if (!body) return;
+  const isHidden = body.classList.contains('hidden');
+  if (isHidden) {
+    body.classList.remove('hidden');
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+  } else {
+    body.classList.add('hidden');
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+  }
+};
+
 window.openEvidenceModal = function(runId) {
   const modal = document.getElementById('evidenceModal');
   if (!modal) return;
@@ -2074,101 +2812,170 @@ window.openEvidenceModal = function(runId) {
   const run = state.history.find(h => h.id === runId || String(h.runNumber) === String(runId));
   if (!run) return;
 
-  document.getElementById('evidRunNumber').textContent = `Run #${run.runNumber || 1}`;
-  document.getElementById('evidTimestamp').textContent = `${run.timestamp || 'Recorded'} ${run.dateStr || ''}`;
-  document.getElementById('evidTitle').textContent = `${run.appName} × ${run.targetGroupName} Simulation Audit`;
+  const countryName = run.countryName || getCountryNameByIso(run.countryCode);
+  const countryCode = run.countryCode || 'USA';
+  const industryDomain = run.industryDomain || 'General Tech';
+  const modelVersion = run.modelVersion || 'v2.0-grounded';
+
+  const runNumEl = document.getElementById('evidRunNumber');
+  const countryBadge = document.getElementById('evidCountryBadge');
+  const industryBadge = document.getElementById('evidIndustryBadge');
+  const modelVersionBadge = document.getElementById('evidModelVersion');
+  const timestampEl = document.getElementById('evidTimestamp');
+  const titleEl = document.getElementById('evidTitle');
+
+  if (runNumEl) runNumEl.textContent = `Run #${run.runNumber || 1}`;
+  if (countryBadge) countryBadge.textContent = `Country: ${countryName} (${countryCode})`;
+  if (industryBadge) industryBadge.textContent = `Industry: ${industryDomain}`;
+  if (modelVersionBadge) modelVersionBadge.textContent = `Model: ${modelVersion}`;
+  if (timestampEl) timestampEl.textContent = `${run.timestamp || 'Recorded'} ${run.dateStr || ''}`;
+  if (titleEl) titleEl.textContent = `${run.appName} × ${run.targetGroupName} Simulation Audit`;
 
   const indicatorsContainer = document.getElementById('evidIndicatorsList');
   const assumptionsContainer = document.getElementById('evidAssumptionsList');
   const outcomesContainer = document.getElementById('evidOutcomesMetrics');
+  const dataGapsContainer = document.getElementById('evidDataGapsContainer');
+  const researchContainer = document.getElementById('evidResearchGuidanceContainer');
 
   const evidence = run.evidence || [];
   const macroItems = evidence.filter(e => e.assumption_type === 'macro_market_context');
   const founderItems = evidence.filter(e => e.assumption_type !== 'macro_market_context');
 
-  // 1. Render Macro Indicators
-  if (macroItems.length > 0) {
-    indicatorsContainer.innerHTML = macroItems.map(item => `
-      <div class="evidence-indicator-item">
-        <div class="evidence-item-name">${escapeHtml(item.indicator_name)}</div>
-        <div class="evidence-item-metric">
-          <span class="evidence-item-num">${item.indicator_value !== null && item.indicator_value !== undefined ? Number(item.indicator_value).toLocaleString() : 'Unavailable'}</span>
-          <span class="evidence-item-unit">${escapeHtml(item.indicator_unit || '')}</span>
+  // 1. Render Relevant Macro Indicators
+  if (indicatorsContainer) {
+    if (macroItems.length > 0) {
+      indicatorsContainer.innerHTML = macroItems.map(item => `
+        <div class="evidence-indicator-item">
+          <div class="evidence-item-name">${escapeHtml(item.indicator_name)}</div>
+          <div class="evidence-item-metric">
+            <span class="evidence-item-num" style="color: ${item.data_status === 'reported' ? 'var(--cyan)' : '#f87171'};">
+              ${item.indicator_value !== null && item.indicator_value !== undefined ? Number(item.indicator_value).toLocaleString() : 'Missing / Unreported'}
+            </span>
+            <span class="evidence-item-unit">${escapeHtml(item.indicator_unit || '')}</span>
+          </div>
+          <div class="evidence-item-meta">
+            ${item.data_status === 'reported' ? `Ref Year: ${item.reference_year || '2023'} • Source: ${escapeHtml(item.source_name || 'Official Publisher')}` : `<span style="color:#f87171;">${escapeHtml(item.uncertainty_note || 'Data Gap')}</span>`}
+          </div>
+          <div style="font-size:0.68rem; color:#94a3b8; margin-top:4px;">
+            ${escapeHtml(item.limitations || item.disclaimer || 'National baseline context.')}
+          </div>
         </div>
-        <div class="evidence-item-meta">
-          Ref Year: ${item.reference_year || '2023'} • Country: ${escapeHtml(item.country_code || 'USA')}
+      `).join('');
+    } else {
+      indicatorsContainer.innerHTML = `
+        <div class="evidence-indicator-item" style="grid-column: 1 / -1;">
+          <div class="evidence-item-meta">Baseline macroeconomic and infrastructure indicators referenced as background national context.</div>
         </div>
-      </div>
-    `).join('');
-  } else {
-    indicatorsContainer.innerHTML = `
-      <div class="evidence-indicator-item" style="grid-column: 1 / -1;">
-        <div class="evidence-item-meta">Baseline WDI demographic and connectivity indicators referenced as background national context.</div>
-      </div>
-    `;
+      `;
+    }
   }
 
   // 2. Render Founder Hypotheses & Assumptions
-  if (founderItems.length > 0) {
-    assumptionsContainer.innerHTML = `
-      <thead>
-        <tr>
-          <th>Assumption Parameter</th>
-          <th>Stated Value / Choice</th>
-          <th>Model Formula &amp; Elasticity Rule</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${founderItems.map(item => `
+  if (assumptionsContainer) {
+    if (founderItems.length > 0) {
+      assumptionsContainer.innerHTML = `
+        <thead>
           <tr>
-            <td><strong>${escapeHtml(item.indicator_name || item.assumption_key)}</strong></td>
-            <td>${escapeHtml(item.assumption_value)}</td>
-            <td>${escapeHtml(item.formula_applied || 'Direct hypothesis input')}</td>
+            <th>Assumption Parameter</th>
+            <th>Stated Value / Choice</th>
+            <th>Model Formula &amp; Elasticity Rule</th>
           </tr>
-        `).join('')}
-      </tbody>
-    `;
-  } else {
-    assumptionsContainer.innerHTML = `
-      <tbody>
-        <tr>
-          <td>Budget: $${run.budget}</td>
-          <td>Price: ${run.price === 0 ? 'Free' : '$' + run.price + '/mo'}</td>
-          <td>Channel: ${channelLabel(run.channel)}</td>
-        </tr>
-      </tbody>
+        </thead>
+        <tbody>
+          ${founderItems.map(item => `
+            <tr>
+              <td><strong>${escapeHtml(item.indicator_name || item.assumption_key)}</strong></td>
+              <td class="text-lime">${escapeHtml(item.assumption_value)}</td>
+              <td>${escapeHtml(item.formula_applied || 'Direct hypothesis input')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      `;
+    } else {
+      assumptionsContainer.innerHTML = `
+        <tbody>
+          <tr>
+            <td>Budget: $${run.budget}</td>
+            <td>Price: ${run.price === 0 ? 'Free' : '$' + run.price + '/mo'}</td>
+            <td>Channel: ${channelLabel(run.channel)}</td>
+          </tr>
+        </tbody>
+      `;
+    }
+  }
+
+  // 3. Render Simulated Outcomes Summary with Uncertainty Sensitivity Ranges
+  if (outcomesContainer) {
+    const uncert = run.uncertaintyRange || {};
+    outcomesContainer.innerHTML = `
+      <div class="evidence-metric-box">
+        <div class="evidence-metric-num">${run.impressions.toLocaleString()}</div>
+        <div class="evidence-metric-label">Impressions (Expected)</div>
+        <div class="evidence-item-meta">${uncert.impressions ? `Range: ${uncert.impressions.low.toLocaleString()} – ${uncert.impressions.high.toLocaleString()}` : 'Simulated'}</div>
+      </div>
+      <div class="evidence-metric-box">
+        <div class="evidence-metric-num">${run.clicks.toLocaleString()}</div>
+        <div class="evidence-metric-label">Clicks (Expected)</div>
+        <div class="evidence-item-meta">${uncert.clicks ? `Range: ${uncert.clicks.low.toLocaleString()} – ${uncert.clicks.high.toLocaleString()}` : 'Simulated'}</div>
+      </div>
+      <div class="evidence-metric-box">
+        <div class="evidence-metric-num">${run.installs.toLocaleString()}</div>
+        <div class="evidence-metric-label">Installs (Expected)</div>
+        <div class="evidence-item-meta">${uncert.installs ? `Range: ${uncert.installs.low.toLocaleString()} – ${uncert.installs.high.toLocaleString()}` : 'Simulated'}</div>
+      </div>
+      <div class="evidence-metric-box">
+        <div class="evidence-metric-num">${run.paidUsers.toLocaleString()}</div>
+        <div class="evidence-metric-label">Paid Users (Expected)</div>
+        <div class="evidence-item-meta">${uncert.paidUsers ? `Range: ${uncert.paidUsers.low.toLocaleString()} – ${uncert.paidUsers.high.toLocaleString()}` : 'Simulated'}</div>
+      </div>
+      <div class="evidence-metric-box">
+        <div class="evidence-metric-num" style="color: ${run.netProfit >= 0 ? 'var(--lime)' : 'var(--danger)'}">
+          ${run.netProfit >= 0 ? '+' : ''}$${run.netProfit.toLocaleString()}
+        </div>
+        <div class="evidence-metric-label">Net Profit (Sim)</div>
+        <div class="evidence-item-meta">${uncert.netProfit ? `Range: ${uncert.netProfit.low >= 0 ? '+' : ''}$${uncert.netProfit.low.toLocaleString()} to ${uncert.netProfit.high >= 0 ? '+' : ''}$${uncert.netProfit.high.toLocaleString()}` : 'Simulated'}</div>
+      </div>
+      <div class="evidence-metric-box">
+        <div class="evidence-metric-num">${run.avgRating.toFixed(1)} / 5.0</div>
+        <div class="evidence-metric-label">Avg Rating (Fictional)</div>
+        <div class="evidence-item-meta">Persona Elasticity Score</div>
+      </div>
     `;
   }
 
-  // 3. Render Simulated Outcomes Summary
-  outcomesContainer.innerHTML = `
-    <div class="evidence-metric-box">
-      <div class="evidence-metric-num">${run.impressions.toLocaleString()}</div>
-      <div class="evidence-metric-label">Impressions</div>
-    </div>
-    <div class="evidence-metric-box">
-      <div class="evidence-metric-num">${run.clicks.toLocaleString()}</div>
-      <div class="evidence-metric-label">Clicks</div>
-    </div>
-    <div class="evidence-metric-box">
-      <div class="evidence-metric-num">${run.installs.toLocaleString()}</div>
-      <div class="evidence-metric-label">Installs</div>
-    </div>
-    <div class="evidence-metric-box">
-      <div class="evidence-metric-num">${run.paidUsers.toLocaleString()}</div>
-      <div class="evidence-metric-label">Paid Users</div>
-    </div>
-    <div class="evidence-metric-box">
-      <div class="evidence-metric-num" style="color: ${run.netProfit >= 0 ? 'var(--lime)' : 'var(--danger)'}">
-        ${run.netProfit >= 0 ? '+' : ''}$${run.netProfit.toLocaleString()}
+  // 4. Render Data Gaps & Uncertainty Breakdown
+  if (dataGapsContainer) {
+    let gapsHtml = '';
+    if (run.dataGaps && run.dataGaps.length > 0) {
+      gapsHtml = `
+        <div class="data-gap-tag-list mb-2">
+          ${run.dataGaps.map(g => `<span class="data-gap-tag">${escapeHtml(g.name)}: ${escapeHtml(g.reason)}</span>`).join('')}
+        </div>
+      `;
+    } else {
+      gapsHtml = `<p class="text-dim mb-2">No missing contextual metrics detected for this run.</p>`;
+    }
+
+    dataGapsContainer.innerHTML = `
+      <div>
+        <strong>Data Gaps Audit for ${escapeHtml(countryName)}:</strong>
+        ${gapsHtml}
+        <div class="mt-2 text-dim" style="font-size:0.75rem; white-space:pre-line;">
+          ${escapeHtml(run.assumptionsAndLimitations || 'Country-level indicators provide regional scale, but cannot measure individual customer willingness to pay.')}
+        </div>
       </div>
-      <div class="evidence-metric-label">Net Profit (Sim)</div>
-    </div>
-    <div class="evidence-metric-box">
-      <div class="evidence-metric-num">${run.avgRating.toFixed(1)} / 5.0</div>
-      <div class="evidence-metric-label">Avg Rating</div>
-    </div>
-  `;
+    `;
+  }
+
+  // 5. Render Real-World Research Guidance
+  if (researchContainer) {
+    researchContainer.innerHTML = `
+      <h6>🔬 Required Real-World Research to Validate Hypotheses:</h6>
+      <p style="margin:4px 0 0 0; white-space:pre-line; color:#e2e8f0; font-size:0.75rem;">
+        ${escapeHtml(run.researchRecommendations || '1. Problem discovery interviews with target users.\n2. Landing page smoke tests.\n3. Willingness-to-pay commitments.')}
+      </p>
+    `;
+  }
 
   modal.classList.remove('hidden');
 };
