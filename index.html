@@ -113,6 +113,15 @@
             <span class="nav-label">Real evidence</span>
             <span class="sidebar-badge" id="navRealEvidenceCount">0</span>
           </button>
+
+          <button class="nav-item" data-view="evaluation">
+            <span class="nav-svg-icon">
+              <!-- Scale / Gauge / Observatory Icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+            </span>
+            <span class="nav-label">Model evaluation</span>
+            <span class="sidebar-badge" id="navEvaluationBadge">Admin</span>
+          </button>
         </nav>
       </div>
 
@@ -1671,6 +1680,16 @@
                 <input type="text" id="evidenceSampleDescription" class="form-input" placeholder="e.g. Recruited via LinkedIn InMail and Hacker News, engineering leads with &gt;5 direct reports in Germany">
               </div>
 
+              <!-- Link to Comparable Simulation Run -->
+              <div class="form-group evidence-full-width">
+                <label for="evidenceLinkedSim">Link to Comparable Simulation Run (Optional)</label>
+                <select id="evidenceLinkedSim" class="form-select">
+                  <option value="">-- No linked simulation (Stand-alone field research) --</option>
+                  <!-- Dynamically populated from state.history -->
+                </select>
+                <small class="field-help-text">Optional link pairing this real test result with a prior simulated launch run in the same market.</small>
+              </div>
+
               <!-- Question or Test Used -->
               <div class="form-group evidence-full-width">
                 <label for="evidenceQuestion">Specific Question or Test Used (Hypothesis) *</label>
@@ -1820,6 +1839,204 @@
               <button class="btn btn-outline-cyan btn-xs" id="btnExportEvidenceCsv" type="button">Export CSV</button>
               <button class="btn btn-danger-outline btn-xs" id="btnDeleteAllEvidence" type="button">Purge All Evidence</button>
             </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 9: MODEL EVALUATION & GOVERNANCE OBSERVATORY           -->
+      <!-- ========================================================== -->
+      <section id="view-evaluation" class="page-view">
+        <div class="view-header">
+          <div>
+            <div class="flex-align-center gap-2 mb-1">
+              <h2>Model Evaluation &amp; Governance Observatory</h2>
+              <span class="admin-lock-badge" id="evalAdminBadge">🔒 Evaluator View</span>
+            </div>
+            <p class="view-desc">
+              Rigorous calibration foundation comparing simulator prediction ranges against real, permissioned founder research. Strictly gated against sparse evidence and automated parameter drifting.
+            </p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline-cyan btn-sm" id="btnToggleAdminMode" type="button">
+              Toggle Mode (Admin / Public Audit)
+            </button>
+            <button class="btn btn-lime-outline btn-sm" id="btnExportEvaluationReport" type="button">
+              Export Evaluation Report (JSON)
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. Strict Governance Protocol Banner -->
+        <div class="governance-protocol-banner">
+          <div class="governance-protocol-header">
+            <div class="governance-protocol-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Model Governance Rule: No Automated Weight Shifting on Small Observations</span>
+            </div>
+            <span class="badge-cadence" style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3);">
+              Policy Enforced
+            </span>
+          </div>
+          <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5; margin: 0;">
+            Foundry will <strong>never</strong> automatically adjust simulation parameters, elasticity formulas, or channel conversion benchmarks based on a handful of founder observations. Automated feedback loops on small sample sizes risk severe overfitting to localized early adopters. Any change to the simulation engine requires a formal methodological review, documented audit trail, and an immutable model version release tag.
+          </p>
+        </div>
+
+        <!-- 2. Validation Readiness & Evidence Gap Assessment -->
+        <div class="validation-readiness-panel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="panel-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+                Model Validation Readiness &amp; Evidence Gap Assessment
+              </h3>
+              <p class="coverage-section-desc">What evidence is needed before Foundry can scientifically assess whether its simulations are useful.</p>
+            </div>
+            <div class="flex-align-center gap-2">
+              <span class="text-xs text-muted">Readiness Progress:</span>
+              <strong class="text-lime" id="evalReadinessPercent">24%</strong>
+            </div>
+          </div>
+
+          <div class="readiness-meter-bar-container">
+            <div class="readiness-meter-fill" id="evalReadinessBar" style="width: 24%;"></div>
+          </div>
+
+          <div class="readiness-criteria-grid">
+            <div class="readiness-criteria-item">
+              <span class="readiness-criteria-title text-warning">
+                ⏳ 1. Sample Size Criteria
+              </span>
+              <span class="readiness-criteria-desc">
+                Requires &ge; 1,000 paired observations across each vertical. Currently in Early Empirical Discovery phase.
+              </span>
+            </div>
+
+            <div class="readiness-criteria-item">
+              <span class="readiness-criteria-title text-warning">
+                ⏳ 2. Longitudinal Tracking
+              </span>
+              <span class="readiness-criteria-desc">
+                Must track real 6-month founder revenue &amp; churn retention against predicted launch elasticity bounds.
+              </span>
+            </div>
+
+            <div class="readiness-criteria-item">
+              <span class="readiness-criteria-title text-cyan">
+                ✓ 3. Sovereign Macro Grounding
+              </span>
+              <span class="readiness-criteria-desc">
+                20 verified macroeconomic indicators (World Bank, ITU, Eurostat, UNCTAD) anchor infrastructure limits.
+              </span>
+            </div>
+
+            <div class="readiness-criteria-item">
+              <span class="readiness-criteria-title text-warning">
+                ⏳ 4. Out-of-Sample Holdout Testing
+              </span>
+              <span class="readiness-criteria-desc">
+                Blind evaluation of model predictions on newly launched startups without post-hoc curve fitting.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Sparsity-Gated Cohort Comparison Matrix -->
+        <div class="city-panel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="panel-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                </span>
+                Simulated Range vs. Empirical Observed Outcome Matrix
+              </h3>
+              <p class="coverage-section-desc">
+                Grouped by Market, Industry, and Experiment Type. <strong>Sparsity Guardrail:</strong> Comparisons are strictly withheld when total participants &lt; 100 or independent studies &lt; 3.
+              </p>
+            </div>
+            <div class="flex-align-center gap-2">
+              <span class="badge-status-neutral" id="evalCohortsCountBadge">0 Cohorts Analyzed</span>
+            </div>
+          </div>
+
+          <!-- Cohort Evaluation Grid -->
+          <div class="cohort-eval-grid" id="evalCohortsContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- 4. Consent & Provenance Compliance Dashboard -->
+        <div class="city-panel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="panel-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </span>
+                Permissioning, Consent &amp; Revocation Compliance
+              </h3>
+              <p class="coverage-section-desc">Strict audit verifying that zero private founder notes or un-consented records enter the evaluation engine.</p>
+            </div>
+          </div>
+
+          <div class="consent-audit-grid">
+            <div class="consent-stat-box">
+              <span class="consent-stat-label">Permissioned Studies</span>
+              <span class="consent-stat-val text-lime" id="evalOptedInCount">0</span>
+            </div>
+            <div class="consent-stat-box">
+              <span class="consent-stat-label">Total Sample Size (N)</span>
+              <span class="consent-stat-val text-cyan" id="evalTotalOptedInN">0</span>
+            </div>
+            <div class="consent-stat-box">
+              <span class="consent-stat-label">Private Studies (Excluded)</span>
+              <span class="consent-stat-val" id="evalPrivateCount">0</span>
+            </div>
+            <div class="consent-stat-box">
+              <span class="consent-stat-label">Revocations &amp; Purges Honored</span>
+              <span class="consent-stat-val text-accent" id="evalRevokedCount">100% Real-time</span>
+            </div>
+          </div>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-top:12px; line-height:1.5;">
+            🔒 <strong>Consent Guarantee:</strong> If a founder unchecks the opt-in toggle or deletes a record, the evaluation pipeline drops that evidence instantly. No un-anonymized quotes or business secrets are retained.
+          </div>
+        </div>
+
+        <!-- 5. Documented Model Version Reviews & Governance Changelog -->
+        <div class="city-panel">
+          <div class="panel-section-header">
+            <div>
+              <h3 class="panel-section-title">
+                <span class="section-title-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </span>
+                Documented Model Version Reviews &amp; Changelog
+              </h3>
+              <p class="coverage-section-desc">Audit trail of formal methodological reviews required before changing any simulation logic.</p>
+            </div>
+          </div>
+
+          <div class="coverage-table-responsive">
+            <table class="coverage-matrix-table" id="evalGovernanceTable">
+              <thead>
+                <tr>
+                  <th>Model Version</th>
+                  <th>Governance Status</th>
+                  <th>Reviewer</th>
+                  <th>Dataset &amp; Scope Summary</th>
+                  <th>Empirical Basis</th>
+                  <th>Decision &amp; Documented Boundaries</th>
+                </tr>
+              </thead>
+              <tbody id="evalGovernanceTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
           </div>
         </div>
 

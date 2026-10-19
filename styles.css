@@ -3957,5 +3957,257 @@ input[type="range"]::-webkit-slider-thumb {
   color: #34d399;
 }
 
+/* ==========================================================
+   MODEL EVALUATION FOUNDATION & GOVERNANCE OBSERVATORY STYLES
+   ========================================================== */
+
+/* Admin Status Badge */
+.admin-lock-badge {
+  background: rgba(244, 63, 94, 0.18);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  color: #fda4af;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-lock-badge.unlocked {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+
+/* Governance Protocol Banner */
+.governance-protocol-banner {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.governance-protocol-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.governance-protocol-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+/* Validation Readiness Meter */
+.validation-readiness-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+
+.readiness-meter-bar-container {
+  background: rgba(255, 255, 255, 0.06);
+  height: 8px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: 10px 0 14px 0;
+}
+
+.readiness-meter-fill {
+  background: linear-gradient(90deg, var(--warning), var(--lime));
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+.readiness-criteria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.readiness-criteria-item {
+  background: var(--bg-panel-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.readiness-criteria-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.readiness-criteria-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Evaluation Comparison Cards & Sparsity Gates */
+.cohort-eval-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.cohort-eval-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+
+.cohort-eval-card:hover {
+  border-color: var(--border-subtle);
+}
+
+.cohort-eval-card.sparse {
+  border-left: 4px solid var(--warning);
+}
+
+.cohort-eval-card.published-eval {
+  border-left: 4px solid var(--cyan);
+}
+
+.cohort-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cohort-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.cohort-meta-sub {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+}
+
+/* Sparsity Withheld Callout */
+.sparsity-withheld-box {
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sparsity-withheld-title {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #fbbf24;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sparsity-withheld-body {
+  font-size: 0.76rem;
+  color: #fde68a;
+  line-height: 1.45;
+}
+
+/* Comparison Metric Table in Card */
+.comparison-metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+  margin-top: 4px;
+}
+
+.comparison-metrics-table th,
+.comparison-metrics-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.comparison-metrics-table th {
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+}
+
+.comparison-metrics-table td.sim-col {
+  color: var(--lime);
+  font-family: var(--font-mono);
+}
+
+.comparison-metrics-table td.obs-col {
+  color: #34d399;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+/* Consent Audit Box */
+.consent-audit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.consent-stat-box {
+  background: var(--bg-panel-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.consent-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.consent-stat-val {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+
 
 

@@ -628,6 +628,8 @@
         collection_end_date: record.collectionEndDate || null,
         sample_size: Math.max(1, parseInt(record.sampleSize, 10) || 1),
         sample_description: record.sampleDescription || null,
+        linked_simulation_run_id: record.linkedSimulationRunId || null,
+        model_version_evaluated: record.modelVersionEvaluated || 'v2.0-grounded',
         research_question: record.researchQuestion || 'Hypothesis validation inquiry',
         results_summary: record.resultsSummary || '',
         quantitative_metrics: record.quantitativeMetrics || {},
@@ -745,6 +747,8 @@
         collectionEndDate: row.collection_end_date,
         sampleSize: Number(row.sample_size),
         sampleDescription: row.sample_description,
+        linkedSimulationRunId: row.linked_simulation_run_id || null,
+        modelVersionEvaluated: row.model_version_evaluated || 'v2.0-grounded',
         researchQuestion: row.research_question,
         resultsSummary: row.results_summary,
         quantitativeMetrics: row.quantitative_metrics || {},
@@ -771,6 +775,8 @@
           'Industry',
           'Customer Group',
           'Sample Size (N)',
+          'Linked Simulation Run ID',
+          'Model Version',
           'Collection Period',
           'Research Question / Hypothesis',
           'Results Summary',
@@ -795,6 +801,8 @@
           r.industryDomain,
           r.customerGroupName || 'All',
           r.sampleSize,
+          r.linkedSimulationRunId || 'None',
+          r.modelVersionEvaluated || 'v2.0-grounded',
           `${r.collectionStartDate || ''} to ${r.collectionEndDate || ''}`.trim(),
           r.researchQuestion,
           r.resultsSummary,
@@ -809,6 +817,98 @@
       }
 
       return JSON.stringify(records, null, 2);
+    }
+
+    /* -------------------------------------------------------------
+       MODEL EVALUATION & GOVERNANCE AUDIT (ADMIN OBSERVATORY)
+       Aggregates only permissioned (opted-in) founder research.
+       Applies sparsity threshold gate: N >= 100 & k >= 3 studies.
+       ------------------------------------------------------------- */
+    async loadModelEvaluationCohorts() {
+      if (!this.client) return [];
+      try {
+        const { data, error } = await this.client
+          .from('model_evaluation_cohorts')
+          .select('*');
+        if (error) {
+          console.warn('[FoundrySupabase] loadModelEvaluationCohorts:', error.message);
+          return [];
+        }
+        return (data || []).map(r => ({
+          industryDomain: r.industry_domain,
+          researchMethod: r.research_method,
+          countryCode: r.country_code,
+          modelVersionEvaluated: r.model_version_evaluated,
+          permissionedStudiesCount: Number(r.permissioned_studies_count),
+          totalSampleSize: Number(r.total_sample_size),
+          isSparseEvidence: Boolean(r.is_sparse_evidence),
+          observedAvgConversionRate: r.observed_avg_conversion_rate !== null ? Number(r.observed_avg_conversion_rate) : null,
+          observedAvgPrice: r.observed_avg_price !== null ? Number(r.observed_avg_price) : null,
+          simulatedAvgPriceTested: r.simulated_avg_price_tested !== null ? Number(r.simulated_avg_price_tested) : null,
+          simulatedAvgPaidRate: r.simulated_avg_paid_rate !== null ? Number(r.simulated_avg_paid_rate) : null,
+          simulatedAvgCtr: r.simulated_avg_ctr !== null ? Number(r.simulated_avg_ctr) : null
+        }));
+      } catch (err) {
+        console.error('[FoundrySupabase] loadModelEvaluationCohorts err:', err);
+        return [];
+      }
+    }
+
+    async loadModelGovernanceReviews() {
+      if (!this.client) return [];
+      try {
+        const { data, error } = await this.client
+          .from('model_governance_reviews')
+          .select('*')
+          .order('review_date', { ascending: false });
+        if (error) {
+          console.warn('[FoundrySupabase] loadModelGovernanceReviews:', error.message);
+          return [];
+        }
+        return (data || []).map(r => ({
+          id: r.id,
+          modelVersion: r.model_version,
+          status: r.status,
+          reviewDate: r.review_date,
+          reviewerTitle: r.reviewer_title,
+          datasetScopeSummary: r.dataset_scope_summary,
+          empiricalCohortsEvaluated: Number(r.empirical_cohorts_evaluated),
+          totalPermissionedSampleSize: Number(r.total_permissioned_sample_size),
+          decisionRationale: r.decision_rationale,
+          documentedLimitations: r.documented_limitations,
+          recommendedEvidenceNeeded: r.recommended_evidence_needed
+        }));
+      } catch (err) {
+        console.error('[FoundrySupabase] loadModelGovernanceReviews err:', err);
+        return [];
+      }
+    }
+
+    async recordModelGovernanceReview(review) {
+      if (!this.isAuthenticated()) return null;
+      try {
+        const payload = {
+          model_version: review.modelVersion,
+          status: review.status || 'under_review',
+          reviewer_title: review.reviewerTitle || 'Model Governance Board',
+          dataset_scope_summary: review.datasetScopeSummary || '',
+          empirical_cohorts_evaluated: review.empiricalCohortsEvaluated || 0,
+          total_permissioned_sample_size: review.totalPermissionedSampleSize || 0,
+          decision_rationale: review.decisionRationale || '',
+          documented_limitations: review.documentedLimitations || '',
+          recommended_evidence_needed: review.recommendedEvidenceNeeded || ''
+        };
+        const { data, error } = await this.client
+          .from('model_governance_reviews')
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.error('[FoundrySupabase] recordModelGovernanceReview err:', err);
+        return null;
+      }
     }
 
 
