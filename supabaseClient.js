@@ -466,6 +466,21 @@
         channel: run.channel || 'social',
         price: run.price || 0,
         budget: run.budget || 0,
+        country_code: run.countryCode || run.country?.code || null,
+        country_name: run.countryName || run.country?.name || null,
+        industry_domain: run.industryDomain || run.industry || null,
+        founder_inputs: run.founderInputs || {
+          targetGroupName: run.targetGroupName,
+          targetBudget: run.targetBudget,
+          channel: run.channel,
+          price: run.price,
+          budget: run.budget
+        },
+        uncertainty_range: run.uncertaintyRange || {},
+        model_logic_explanation: run.modelLogicExplanation || null,
+        assumptions_and_limitations: run.assumptionsAndLimitations || null,
+        data_gaps: run.dataGaps || [],
+        research_recommendations: run.researchRecommendations || null,
         simulated_impressions: run.impressions || 0,
         simulated_clicks: run.clicks || 0,
         simulated_installs: run.installs || 0,
@@ -474,7 +489,7 @@
         simulated_net_profit: run.netProfit || 0,
         simulated_avg_rating: Math.min(5.0, Math.max(1.0, run.avgRating || 3.0)),
         simulated_reviews: run.reviews || [],
-        model_version: 'v1.0-wdi-grounded'
+        model_version: run.modelVersion || 'v2.0-grounded'
       };
 
       const { data: insertedRun, error: runErr } = await this.client
@@ -492,6 +507,10 @@
           simulation_run_id: simRunId,
           workspace_id: ws.id,
           user_id: this.currentUser.id,
+          source_id: ev.source_id || ev.sourceId || null,
+          source_name: ev.source_name || ev.sourceName || null,
+          data_status: ev.data_status || (ev.indicator_value !== null && ev.indicator_value !== undefined ? 'reported' : 'missing_unreported'),
+          uncertainty_note: ev.uncertainty_note || ev.uncertaintyNote || null,
           indicator_code: ev.indicator_code || null,
           indicator_name: ev.indicator_name,
           indicator_value: ev.indicator_value !== undefined ? ev.indicator_value : null,
@@ -502,7 +521,7 @@
           assumption_key: ev.assumption_key,
           assumption_value: String(ev.assumption_value),
           formula_applied: ev.formula_applied || null,
-          disclaimer: 'Simulated educational model output. Background macroeconomic indicators provide national context, not microeconomic purchasing intent or sales guarantees.'
+          disclaimer: ev.disclaimer || 'Simulated educational model output. Background macroeconomic indicators provide national context, not microeconomic purchasing intent or sales guarantees.'
         }));
 
         await this.client

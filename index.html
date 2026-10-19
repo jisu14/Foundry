@@ -687,7 +687,23 @@
           <!-- Campaign Setup Form -->
           <div class="city-panel config-panel">
             <h3 class="panel-title mb-2">Campaign Setup</h3>
-            <p class="panel-desc mb-4">Choose target audience, price, channel, and budget for this simulation run.</p>
+            <p class="panel-desc mb-3">Choose target audience, price, channel, and budget for this simulation run.</p>
+
+            <!-- Grounding Market & Industry Context Bar -->
+            <div id="simRunContextBar" class="sim-context-bar">
+              <div class="sim-context-item">
+                <span class="sim-context-label">Target Market</span>
+                <span class="sim-context-val" id="simContextCountry">United States (USA)</span>
+              </div>
+              <div class="sim-context-item">
+                <span class="sim-context-label">Industry Domain</span>
+                <span class="sim-context-val" id="simContextIndustry">Mobile Applications</span>
+              </div>
+              <div class="sim-context-item">
+                <span class="sim-context-label">Model Engine</span>
+                <span class="sim-context-val font-mono" id="simContextModel">v2.0-grounded</span>
+              </div>
+            </div>
 
             <form id="launchForm" onsubmit="return false;">
               
@@ -754,7 +770,10 @@
           <div class="city-panel results-panel">
             
             <div class="panel-header mb-3">
-              <h3 class="panel-title">Simulated Market Outcomes</h3>
+              <div>
+                <h3 class="panel-title">Simulated Market Outcomes</h3>
+                <p class="panel-desc" style="margin:2px 0 0 0; font-size:0.75rem;">Theoretical outcomes generated from founder hypotheses and regional infrastructure baselines.</p>
+              </div>
               <div class="action-tag-group">
                 <button class="btn btn-outline-cyan btn-xs" data-nav="overview">View in World Map</button>
                 <span class="simulated-pill">Simulated Model</span>
@@ -773,37 +792,55 @@
             <!-- Simulation Results Container -->
             <div id="launchResultsArea" class="results-container hidden">
               
-              <!-- Key Metrics -->
+              <!-- Key Metrics with Uncertainty Ranges -->
               <div class="metrics-grid">
                 <div class="metric-card">
                   <div class="metric-label">Simulated Reach (Impressions)</div>
                   <div class="metric-val" id="resImpressions">0</div>
+                  <div class="metric-range" id="resImpressionsRange">Range: 0 – 0</div>
                   <div class="metric-sub" id="resClicks">0 clicks</div>
                 </div>
 
                 <div class="metric-card">
                   <div class="metric-label">Simulated Installs / Signups</div>
                   <div class="metric-val text-cyan" id="resInstalls">0</div>
+                  <div class="metric-range" id="resInstallsRange">Range: 0 – 0</div>
                   <div class="metric-sub" id="resConversion">0% conversion</div>
                 </div>
 
                 <div class="metric-card">
                   <div class="metric-label">Paying Customers (Simulated)</div>
                   <div class="metric-val text-lime" id="resPaidUsers">0</div>
+                  <div class="metric-range" id="resPaidUsersRange">Range: 0 – 0</div>
                   <div class="metric-sub" id="resPaidRate">0% of installs paid</div>
                 </div>
 
                 <div class="metric-card">
                   <div class="metric-label">Simulated Financial Outcome</div>
                   <div class="metric-val" id="resNetProfit">$0</div>
+                  <div class="metric-range" id="resProfitRange">Range: $0 – $0</div>
                   <div class="metric-sub" id="resRevenueBreakdown">Rev: $0 | Budget: $0</div>
+                </div>
+              </div>
+
+              <!-- Uncertainty & Data Gaps Analysis Card -->
+              <div id="simUncertaintyBox" class="uncertainty-card">
+                <div class="uncertainty-header">
+                  <span class="icon-warning-amber">⚠</span>
+                  <div>
+                    <h5>Model Uncertainty &amp; Market Data Gaps</h5>
+                    <p id="simUncertaintySubtitle">Analyzing data availability for the selected country.</p>
+                  </div>
+                </div>
+                <div id="simUncertaintyContent" class="uncertainty-body">
+                  <!-- Populated dynamically -->
                 </div>
               </div>
 
               <!-- Funnel & Drop-off Breakdown -->
               <div class="panel-section">
                 <h4 class="section-title">
-                  <span>Simulated Funnel & Drop-off Breakdown</span>
+                  <span>Simulated Funnel &amp; Drop-off Breakdown</span>
                   <span class="simulated-pill">Theoretical Funnel</span>
                 </h4>
                 
@@ -853,13 +890,57 @@
                 </div>
               </div>
 
-              <!-- Customer Feedback & Reviews -->
+              <!-- Grounding Factors: Sourced Data vs. Founder Assumptions -->
+              <div class="panel-section factors-comparison-section">
+                <div class="factors-section-header">
+                  <h4 class="section-title">
+                    <span>Factor Provenance: Sourced Market Data vs. Founder Hypotheses</span>
+                    <span class="simulated-pill">Model Evidence</span>
+                  </h4>
+                  <p class="section-desc">Distinguishing verified external statistics from founder-declared assumptions.</p>
+                </div>
+
+                <div class="factors-grid">
+                  <!-- Sourced Indicators Box -->
+                  <div class="factor-card factor-card-sourced">
+                    <div class="factor-header">
+                      <span class="factor-badge factor-badge-sourced">🌐 SOURCED MARKET DATA</span>
+                      <span class="factor-scope" id="factorSourcedScope">National Context</span>
+                    </div>
+                    <div id="simSourcedFactorsList" class="factors-list">
+                      <!-- Dynamically populated relevant indicators -->
+                    </div>
+                    <div class="factor-disclaimer">
+                      <strong>Ethical Guardrail:</strong> National statistics describe regional demographic volume and digital infrastructure. They do <em>not</em> determine individual willingness to buy or forecast customer-level decisions.
+                    </div>
+                  </div>
+
+                  <!-- Founder Assumptions Box -->
+                  <div class="factor-card factor-card-assumptions">
+                    <div class="factor-header">
+                      <span class="factor-badge factor-badge-founder">💡 FOUNDER HYPOTHESES</span>
+                      <span class="factor-scope">Persona &amp; Pricing Model</span>
+                    </div>
+                    <div id="simFounderFactorsList" class="factors-list">
+                      <!-- Dynamically populated founder assumptions -->
+                    </div>
+                    <div class="factor-disclaimer">
+                      <strong>Boundary:</strong> Pricing elasticity and channel preference are hypotheses declared by the founder, not validated customer conversions.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Customer Feedback & Reviews (Fictional Simulation) -->
               <div class="panel-section">
                 <div class="reviews-header">
-                  <h4 class="section-title">
-                    <span>Simulated Customer Reviews</span>
-                    <span class="simulated-pill">Simulated Profiles</span>
-                  </h4>
+                  <div>
+                    <h4 class="section-title">
+                      <span>Simulated Persona Feedback</span>
+                      <span class="simulated-pill fiction-pill">100% Fictional Simulation</span>
+                    </h4>
+                    <p class="section-desc">Illustrative reactions generated algorithmically from the pricing elasticity curve for this budget tier. Does not reflect real human feedback.</p>
+                  </div>
                   <div class="rating-summary">
                     <span class="stars" id="resStars">★★★★☆</span>
                     <strong id="resAvgRating">4.0 / 5.0</strong>
@@ -871,22 +952,23 @@
                 </div>
               </div>
 
-              <!-- Assumptions Card -->
-              <div class="assumptions-card">
-                <div class="assumptions-header">
-                  <span class="assumptions-icon-svg">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                  </span>
-                  <div>
-                    <h5>Simulation Assumptions & Model Boundaries</h5>
-                    <p class="assumptions-desc">What this simulation models vs. what it cannot predict:</p>
+              <!-- Model Logic & Real-World Research Guidance Accordion -->
+              <div class="panel-section model-logic-section">
+                <div class="model-logic-card">
+                  <div class="model-logic-header" onclick="window.toggleModelLogicAccordion()">
+                    <div class="model-logic-title-row">
+                      <span class="logic-icon">🧠</span>
+                      <div>
+                        <h5>Simulation Model Logic &amp; De-Risking Guidance</h5>
+                        <p class="text-dim">Plain language walkthrough of calculations and what requires real customer research.</p>
+                      </div>
+                    </div>
+                    <span id="logicAccordionToggle" class="accordion-arrow">▼</span>
+                  </div>
+                  <div id="modelLogicDetails" class="model-logic-body hidden">
+                    <!-- Populated dynamically -->
                   </div>
                 </div>
-                <ul class="assumptions-list">
-                  <li><strong>Price Sensitivity Curve:</strong> Conversions decrease non-linearly as unit price exceeds the target group's declared budget tolerance.</li>
-                  <li><strong>Channel Relevance:</strong> Ad impressions and click-through rates scale based on whether the chosen channel matches the audience's primary discovery habit.</li>
-                  <li><strong>What It Does NOT Prove:</strong> This model assumes immediate visibility without organic churn or viral decay. It does <em>not</em> validate real consumer willingness to buy, does <em>not</em> forecast actual commercial revenue, and cannot substitute for speaking directly with real human customers.</li>
-                </ul>
               </div>
 
             </div>
@@ -1437,12 +1519,18 @@
   <!-- ========================================================== -->
   <!-- MODAL: SIMULATION AUDIT EVIDENCE INSPECTOR                  -->
   <!-- ========================================================== -->
+  <!-- ========================================================== -->
+  <!-- MODAL: SIMULATION AUDIT EVIDENCE INSPECTOR                  -->
+  <!-- ========================================================== -->
   <div id="evidenceModal" class="modal-backdrop hidden">
     <div class="modal-card modal-card-wide">
       <div class="modal-header">
         <div>
           <div class="evidence-tag-row">
             <span class="evidence-badge-lime" id="evidRunNumber">Run Evidence</span>
+            <span class="badge-cadence" id="evidCountryBadge">Country: USA</span>
+            <span class="badge-cadence" id="evidIndustryBadge">Industry: Software</span>
+            <span class="badge-cadence" id="evidModelVersion" style="color:var(--lime); border-color:rgba(212,249,56,0.3);">Model: v2.0-grounded</span>
             <span class="evidence-timestamp" id="evidTimestamp">Recorded</span>
           </div>
           <h3 id="evidTitle">Model Evidence &amp; Assumptions Audit</h3>
@@ -1452,15 +1540,15 @@
 
       <div class="evidence-modal-body">
         
-        <!-- Section 1: Grounding Macro Indicators -->
+        <!-- Section 1: Grounding Relevant Macro & Industry Indicators -->
         <div class="evidence-section">
           <h4 class="evidence-section-title">
             <span class="evidence-icon-svg">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </span>
-            Contextual Macroeconomic &amp; Infrastructure Indicators
+            Sourced Market Indicators (Contextual Baselines Only)
           </h4>
-          <p class="evidence-section-desc">Real-world baseline indicators for the target market applied as background context.</p>
+          <p class="evidence-section-desc">Relevant macroeconomic and infrastructure indicators for the selected target geography. Sourced from official international databases.</p>
           <div id="evidIndicatorsList" class="evidence-grid-2">
             <!-- Dynamic indicators list -->
           </div>
@@ -1474,28 +1562,55 @@
             </span>
             Founder Hypotheses &amp; Simulation Assumptions
           </h4>
+          <p class="evidence-section-desc">Customer persona budget tolerance, pricing, channel selection, and test budget declared by the founder.</p>
           <div id="evidAssumptionsList" class="evidence-assumptions-table">
             <!-- Dynamic assumptions list -->
           </div>
         </div>
 
-        <!-- Section 3: Calculated Outcomes Summary -->
+        <!-- Section 3: Calculated Outcomes Summary & Uncertainty Ranges -->
         <div class="evidence-section">
           <h4 class="evidence-section-title">
             <span class="evidence-icon-svg">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
             </span>
-            Simulated Outcomes (Explicitly Simulated)
+            Simulated Outcomes &amp; Expected Sensitivity Ranges (Fictional Model)
           </h4>
           <div id="evidOutcomesMetrics" class="evidence-metrics-row">
             <!-- Dynamic outcomes breakdown -->
           </div>
         </div>
 
-        <!-- Section 4: Boundary Disclaimer -->
+        <!-- Section 4: Data Gaps & Uncertainty Breakdown -->
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">
+            <span class="evidence-icon-svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+            Data Gaps &amp; Model Uncertainty
+          </h4>
+          <div id="evidDataGapsContainer" class="factor-disclaimer">
+            <!-- Dynamic data gaps -->
+          </div>
+        </div>
+
+        <!-- Section 5: Real-World Research Guidance -->
+        <div class="evidence-section">
+          <h4 class="evidence-section-title">
+            <span class="evidence-icon-svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </span>
+            Real-World Research &amp; De-Risking Guidance
+          </h4>
+          <div id="evidResearchGuidanceContainer" class="research-checklist">
+            <!-- Dynamic recommendations -->
+          </div>
+        </div>
+
+        <!-- Section 6: Boundary & Ethical Modeling Disclaimer -->
         <div class="evidence-disclaimer-box">
-          <strong>Educational Model Disclaimer:</strong>
-          All customer decisions, conversion drop-offs, and financial results are simulated outputs generated by Foundry's market simulation model for founder practice. Country-level macro indicators provide general national context; they do not represent surveyed buyers or guarantee commercial performance.
+          <strong>Ethical Modeling &amp; Educational Boundary Disclaimer:</strong>
+          All simulated customer behaviors, drop-offs, reviews, and financial results are fictional simulation outputs generated by Foundry's market simulation model for founder practice. Country-level statistics (e.g. GDP per capita, internet penetration) describe general national infrastructure scale; they do <em>not</em> dictate an individual person's willingness to pay, and cannot substitute for speaking directly with real human customers.
         </div>
 
       </div>
