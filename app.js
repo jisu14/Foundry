@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCoverageView();
   initRealEvidenceView();
   initEvaluationView();
+  initBetaFeedback();
   initSupabaseAuthAndModals();
   renderAllViews();
 });
@@ -2887,6 +2888,8 @@ window.openEvidenceModal = function(runId) {
   const run = state.history.find(h => h.id === runId || String(h.runNumber) === String(runId));
   if (!run) return;
 
+  window.currentInspectedRunId = run.id;
+
   const countryName = run.countryName || getCountryNameByIso(run.countryCode);
   const countryCode = run.countryCode || 'USA';
   const industryDomain = run.industryDomain || 'General Tech';
@@ -5069,6 +5072,165 @@ function renderModelGovernanceTable() {
   `).join('');
 }
 window.renderModelGovernanceTable = renderModelGovernanceTable;
+
+/* ==========================================================
+   12D. BETA FEEDBACK & ISSUE REPORTING CONTROLLER
+   Empowers beta founders to report confusing simulation results,
+   suspected macro data errors, or missing vertical indicators.
+   ========================================================== */
+
+function initBetaFeedback() {
+  const modal = document.getElementById('betaFeedbackModal');
+  const btnOpen = document.getElementById('btnOpenFeedbackModal');
+  const btnClose = document.getElementById('btnCloseFeedbackModal');
+  const btnCancel = document.getElementById('btnCancelFeedback');
+  const form = document.getElementById('betaFeedbackForm');
+  const btnReportFromModal = document.getElementById('btnReportFromEvidenceModal');
+
+  if (btnOpen) {
+    btnOpen.addEventListener('click', () => {
+      openBetaFeedbackModal({
+        contextView: 'sidebar',
+        label: 'General Workspace'
+      });
+    });
+  }
+
+  if (btnReportFromModal) {
+    btnReportFromModal.addEventListener('click', () => {
+      const runId = window.currentInspectedRunId;
+      const run = (state.history || []).find(h => h.id === runId);
+      openBetaFeedbackModal({
+        contextView: 'simulation_evidence',
+        relatedRunId: runId,
+        reportType: 'confusing_simulation',
+        subject: run ? `Confusing Result: ${run.appName} (${run.countryName} - ${run.industryDomain})` : '',
+        label: run ? `Simulation Run #${run.runNumber || run.id} (${run.countryName})` : 'Simulation Evidence Audit'
+      });
+    });
+  }
+
+  if (btnClose && modal) {
+    btnClose.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+
+  if (btnCancel && modal) {
+    btnCancel.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', handleSaveBetaFeedback);
+  }
+}
+
+function openBetaFeedbackModal(context = {}) {
+  const modal = document.getElementById('betaFeedbackModal');
+  if (!modal) return;
+
+  const typeEl = document.getElementById('feedbackReportType');
+  const subjectEl = document.getElementById('feedbackSubject');
+  const descEl = document.getElementById('feedbackDiscrepancy');
+  const detailsEl = document.getElementById('feedbackDetails');
+  const contextViewEl = document.getElementById('feedbackContextView');
+  const relatedRunIdEl = document.getElementById('feedbackRelatedRunId');
+  const relatedIndEl = document.getElementById('feedbackRelatedIndicator');
+  const contextDisplayEl = document.getElementById('feedbackContextDisplay');
+  const noticeEl = document.getElementById('feedbackNotice');
+
+  if (noticeEl) {
+    noticeEl.className = 'auth-notice hidden';
+    noticeEl.textContent = '';
+  }
+
+  if (typeEl && context.reportType) typeEl.value = context.reportType;
+  if (subjectEl) subjectEl.value = context.subject || '';
+  if (descEl) descEl.value = context.discrepancy || '';
+  if (detailsEl) detailsEl.value = context.details || '';
+  if (contextViewEl) contextViewEl.value = context.contextView || 'general';
+  if (relatedRunIdEl) relatedRunIdEl.value = context.relatedRunId || '';
+  if (relatedIndEl) relatedIndEl.value = context.relatedIndicator || '';
+  if (contextDisplayEl) contextDisplayEl.textContent = context.label || 'General Workspace';
+
+  modal.classList.remove('hidden');
+}
+window.openBetaFeedbackModal = openBetaFeedbackModal;
+
+async function handleSaveBetaFeedback(e) {
+  e.preventDefault();
+
+  const type = document.getElementById('feedbackReportType').value;
+  const subject = document.getElementById('feedbackSubject').value.trim();
+  const discrepancy = document.getElementById('feedbackDiscrepancy').value.trim();
+  const details = document.getElementById('feedbackDetails').value.trim();
+  const contextView = document.getElementById('feedbackContextView').value;
+  const relatedRunId = document.getElementById('feedbackRelatedRunId').value;
+  const relatedIndicator = document.getElementById('feedbackRelatedIndicator').value;
+  const noticeEl = document.getElementById('feedbackNotice');
+  const submitBtn = document.getElementById('btnSubmitFeedback');
+
+  if (!subject || !details) return;
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting Report...';
+  }
+
+  const report = {
+    reportType: type,
+    subject: subject,
+    details: details,
+    observedDiscrepancy: discrepancy,
+    contextView: contextView,
+    relatedRunId: relatedRunId || null,
+    relatedIndicatorCode: relatedIndicator || null,
+    clientAppVersion: 'v2.0-beta'
+  };
+
+  try {
+    let res = null;
+    if (window.foundrySupabase && window.foundrySupabase.isConfigured()) {
+      res = await window.foundrySupabase.submitBetaFeedback(report);
+    } else {
+      const local = JSON.parse(localStorage.getItem('vsw_beta_feedback_v2') || '[]');
+      local.unshift({ id: 'fb_' + Date.now(), ...report, created_at: new Date().toISOString() });
+      localStorage.setItem('vsw_beta_feedback_v2', JSON.stringify(local));
+      res = { localOnly: true };
+    }
+
+    if (noticeEl) {
+      noticeEl.className = 'auth-notice success';
+      noticeEl.textContent = (res && res.localOnly)
+        ? '✓ Feedback logged locally. Will sync when signed in.'
+        : '✓ Feedback report submitted successfully! Thank you for helping calibrate Foundry.';
+      noticeEl.classList.remove('hidden');
+    }
+
+    setTimeout(() => {
+      const modal = document.getElementById('betaFeedbackModal');
+      if (modal) modal.classList.add('hidden');
+      document.getElementById('betaFeedbackForm').reset();
+      if (noticeEl) noticeEl.classList.add('hidden');
+    }, 1800);
+  } catch (err) {
+    if (noticeEl) {
+      noticeEl.className = 'auth-notice error';
+      noticeEl.textContent = err.message || 'Error submitting report';
+      noticeEl.classList.remove('hidden');
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Feedback Report';
+    }
+  }
+}
+window.handleSaveBetaFeedback = handleSaveBetaFeedback;
 
 /* ==========================================================
    13. SUPABASE AUTH & MODALS INTEGRATION

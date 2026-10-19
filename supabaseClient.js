@@ -911,6 +911,73 @@
       }
     }
 
+    /* -------------------------------------------------------------
+       BETA FEEDBACK & DATA ERROR REPORTING (ISOLATED BY RLS)
+       ------------------------------------------------------------- */
+    async submitBetaFeedback(report) {
+      if (!this.isAuthenticated()) {
+        const localList = JSON.parse(localStorage.getItem('vsw_beta_feedback_v2') || '[]');
+        const localRecord = {
+          id: 'fb_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+          ...report,
+          created_at: new Date().toISOString(),
+          status: 'stored_locally'
+        };
+        localList.unshift(localRecord);
+        localStorage.setItem('vsw_beta_feedback_v2', JSON.stringify(localList));
+        return { data: localRecord, localOnly: true };
+      }
+
+      try {
+        const payload = {
+          user_id: this.user.id,
+          workspace_id: this.user.id,
+          report_type: report.reportType || 'general_feedback',
+          context_view: report.contextView || 'general',
+          related_run_id: report.relatedRunId || null,
+          related_indicator_code: report.relatedIndicatorCode || null,
+          target_country_code: report.targetCountryCode || null,
+          target_industry_domain: report.targetIndustryDomain || null,
+          subject: report.subject,
+          details: report.details,
+          observed_discrepancy: report.observedDiscrepancy || null,
+          client_app_version: report.clientAppVersion || 'v2.0-beta',
+          status: 'submitted'
+        };
+
+        const { data, error } = await this.client
+          .from('beta_feedback_reports')
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return { data, error: null };
+      } catch (err) {
+        console.error('[FoundrySupabase] submitBetaFeedback error:', err);
+        return { data: null, error: err };
+      }
+    }
+
+    async loadUserBetaFeedback() {
+      if (!this.isAuthenticated()) {
+        return JSON.parse(localStorage.getItem('vsw_beta_feedback_v2') || '[]');
+      }
+      try {
+        const { data, error } = await this.client
+          .from('beta_feedback_reports')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.warn('[FoundrySupabase] loadUserBetaFeedback error:', error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('[FoundrySupabase] loadUserBetaFeedback exception:', err);
+        return [];
+      }
+    }
 
     /* -------------------------------------------------------------
        MARKET DATA LIBRARY (PUBLIC READ VIA RLS)
