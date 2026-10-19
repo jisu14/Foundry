@@ -6307,6 +6307,23 @@ function initAiMarketAnalyst() {
     });
   }
 
+  // Evidence Inspection Accordion Toggle
+  const btnToggleInspection = document.getElementById('btnToggleEvidenceInspection');
+  const bodyInspection = document.getElementById('aiEvidenceInspectionBody');
+  const arrowInspection = document.getElementById('evidenceInspectionArrow');
+  if (btnToggleInspection && bodyInspection) {
+    btnToggleInspection.addEventListener('click', () => {
+      const isHidden = bodyInspection.classList.contains('hidden');
+      if (isHidden) {
+        bodyInspection.classList.remove('hidden');
+        if (arrowInspection) arrowInspection.textContent = '▲ Hide Sourced Records';
+      } else {
+        bodyInspection.classList.add('hidden');
+        if (arrowInspection) arrowInspection.textContent = '▼ Show Sourced Records';
+      }
+    });
+  }
+
   // Run Analysis Button
   if (btnRun) {
     btnRun.addEventListener('click', runAiMarketAnalysis);
@@ -6353,6 +6370,32 @@ async function openAiMarketAnalystModal(initialMode = 'examine_assumptions') {
       btn.classList.remove('active');
     }
   });
+
+  // Reset any previous analysis views
+  const insufficientNotice = document.getElementById('aiInsufficientEvidenceNotice');
+  if (insufficientNotice) {
+    insufficientNotice.classList.add('hidden');
+    insufficientNotice.innerHTML = '';
+  }
+  const evidenceInspection = document.getElementById('aiEvidenceInspectionSection');
+  if (evidenceInspection) evidenceInspection.classList.add('hidden');
+  const evidenceBody = document.getElementById('aiEvidenceInspectionBody');
+  if (evidenceBody) {
+    evidenceBody.classList.add('hidden');
+    evidenceBody.innerHTML = '';
+  }
+  const arrowInspection = document.getElementById('evidenceInspectionArrow');
+  if (arrowInspection) arrowInspection.textContent = '▼ Show Sourced Records';
+
+  const emptyState = document.getElementById('aiEmptyState');
+  if (emptyState) emptyState.classList.remove('hidden');
+  const responseContent = document.getElementById('aiFormattedResponse');
+  if (responseContent) {
+    responseContent.classList.add('hidden');
+    responseContent.innerHTML = '';
+  }
+  const loadingSpinner = document.getElementById('aiLoadingSpinner');
+  if (loadingSpinner) loadingSpinner.classList.add('hidden');
 
   // Get current context from campaign or latest simulation
   const latestRun = (state.history && state.history[0]) || null;
@@ -6502,6 +6545,13 @@ async function runAiMarketAnalysis() {
   const loadingSpinner = document.getElementById('aiLoadingSpinner');
   const responseContent = document.getElementById('aiFormattedResponse');
   const consentCheckbox = document.getElementById('aiFounderConsentCheckbox');
+  const questionInput = document.getElementById('aiFounderQuestionInput');
+  const question = questionInput ? questionInput.value.trim() : '';
+
+  const insufficientNotice = document.getElementById('aiInsufficientEvidenceNotice');
+  const evidenceInspection = document.getElementById('aiEvidenceInspectionSection');
+  const evidenceBody = document.getElementById('aiEvidenceInspectionBody');
+  const evidenceTitle = document.getElementById('evidenceInspectionTitle');
 
   if (!window.foundrySupabase || !window.foundrySupabase.isConfigured()) {
     if (noticeEl) {
@@ -6557,16 +6607,23 @@ async function runAiMarketAnalysis() {
   isAiAnalyzing = true;
   if (btnRun) {
     btnRun.disabled = true;
-    btnRun.textContent = 'Analyzing with Gemini...';
+    btnRun.textContent = 'Retrieving Evidence & Analyzing...';
   }
   if (noticeEl) noticeEl.classList.add('hidden');
   if (emptyState) emptyState.classList.add('hidden');
   if (responseContent) responseContent.classList.add('hidden');
+  if (insufficientNotice) {
+    insufficientNotice.classList.add('hidden');
+    insufficientNotice.innerHTML = '';
+  }
+  if (evidenceInspection) evidenceInspection.classList.add('hidden');
   if (loadingSpinner) loadingSpinner.classList.remove('hidden');
 
   try {
     const result = await window.foundrySupabase.analyzeMarketWithAi({
       mode: activeAiMode,
+      question,
+      simulationRunId: latestRun ? latestRun.id : null,
       countryCode,
       countryName,
       industryDomain,
@@ -6582,10 +6639,81 @@ async function runAiMarketAnalysis() {
 
     if (loadingSpinner) loadingSpinner.classList.add('hidden');
 
+    // Case 1: Insufficient Evidence Guardrail
+    if (result && result.status === 'insufficient_evidence') {
+      if (insufficientNotice) {
+        const gaps = result.dataGaps || [];
+        const gapsHtml = gaps.length > 0
+          ? gaps.map(g => `<li style="margin-bottom: 4px;"><strong>${escapeHtml(g.name || g.code)}:</strong> ${escapeHtml(g.reason || 'Unreported')}</li>`).join('')
+          : `<li>No verified macro indicators found in database for country code <code>${escapeHtml(countryCode)}</code>.</li>`;
+
+        insufficientNotice.innerHTML = `
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="font-size: 1.3rem; line-height: 1;">⚠️</span>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <strong style="color: #fde047; font-size: 0.84rem;">Insufficient Sourced Evidence for ${escapeHtml(countryName)} (${escapeHtml(countryCode)})</strong>
+                <span class="badge-status-neutral">Coverage: ${result.reportedCount || 0} Records</span>
+              </div>
+              <p style="color: #cbd5e1; font-size: 0.74rem; line-height: 1.45; margin: 4px 0 8px 0;">
+                Foundry retrieved fewer than 2 verified indicators for this query (${result.reportedCount || 0} found). To prevent hallucinated market claims, Gemini execution was halted before dispatch.
+              </p>
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; padding: 8px 10px; margin-bottom: 8px;">
+                <strong style="color: #94a3b8; font-size: 0.72rem; text-transform: uppercase;">Missing / Unreported Metrics:</strong>
+                <ul style="margin: 4px 0 0 16px; padding: 0; font-size: 0.73rem; color: #cbd5e1;">
+                  ${gapsHtml}
+                </ul>
+              </div>
+              <div class="founder-action-box" style="background: rgba(251, 191, 36, 0.08); border: 1px dashed rgba(251, 191, 36, 0.4); border-radius: 6px; padding: 10px;">
+                <strong style="color: #fde047; font-size: 0.76rem;">Action Required: Provide Stated Assumptions or Primary Research</strong>
+                <p style="font-size: 0.73rem; color: #cbd5e1; margin: 4px 0 8px 0; line-height: 1.45;">
+                  ${escapeHtml(result.message || 'Please provide your own assumption or field research findings to proceed.')}
+                </p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-outline-cyan btn-xs" onclick="window.location.hash='#real-data'; document.getElementById('aiAnalystModal').classList.add('hidden');">
+                    📝 Record Founder Field Research
+                  </button>
+                  <button type="button" class="btn btn-outline-cyan btn-xs" onclick="openTweakScenariosModal ? openTweakScenariosModal(currentActiveSimulationRun || (state.history && state.history[0])) : null; document.getElementById('aiAnalystModal').classList.add('hidden');">
+                    ⚙️ Declare Stated Assumptions
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        insufficientNotice.classList.remove('hidden');
+      }
+      startAiCooldown(5);
+      return;
+    }
+
+    // Case 2: Successful Grounded Response
     if (result && result.analysis) {
       if (responseContent) {
         responseContent.innerHTML = formatAiMarkdown(result.analysis, result.modelUsed);
         responseContent.classList.remove('hidden');
+      }
+
+      // Populate Server-Side Evidence Inspection Accordion
+      if (evidenceInspection && evidenceBody && Array.isArray(result.evidenceUsed) && result.evidenceUsed.length > 0) {
+        if (evidenceTitle) {
+          evidenceTitle.textContent = `Inspect Used Evidence Records (${result.evidenceUsed.length} Records Retrieved Server-Side)`;
+        }
+        evidenceBody.innerHTML = renderEvidenceRecordsList(result.evidenceUsed, result.staleObservations);
+        evidenceInspection.classList.remove('hidden');
+      }
+
+      // Save evidence records to latestRun for local inspectability
+      if (latestRun) {
+        latestRun.lastAiEvidenceUsed = result.evidenceUsed || [];
+        latestRun.lastAiAnalysis = {
+          mode: activeAiMode,
+          model: result.modelUsed || 'gemini-2.5-flash-lite',
+          generatedAt: new Date().toISOString(),
+          question: question || null,
+          evidenceRecordsCount: (result.evidenceUsed || []).length
+        };
+        saveState(STORAGE_HISTORY, state.history);
       }
 
       // If in hypothetical_scenarios mode, also save to latest simulation run
@@ -6601,7 +6729,7 @@ async function runAiMarketAnalysis() {
             customerTraits
           },
           analysisMarkdown: result.analysis,
-          evidence: (latestRun.evidence || []).filter(e => e.assumption_type === 'macro_market_context')
+          evidence: (result.evidenceUsed && result.evidenceUsed.length > 0) ? result.evidenceUsed : ((latestRun.evidence || []).filter(e => e.assumption_type === 'macro_market_context'))
         };
         saveState(STORAGE_HISTORY, state.history);
         renderHypotheticalScenariosSection(latestRun);
@@ -6641,6 +6769,73 @@ async function runAiMarketAnalysis() {
       btnRun.textContent = '✨ Run AI Analysis with Gemini';
     }
   }
+}
+
+function renderEvidenceRecordsList(records, staleObservations = []) {
+  if (!records || records.length === 0) {
+    return '<p class="text-xs text-muted" style="padding: 10px;">No evidence records attached.</p>';
+  }
+
+  const staleCodes = new Set((staleObservations || []).map(s => s.code));
+
+  return records.map(rec => {
+    const isStale = rec.isStale || staleCodes.has(rec.code) || (rec.referenceYear && rec.referenceYear <= 2021);
+    const valDisplay = rec.value !== null && rec.value !== undefined ? rec.value.toLocaleString() : 'N/A';
+    const unitDisplay = rec.unit || '';
+    const yearDisplay = rec.referenceYear || 'Unspecified';
+
+    return `
+      <div class="evidence-record-card" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px;">
+          <div>
+            <strong style="color: #38bdf8; font-size: 0.8rem;">${escapeHtml(rec.name || rec.code)}</strong>
+            <span class="text-xs text-muted" style="margin-left: 6px;"><code>${escapeHtml(rec.code)}</code></span>
+          </div>
+          <div class="flex-align-center gap-1">
+            ${isStale ? `<span class="badge-stale-obs" title="Observation year is 2021 or earlier. Post-pandemic inflation may alter current metrics.">⏳ Stale (${yearDisplay})</span>` : ''}
+            <span class="sim-tag-fictional" style="font-size: 0.68rem; color: #a78bfa; border-color: rgba(167, 139, 250, 0.3);">
+              ${escapeHtml(rec.sourceName || 'Verified Source')}
+            </span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 4px; font-size: 0.74rem;">
+          <div>
+            <span class="text-muted text-xs block">Reported Value:</span>
+            <strong class="text-lime">${escapeHtml(String(valDisplay))}</strong>
+          </div>
+          <div>
+            <span class="text-muted text-xs block">Unit of Measurement:</span>
+            <span class="text-white">${escapeHtml(unitDisplay)}</span>
+          </div>
+          <div>
+            <span class="text-muted text-xs block">Reference Period:</span>
+            <span class="text-white">${escapeHtml(String(yearDisplay))}</span>
+          </div>
+        </div>
+
+        <div style="font-size: 0.73rem; color: #cbd5e1; line-height: 1.45; margin-bottom: 6px;">
+          <strong style="color: #94a3b8; font-size: 0.7rem; text-transform: uppercase;">Definition:</strong>
+          <span>${escapeHtml(rec.definition || 'No definition supplied.')}</span>
+        </div>
+
+        ${rec.limitation ? `
+          <div style="font-size: 0.72rem; color: #fbbf24; background: rgba(251, 191, 36, 0.06); border-left: 2px solid #fbbf24; padding: 4px 8px; margin-bottom: 6px; border-radius: 0 4px 4px 0;">
+            <strong>Limitation:</strong> ${escapeHtml(rec.limitation)}
+          </div>
+        ` : ''}
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: #94a3b8; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px;">
+          <span>Untrusted Boundary: Treated strictly as inert data</span>
+          ${rec.sourceUrl ? `
+            <a href="${escapeHtml(rec.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="evidence-source-link" style="color: #38bdf8; text-decoration: underline;">
+              Verify at Source ↗
+            </a>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function startAiCooldown(seconds) {

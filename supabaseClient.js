@@ -1783,6 +1783,8 @@
         countryCode: params.countryCode || 'USA',
         countryName: params.countryName || 'United States',
         industryDomain: params.industryDomain || 'General Tech',
+        question: params.question || null,
+        simulationRunId: params.simulationRunId || null,
         founderAssumptions: {
           price: params.price !== undefined ? Number(params.price) : 10,
           budget: params.budget !== undefined ? Number(params.budget) : 300,
@@ -1810,11 +1812,33 @@
         throw new Error(error.message || 'Edge function execution failed.');
       }
 
-      if (data && data.error) {
+      // Handle insufficient evidence as a structured state rather than fatal exception
+      if (data && data.status === 'insufficient_evidence') {
+        return data;
+      }
+
+      if (data && data.error && !data.success) {
         throw new Error(data.error);
       }
 
       return data;
+    }
+
+    // Load AI Analyst Audit Logs for this Founder Workspace
+    async getAiAnalystLogs(limit = 20) {
+      if (!this.isAuthenticated()) return [];
+      try {
+        const { data, error } = await this.client
+          .from('ai_analyst_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.warn('Could not query ai_analyst_logs:', err);
+        return [];
+      }
     }
   }
 

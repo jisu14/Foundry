@@ -2950,6 +2950,15 @@
         </div>
       </div>
 
+      <!-- Founder Custom Inquiry / Question Input -->
+      <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
+        <label for="aiFounderQuestionInput" style="font-size: 0.76rem; color: #cbd5e1; display: flex; justify-content: space-between;">
+          <span>Ask a Specific Market Question (Optional):</span>
+          <span class="text-xs text-muted">Retrieves most relevant indicators server-side</span>
+        </label>
+        <input type="text" id="aiFounderQuestionInput" placeholder="e.g. Can we charge $49/mo for B2B tools in Brazil? or What is the broadband speed readiness?" style="font-size: 0.78rem;">
+      </div>
+
       <!-- Analysis Mode Buttons -->
       <div class="ai-mode-selector-bar">
         <span class="text-xs text-muted" style="margin-right: 6px;">Select Analysis Mode:</span>
@@ -2985,18 +2994,51 @@
           </div>
           <h4 style="margin-top: 8px; color: #f8fafc; font-size: 0.9rem;">Ready to Analyze Market Context</h4>
           <p style="max-width: 480px; margin: 4px auto 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">
-            Choose an analysis mode above and click <em>Run AI Analysis</em>. Gemini will stress-test your assumptions against official macroeconomic indicators.
+            Choose an analysis mode above, optionally enter a specific question, and click <em>Run AI Analysis</em>. Indicators will be retrieved from the database to ground the response.
           </p>
         </div>
 
         <div id="aiLoadingSpinner" class="hidden" style="text-align: center; padding: 36px 20px;">
           <div class="spinner-pulse"></div>
-          <div style="margin-top: 12px; font-weight: 600; color: #38bdf8; font-size: 0.85rem;">Consulting Gemini AI Analyst via Supabase Edge Function...</div>
-          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">Grounding claims in World Bank &amp; ITU reference observations. Checking evidence boundaries.</div>
+          <div style="margin-top: 12px; font-weight: 600; color: #38bdf8; font-size: 0.85rem;">Retrieving relevant market evidence from database &amp; consulting Gemini...</div>
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">Auditing definitions, limitations, and source URLs. Enforcing untrusted data boundary.</div>
+        </div>
+
+        <!-- Insufficient Evidence Notice -->
+        <div id="aiInsufficientEvidenceNotice" class="insufficient-evidence-card hidden" style="margin-top: 10px;">
+          <!-- Populated dynamically when evidence is sparse -->
         </div>
 
         <div id="aiFormattedResponse" class="ai-response-content hidden">
           <!-- Populated dynamically with formatted Markdown & citation badges -->
+        </div>
+
+        <!-- Evidence Records Inspection Accordion -->
+        <div id="aiEvidenceInspectionSection" class="evidence-inspection-section hidden" style="margin-top: 14px;">
+          <div class="evidence-inspection-header" id="btnToggleEvidenceInspection" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); padding: 8px 12px; border-radius: 6px;">
+            <div class="flex-align-center gap-2">
+              <span style="font-size: 0.9rem;">🔎</span>
+              <strong style="font-size: 0.78rem; color: #38bdf8;" id="evidenceInspectionTitle">Inspect Used Evidence Records (0 Records)</strong>
+            </div>
+            <span id="evidenceInspectionArrow" style="font-size: 0.7rem; color: #94a3b8;">▼ Show Sourced Records</span>
+          </div>
+          <div id="aiEvidenceInspectionBody" class="evidence-inspection-body hidden" style="margin-top: 8px;">
+            <!-- Populated dynamically with full record definitions, values, units, reference years, URLs, and limitations -->
+          </div>
+        </div>
+
+        <!-- How Evidence is Selected Explanation Card -->
+        <div class="evidence-selection-explainer" style="background: rgba(6, 182, 212, 0.05); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 6px; padding: 10px; margin-top: 12px; font-size: 0.73rem; color: #cbd5e1; line-height: 1.45;">
+          <div style="font-weight: 700; color: #38bdf8; margin-bottom: 2px;">
+            ⚙️ How Evidence is Selected &amp; Handled Server-Side:
+          </div>
+          <ul style="margin: 4px 0 0 16px; padding: 0;">
+            <li><strong>Server-Side Querying:</strong> Indicators and observations are queried directly in Supabase based on country, vertical, and inquiry keywords—eliminating unrelated data.</li>
+            <li><strong>Untrusted Data Boundary:</strong> Records are injected as inert JSON data inside <code>&lt;market_evidence_data&gt;</code>, strictly preventing prompt-injection command execution from stored text.</li>
+            <li><strong>Zero-Hallucination Mandate:</strong> Gemini is constrained to cite only the supplied records. If data does not substantiate a claim, it is required to flag an evidence gap.</li>
+            <li><strong>Insufficient Data Safeguard:</strong> If fewer than 2 relevant verified indicators exist for a market, execution halts before calling Gemini, prompting the founder for firsthand research.</li>
+            <li><strong>Audit Trail:</strong> Used evidence records, limitations, and citations are logged to your workspace for review.</li>
+          </ul>
         </div>
       </div>
 
