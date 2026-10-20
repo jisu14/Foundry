@@ -112,7 +112,8 @@ function initNavigation() {
     const navBtn = e.target.closest('[data-nav]');
     if (navBtn) {
       const viewId = navBtn.getAttribute('data-nav');
-      navigateToView(viewId);
+      const subtab = navBtn.getAttribute('data-launch-subtab');
+      navigateToView(viewId, subtab);
     }
   });
 
@@ -145,7 +146,7 @@ function initNavigation() {
   handleHashRouting();
 }
 
-function navigateToView(viewId) {
+function navigateToView(viewId, subtab = null) {
   // Update sidebar nav items
   document.querySelectorAll('.nav-item').forEach(item => {
     if (item.getAttribute('data-view') === viewId) {
@@ -177,6 +178,9 @@ function navigateToView(viewId) {
     renderGuidedJourneyBanner();
   } else if (viewId === 'launch') {
     populateTargetGroupDropdown();
+    if (subtab) {
+      switchLaunchSubtab(subtab);
+    }
   } else if (viewId === 'library') {
     renderLibraryView();
   } else if (viewId === 'coverage') {
@@ -266,15 +270,16 @@ function renderGuidedJourneyBanner() {
   const hasProfile = Boolean(state.profile && state.profile.name && state.profile.name.trim().length > 0);
   const hasCountry = Boolean(state.profile && state.profile.country && state.profile.country.trim().length > 0);
   const hasGroups = Boolean(state.market && state.market.groups && state.market.groups.length > 0);
-  const hasExperiment = Boolean(state.campaign && state.campaign.targetGroupId && state.campaign.price > 0);
-  const hasSimulation = Boolean(state.history && state.history.length > 0);
-  const hasReviewedScenarios = Boolean(state.history && state.history.some(h => (h.hypotheticalScenarios && h.hypotheticalScenarios.length > 0) || (h.observationsCount && h.observationsCount > 0)));
+  const hasFlowTasks = Boolean(state.productFlow && state.productFlow.tasks && state.productFlow.tasks.length >= 2);
+  const hasSimulation = Boolean((state.activeLaunch && state.activeLaunch.dailyReports && state.activeLaunch.dailyReports.length > 0) || (state.history && state.history.length > 0));
+  const hasCompletedRun = Boolean(state.launchRuns && state.launchRuns.length > 0);
   const hasRealEvidence = Boolean(state.realEvidence && state.realEvidence.length > 0);
 
   let currentStep = 1;
   let stepTitle = 'Set Up Startup Profile';
   let nextLabel = 'Configure Startup Profile →';
   let targetNav = 'profile';
+  let targetSubtab = null;
 
   if (!hasProfile) {
     currentStep = 1;
@@ -291,47 +296,47 @@ function renderGuidedJourneyBanner() {
     stepTitle = 'Define Customer Group & Explicit Assumptions';
     nextLabel = 'Add Customer Group →';
     targetNav = 'market';
-  } else if (!hasExperiment) {
+  } else if (!hasFlowTasks) {
     currentStep = 4;
-    stepTitle = 'Create Marketing or Product Experiment';
-    nextLabel = 'Set Pricing & Channels →';
+    stepTitle = 'Map Web Product & Key Flow Tasks';
+    nextLabel = 'Map Product Flow Tasks →';
     targetNav = 'launch';
+    targetSubtab = 'flow';
   } else if (!hasSimulation) {
     currentStep = 5;
-    stepTitle = 'Run Clearly Labeled Simulation in City';
-    nextLabel = 'Advance World & Simulate (+7 Days) →';
-    targetNav = 'overview';
-  } else if (!hasReviewedScenarios) {
-    currentStep = 6;
-    stepTitle = 'Review Sourced Evidence & AI Scenarios';
-    nextLabel = 'Inspect Scenarios & Observations →';
+    stepTitle = 'Run Accelerated Virtual Launch in Market';
+    nextLabel = 'Open Launch Stepper & Advance Days →';
     targetNav = 'launch';
+    targetSubtab = 'stepper';
+  } else if (!hasCompletedRun) {
+    currentStep = 6;
+    stepTitle = 'Audit Daily Flow Bottlenecks & Friction';
+    nextLabel = 'Inspect Day-by-Day Report & Drop-offs →';
+    targetNav = 'launch';
+    targetSubtab = 'daily';
   } else if (!hasRealEvidence) {
     currentStep = 7;
     stepTitle = 'Ground Assumptions with Real Customer Evidence';
-    nextLabel = 'Log Real Customer Evidence →';
+    nextLabel = 'Record Field Customer Study →';
     targetNav = 'real-evidence';
   } else {
     currentStep = 7;
-    stepTitle = 'Decision Cycle Complete: Evaluate Variance';
-    nextLabel = 'Open Assumption Evaluator →';
-    targetNav = 'evaluation';
+    stepTitle = 'Launch Learning Loop Complete: Compare & Validate';
+    nextLabel = 'Compare Runs & AI Diagnosis →';
+    targetNav = 'launch';
+    targetSubtab = 'compare';
   }
 
   badgeStep.textContent = `STEP ${currentStep} OF 7`;
   titleElem.textContent = stepTitle;
   nextBtn.innerHTML = `${nextLabel}`;
   nextBtn.setAttribute('data-nav', targetNav);
-
-  // If on step 5 and clicking next on overview, we can also advance world
-  if (currentStep === 5) {
-    nextBtn.onclick = (e) => {
-      e.preventDefault();
-      handleAdvanceWorld();
-    };
+  if (targetSubtab) {
+    nextBtn.setAttribute('data-launch-subtab', targetSubtab);
   } else {
-    nextBtn.onclick = null;
+    nextBtn.removeAttribute('data-launch-subtab');
   }
+  nextBtn.onclick = null;
 
   // Update step nodes
   nodes.forEach(node => {
