@@ -1793,7 +1793,17 @@
 
           <!-- Day-by-Day Historical Log Table -->
           <div class="city-panel">
-            <h4 class="panel-title mb-2">Day-by-Day Cohort Timeline</h4>
+            <div class="panel-header mb-2" style="display: flex; justify-content: space-between; align-items: center;">
+              <h4 class="panel-title" style="margin: 0;">Day-by-Day Cohort Timeline</h4>
+              <div class="table-actions" style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-outline-cyan btn-xs" id="btnExportTimelineCsv" title="Export day-by-day table to CSV">
+                  ↓ Export CSV
+                </button>
+                <button type="button" class="btn btn-outline-cyan btn-xs" id="btnExportTimelineJson" title="Export full run telemetry to JSON">
+                  ↓ Export JSON
+                </button>
+              </div>
+            </div>
             <div class="table-responsive">
               <table class="daily-timeline-table" id="dailyTimelineTable">
                 <thead>

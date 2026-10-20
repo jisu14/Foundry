@@ -1860,6 +1860,17 @@ function initLaunchLab() {
     btnRunAiAnalysis.addEventListener('click', handleAiFlowAnalysis);
   }
 
+  // Export Daily Timeline (CSV / JSON)
+  const btnExportCsv = document.getElementById('btnExportTimelineCsv');
+  if (btnExportCsv) {
+    btnExportCsv.addEventListener('click', handleExportTimelineCsv);
+  }
+
+  const btnExportJson = document.getElementById('btnExportTimelineJson');
+  if (btnExportJson) {
+    btnExportJson.addEventListener('click', handleExportTimelineJson);
+  }
+
   // Render initial components
   renderProductFlowTasks();
   populateTargetGroupDropdown();
@@ -2812,6 +2823,111 @@ function renderTimelineTable(reports, selectedDay) {
       </tr>
     `;
   }).join('');
+}
+
+function handleExportTimelineCsv() {
+  const reports = state.activeLaunch.dailyReports || [];
+  if (reports.length === 0) {
+    alert('No simulation days to export yet. Please advance the market at least 1 day.');
+    return;
+  }
+
+  const headers = [
+    'Day',
+    'Date',
+    'Impressions',
+    'Visits',
+    'CTR_Percent',
+    'Signups',
+    'Activations',
+    'CoreCompletions',
+    'ReturningUsers',
+    'DAU',
+    'PaidUsers',
+    'DailySpend',
+    'DailyRevenue',
+    'DailyNetProfit',
+    'TopBottleneckStep',
+    'BottleneckDropRate_Percent'
+  ];
+
+  const rows = reports.map(r => {
+    const ctr = r.impressions > 0 ? ((r.visits / r.impressions) * 100).toFixed(2) : '0';
+    const bName = r.bottleneckStep ? r.bottleneckStep.name.replace(/"/g, '""') : 'None';
+    const bRate = r.bottleneckStep ? (r.bottleneckStep.dropRate * 100).toFixed(1) : '0';
+
+    return [
+      r.day,
+      `"${r.dateStr || ''}"`,
+      r.impressions,
+      r.visits,
+      ctr,
+      r.signups,
+      r.activations,
+      r.coreCompletions,
+      r.returningUsers,
+      r.dau,
+      r.paidUsers,
+      r.dailyBudget,
+      r.dailyRevenue,
+      r.dailyProfit,
+      `"${bName}"`,
+      bRate
+    ].join(',');
+  });
+
+  const csvContent = [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `foundry_launch_timeline_seed${state.activeLaunch.seed || 42}_${reports.length}days.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function handleExportTimelineJson() {
+  const reports = state.activeLaunch.dailyReports || [];
+  if (reports.length === 0) {
+    alert('No simulation telemetry to export yet. Please advance the market at least 1 day.');
+    return;
+  }
+
+  const exportPayload = {
+    exportDate: new Date().toISOString(),
+    startupName: state.profile.name || 'Your Web Product',
+    targetCountry: state.campaign.country || 'USA',
+    industryDomain: state.campaign.industry || 'Mobile Applications',
+    campaignSettings: {
+      channel: state.campaign.channel,
+      price: state.campaign.price,
+      dailyBudget: state.activeLaunch.dailyBudget,
+      seed: state.activeLaunch.seed,
+      durationDays: state.activeLaunch.durationDays
+    },
+    productFlowTasks: state.productFlow.tasks,
+    dailyReports: reports,
+    summary: {
+      totalDaysSimulated: reports.length,
+      totalVisits: reports.reduce((s, r) => s + r.visits, 0),
+      totalSignups: reports.reduce((s, r) => s + r.signups, 0),
+      totalPaidUsers: reports.reduce((s, r) => s + r.paidUsers, 0),
+      totalRevenue: reports.reduce((s, r) => s + r.dailyRevenue, 0),
+      finalDau: reports[reports.length - 1].dau
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `foundry_launch_telemetry_seed${state.activeLaunch.seed || 42}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /* ==========================================================
