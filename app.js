@@ -2607,8 +2607,71 @@ function renderDailyReport(targetDay) {
   // Render Friction Alert Banner
   renderFrictionAlert(activeData.stepDropOffs);
 
+  // Render Empirical Real Evidence Cross-Reference
+  renderDailyRealEvidenceCrossReference(activeData);
+
   // Render Timeline Cohort Table
   renderTimelineTable(reports, dayToView);
+}
+
+function renderDailyRealEvidenceCrossReference(activeData) {
+  const box = document.getElementById('dailyRealEvidenceBox');
+  const badge = document.getElementById('dailyRealEvidenceBadge');
+  const content = document.getElementById('dailyRealEvidenceContent');
+  if (!box || !content) return;
+
+  const countryCode = state.campaign.country || 'USA';
+  const industryDomain = state.campaign.industry || 'Mobile Applications';
+
+  const matching = (state.realEvidence || []).filter(ev => {
+    const matchCountry = !ev.countryCode || ev.countryCode === 'GLOBAL' || ev.countryCode === countryCode;
+    const matchIndustry = !ev.industryDomain || ev.industryDomain === 'All' || ev.industryDomain === industryDomain;
+    return matchCountry && matchIndustry;
+  });
+
+  if (badge) {
+    badge.textContent = `${matching.length} Field ${matching.length === 1 ? 'Study' : 'Studies'}`;
+  }
+
+  if (matching.length === 0) {
+    content.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:6px 0;">
+        <span style="font-size:0.78rem; color:#94a3b8;">
+          No firsthand customer research recorded yet for <strong>${escapeHtml(countryCode)} &bull; ${escapeHtml(industryDomain)}</strong>.
+        </span>
+        <button class="btn btn-lime-outline btn-xs" type="button" onclick="navigateToView('real-evidence')">
+          + Record Field Study in Real Evidence Tab
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  content.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <p style="color:#d1fae5; margin:0; font-size:0.76rem;">
+        Foundry cross-referenced <strong>${matching.length} recorded empirical customer ${matching.length === 1 ? 'study' : 'studies'}</strong> in your workspace against today's simulated friction points:
+      </p>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px;">
+        ${matching.map(ev => `
+          <div style="background:rgba(0,0,0,0.35); border:1px solid rgba(16,185,129,0.3); border-radius:6px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-weight:700; color:#34d399; font-size:0.74rem; text-transform:uppercase;">${escapeHtml(formatMethodLabel(ev.researchMethod))}</span>
+              <span style="font-family:var(--font-mono); font-size:0.72rem; color:#cbd5e1; background:rgba(255,255,255,0.06); padding:1px 6px; border-radius:3px;">N = ${ev.sampleSize}</span>
+            </div>
+            <div style="font-size:0.78rem; color:#f1f5f3; font-weight:600; margin-bottom:4px;">"${escapeHtml(ev.researchQuestion)}"</div>
+            <div style="font-size:0.74rem; color:#94a3b8; margin-bottom:6px; line-height:1.4;">${escapeHtml(ev.resultsSummary)}</div>
+            <div style="background:rgba(251,191,36,0.1); border-left:2px solid #fbbf24; padding:5px 8px; font-size:0.71rem; color:#fef3c7;">
+              <strong style="color:#fbbf24;">Limitation:</strong> ${escapeHtml(ev.limitationsAndBiases)}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <p style="font-size:0.7rem; color:#94a3b8; margin:0;">
+        <em>Ethical guideline: Directional findings from small or biased samples (N &lt; 50) provide qualitative problem-space signals, but cannot be presented as representative of an entire country or industry.</em>
+      </p>
+    </div>
+  `;
 }
 
 function selectDailyReportDay(dayNum) {
