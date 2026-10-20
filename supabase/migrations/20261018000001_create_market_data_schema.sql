@@ -84,18 +84,21 @@ ALTER TABLE public.country_observations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.market_import_logs ENABLE ROW LEVEL SECURITY;
 
 -- Public Read Policies (Allow frontend/anon and authenticated users to read sourced data)
+DROP POLICY IF EXISTS "Public read access for market data sources" ON public.market_data_sources;
 CREATE POLICY "Public read access for market data sources"
 ON public.market_data_sources
 FOR SELECT
 TO anon, authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Public read access for market indicators" ON public.market_indicators;
 CREATE POLICY "Public read access for market indicators"
 ON public.market_indicators
 FOR SELECT
 TO anon, authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Public read access for country observations" ON public.country_observations;
 CREATE POLICY "Public read access for country observations"
 ON public.country_observations
 FOR SELECT

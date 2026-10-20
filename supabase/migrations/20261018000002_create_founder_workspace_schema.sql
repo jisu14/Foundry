@@ -194,6 +194,7 @@ ALTER TABLE public.founder_simulation_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.simulation_evidence ENABLE ROW LEVEL SECURITY;
 
 -- 1. Workspace Isolation
+DROP POLICY IF EXISTS "Founders can only access their own workspace" ON public.founder_workspaces;
 CREATE POLICY "Founders can only access their own workspace"
 ON public.founder_workspaces
 FOR ALL
@@ -202,6 +203,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 2. Startup Profiles Isolation
+DROP POLICY IF EXISTS "Founders can only access their own startups" ON public.founder_startups;
 CREATE POLICY "Founders can only access their own startups"
 ON public.founder_startups
 FOR ALL
@@ -210,6 +212,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 3. Customer Groups Isolation
+DROP POLICY IF EXISTS "Founders can only access their own customer groups" ON public.founder_customer_groups;
 CREATE POLICY "Founders can only access their own customer groups"
 ON public.founder_customer_groups
 FOR ALL
@@ -218,6 +221,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 4. Competitor Notes Isolation
+DROP POLICY IF EXISTS "Founders can only access their own competitor notes" ON public.founder_competitor_notes;
 CREATE POLICY "Founders can only access their own competitor notes"
 ON public.founder_competitor_notes
 FOR ALL
@@ -226,6 +230,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 5. Campaigns Isolation
+DROP POLICY IF EXISTS "Founders can only access their own campaigns" ON public.founder_campaigns;
 CREATE POLICY "Founders can only access their own campaigns"
 ON public.founder_campaigns
 FOR ALL
@@ -234,6 +239,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 6. Simulation Runs Isolation
+DROP POLICY IF EXISTS "Founders can only access their own simulation runs" ON public.founder_simulation_runs;
 CREATE POLICY "Founders can only access their own simulation runs"
 ON public.founder_simulation_runs
 FOR ALL
@@ -242,6 +248,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 7. Simulation Events Isolation
+DROP POLICY IF EXISTS "Founders can only access their own simulation events" ON public.founder_simulation_events;
 CREATE POLICY "Founders can only access their own simulation events"
 ON public.founder_simulation_events
 FOR ALL
@@ -250,6 +257,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 8. Simulation Evidence Isolation
+DROP POLICY IF EXISTS "Founders can only access their own simulation evidence" ON public.simulation_evidence;
 CREATE POLICY "Founders can only access their own simulation evidence"
 ON public.simulation_evidence
 FOR ALL

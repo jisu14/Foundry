@@ -1,6 +1,7 @@
 -- ==============================================================================
 -- Foundry: Complete Database Schema & Seed Data Bundle
 -- Run this in your Supabase Dashboard > SQL Editor > New Query
+-- Note: Fully idempotent (safe to run multiple times without 42710 errors)
 -- ==============================================================================
 
 
@@ -94,18 +95,21 @@ ALTER TABLE public.country_observations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.market_import_logs ENABLE ROW LEVEL SECURITY;
 
 -- Public Read Policies (Allow frontend/anon and authenticated users to read sourced data)
+DROP POLICY IF EXISTS "Public read access for market data sources" ON public.market_data_sources;
 CREATE POLICY "Public read access for market data sources"
 ON public.market_data_sources
 FOR SELECT
 TO anon, authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Public read access for market indicators" ON public.market_indicators;
 CREATE POLICY "Public read access for market indicators"
 ON public.market_indicators
 FOR SELECT
 TO anon, authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Public read access for country observations" ON public.country_observations;
 CREATE POLICY "Public read access for country observations"
 ON public.country_observations
 FOR SELECT
@@ -201,7 +205,6 @@ ON CONFLICT (id) DO UPDATE SET
     topic = EXCLUDED.topic,
     unit = EXCLUDED.unit,
     limitations = EXCLUDED.limitations;
-
 
 
 -- ------------------------------------------------------------------------------
@@ -404,6 +407,7 @@ ALTER TABLE public.founder_simulation_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.simulation_evidence ENABLE ROW LEVEL SECURITY;
 
 -- 1. Workspace Isolation
+DROP POLICY IF EXISTS "Founders can only access their own workspace" ON public.founder_workspaces;
 CREATE POLICY "Founders can only access their own workspace"
 ON public.founder_workspaces
 FOR ALL
@@ -412,6 +416,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 2. Startup Profiles Isolation
+DROP POLICY IF EXISTS "Founders can only access their own startups" ON public.founder_startups;
 CREATE POLICY "Founders can only access their own startups"
 ON public.founder_startups
 FOR ALL
@@ -420,6 +425,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 3. Customer Groups Isolation
+DROP POLICY IF EXISTS "Founders can only access their own customer groups" ON public.founder_customer_groups;
 CREATE POLICY "Founders can only access their own customer groups"
 ON public.founder_customer_groups
 FOR ALL
@@ -428,6 +434,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 4. Competitor Notes Isolation
+DROP POLICY IF EXISTS "Founders can only access their own competitor notes" ON public.founder_competitor_notes;
 CREATE POLICY "Founders can only access their own competitor notes"
 ON public.founder_competitor_notes
 FOR ALL
@@ -436,6 +443,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 5. Campaigns Isolation
+DROP POLICY IF EXISTS "Founders can only access their own campaigns" ON public.founder_campaigns;
 CREATE POLICY "Founders can only access their own campaigns"
 ON public.founder_campaigns
 FOR ALL
@@ -444,6 +452,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 6. Simulation Runs Isolation
+DROP POLICY IF EXISTS "Founders can only access their own simulation runs" ON public.founder_simulation_runs;
 CREATE POLICY "Founders can only access their own simulation runs"
 ON public.founder_simulation_runs
 FOR ALL
@@ -452,6 +461,7 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 7. Simulation Events Isolation
+DROP POLICY IF EXISTS "Founders can only access their own simulation events" ON public.founder_simulation_events;
 CREATE POLICY "Founders can only access their own simulation events"
 ON public.founder_simulation_events
 FOR ALL
@@ -460,13 +470,13 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- 8. Simulation Evidence Isolation
+DROP POLICY IF EXISTS "Founders can only access their own simulation evidence" ON public.simulation_evidence;
 CREATE POLICY "Founders can only access their own simulation evidence"
 ON public.simulation_evidence
 FOR ALL
 TO authenticated
 USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
-
 
 
 -- ------------------------------------------------------------------------------
@@ -559,7 +569,6 @@ ON CONFLICT (id) DO UPDATE SET
     topic = EXCLUDED.topic,
     unit = EXCLUDED.unit,
     limitations = EXCLUDED.limitations;
-
 
 
 -- ------------------------------------------------------------------------------
@@ -663,7 +672,6 @@ ON CONFLICT (id) DO UPDATE SET
     limitations = EXCLUDED.limitations;
 
 
-
 -- ------------------------------------------------------------------------------
 -- MIGRATION: 20261018000005_add_unctad_data_source.sql
 -- ------------------------------------------------------------------------------
@@ -765,7 +773,6 @@ ON CONFLICT (id) DO UPDATE SET
     limitations = EXCLUDED.limitations;
 
 
-
 -- ------------------------------------------------------------------------------
 -- MIGRATION: 20261018000006_allow_read_market_import_logs.sql
 -- ------------------------------------------------------------------------------
@@ -780,6 +787,7 @@ ON CONFLICT (id) DO UPDATE SET
 DROP POLICY IF EXISTS "Public read access for market import logs" ON public.market_import_logs;
 
 -- Allow public read access on market_import_logs
+DROP POLICY IF EXISTS "Public read access for market import logs" ON public.market_import_logs;
 CREATE POLICY "Public read access for market import logs"
 ON public.market_import_logs
 FOR SELECT
@@ -787,7 +795,6 @@ TO anon, authenticated
 USING (true);
 
 COMMENT ON TABLE public.market_import_logs IS 'Audit log of market data ingestion runs. Readable by anon and authenticated for coverage health checks.';
-
 
 
 -- ------------------------------------------------------------------------------
@@ -889,7 +896,6 @@ ON CONFLICT (id) DO UPDATE SET
     topic = EXCLUDED.topic,
     unit = EXCLUDED.unit,
     limitations = EXCLUDED.limitations;
-
 
 
 -- ------------------------------------------------------------------------------
@@ -1056,7 +1062,6 @@ $$;
 COMMENT ON FUNCTION public.record_market_import_result IS 'Internal procedure to safely update source health status, timestamps, and failure counters.';
 
 
-
 -- ------------------------------------------------------------------------------
 -- MIGRATION: 20261018000009_simulation_grounding_and_evidence.sql
 -- ------------------------------------------------------------------------------
@@ -1103,7 +1108,6 @@ COMMENT ON COLUMN public.simulation_evidence.uncertainty_note IS 'Contextual exp
 -- 3. Create helper index for querying runs by country and industry
 CREATE INDEX IF NOT EXISTS idx_sim_runs_country_industry 
 ON public.founder_simulation_runs (country_code, industry_domain);
-
 
 
 -- ------------------------------------------------------------------------------
@@ -1204,6 +1208,7 @@ COMMENT ON COLUMN public.founder_real_evidence.privacy_status IS 'Strictly priva
 ALTER TABLE public.founder_real_evidence ENABLE ROW LEVEL SECURITY;
 
 -- 1. Full Isolation Policy: Founders can only view, insert, edit, and delete their own records
+DROP POLICY IF EXISTS "Founders can only access and manage their own real evidence" ON public.founder_real_evidence;
 CREATE POLICY "Founders can only access and manage their own real evidence"
 ON public.founder_real_evidence
 FOR ALL
@@ -1237,7 +1242,6 @@ GROUP BY industry_domain, research_method, country_code, evidence_type
 HAVING COUNT(id) >= 3; -- Minimum 3 contributions required to prevent k-anonymity re-identification
 
 COMMENT ON VIEW public.shared_evidence_benchmarks IS 'Anonymized, aggregate empirical benchmarks across opted-in studies. Never reveals raw notes, names, or individual founder workspaces.';
-
 
 
 -- ------------------------------------------------------------------------------
@@ -1324,6 +1328,7 @@ ON CONFLICT DO NOTHING;
 ALTER TABLE public.model_governance_reviews ENABLE ROW LEVEL SECURITY;
 
 -- Read policy: Authenticated founders can review governance decisions
+DROP POLICY IF EXISTS "Founders can view model governance reviews" ON public.model_governance_reviews;
 CREATE POLICY "Founders can view model governance reviews"
 ON public.model_governance_reviews
 FOR SELECT
@@ -1359,7 +1364,6 @@ WHERE re.privacy_status = 'opted_in_shared'
 GROUP BY re.industry_domain, re.research_method, COALESCE(re.country_code, 'GLOBAL'), re.model_version_evaluated;
 
 COMMENT ON VIEW public.model_evaluation_cohorts IS 'Evaluation view comparing simulated ranges with permissioned empirical outcomes. Automatically gates sparse cohorts.';
-
 
 
 -- ------------------------------------------------------------------------------
@@ -1429,7 +1433,6 @@ CREATE POLICY "Service role has full feedback access"
 CREATE INDEX IF NOT EXISTS idx_beta_feedback_user ON public.beta_feedback_reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_beta_feedback_type ON public.beta_feedback_reports(report_type);
 CREATE INDEX IF NOT EXISTS idx_beta_feedback_created ON public.beta_feedback_reports(created_at DESC);
-
 
 
 -- ------------------------------------------------------------------------------
@@ -1542,7 +1545,6 @@ CREATE INDEX IF NOT EXISTS idx_sim_feedback_country_ind ON public.simulation_run
 CREATE INDEX IF NOT EXISTS idx_sim_feedback_shared ON public.simulation_run_feedback(share_with_foundry_team);
 
 
-
 -- ------------------------------------------------------------------------------
 -- MIGRATION: 20261018000014_create_ai_analyst_audit_log.sql
 -- ------------------------------------------------------------------------------
@@ -1607,7 +1609,6 @@ CREATE INDEX IF NOT EXISTS idx_ai_logs_user_workspace
 
 CREATE INDEX IF NOT EXISTS idx_ai_logs_sim_run
     ON public.ai_analyst_logs (simulation_run_id);
-
 
 
 -- ------------------------------------------------------------------------------
@@ -1723,5 +1724,4 @@ REVOKE EXECUTE ON FUNCTION public.delete_founder_workspace_data() FROM public;
 GRANT EXECUTE ON FUNCTION public.delete_founder_workspace_data() TO authenticated;
 
 COMMENT ON FUNCTION public.delete_founder_workspace_data() IS 'Permanently purges all private workspace data and historical records for the invoking authenticated founder.';
-
 

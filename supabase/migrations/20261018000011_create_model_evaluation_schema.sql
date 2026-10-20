@@ -78,6 +78,7 @@ ON CONFLICT DO NOTHING;
 ALTER TABLE public.model_governance_reviews ENABLE ROW LEVEL SECURITY;
 
 -- Read policy: Authenticated founders can review governance decisions
+DROP POLICY IF EXISTS "Founders can view model governance reviews" ON public.model_governance_reviews;
 CREATE POLICY "Founders can view model governance reviews"
 ON public.model_governance_reviews
 FOR SELECT

@@ -8,6 +8,7 @@
 DROP POLICY IF EXISTS "Public read access for market import logs" ON public.market_import_logs;
 
 -- Allow public read access on market_import_logs
+DROP POLICY IF EXISTS "Public read access for market import logs" ON public.market_import_logs;
 CREATE POLICY "Public read access for market import logs"
 ON public.market_import_logs
 FOR SELECT

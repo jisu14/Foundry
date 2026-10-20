@@ -92,6 +92,7 @@ COMMENT ON COLUMN public.founder_real_evidence.privacy_status IS 'Strictly priva
 ALTER TABLE public.founder_real_evidence ENABLE ROW LEVEL SECURITY;
 
 -- 1. Full Isolation Policy: Founders can only view, insert, edit, and delete their own records
+DROP POLICY IF EXISTS "Founders can only access and manage their own real evidence" ON public.founder_real_evidence;
 CREATE POLICY "Founders can only access and manage their own real evidence"
 ON public.founder_real_evidence
 FOR ALL
