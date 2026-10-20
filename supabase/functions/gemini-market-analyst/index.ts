@@ -598,6 +598,485 @@ async function retrieveRelevantMarketEvidence(
   };
 }
 
+
+// -----------------------------------------------------------------------------
+// Live Cited Market Research via Gemini with Google Search Grounding
+// -----------------------------------------------------------------------------
+
+function extractPublisherFromUrl(urlStr: string): string {
+  try {
+    const parsed = new URL(urlStr);
+    const host = parsed.hostname.replace(/^www\./, "");
+    const parts = host.split(".");
+    if (parts.length >= 2) {
+      const main = parts[parts.length - 2];
+      return main.charAt(0).toUpperCase() + main.slice(1);
+    }
+    return host;
+  } catch {
+    return "Official Web Source";
+  }
+}
+
+function extractYearFromTitle(title: string): number | null {
+  if (!title) return null;
+  const match = title.match(/\b(201\d|202\d)\b/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function parseJsonFromMarkdown(text: string): any {
+  try {
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[1]);
+    }
+    const firstBrace = text.indexOf("{");
+    const lastBrace = text.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      return JSON.parse(text.slice(firstBrace, lastBrace + 1));
+    }
+  } catch (e) {
+    console.warn("Could not parse structured JSON block from model response:", e);
+  }
+  return null;
+}
+
+async function handleLiveGroundedResearch({
+  req,
+  body,
+  geminiApiKey,
+  supabase,
+  currentUser,
+  currentWorkspaceId,
+  geminiModel
+}: {
+  req: Request;
+  body: any;
+  geminiApiKey: string;
+  supabase: any;
+  currentUser: any;
+  currentWorkspaceId: string | null;
+  geminiModel: string;
+}) {
+  const countryCode = String(body.countryCode || "USA").trim().toUpperCase().slice(0, 10);
+  const countryName = String(body.countryName || "United States").trim().slice(0, 80);
+  const industryDomain = String(body.industryDomain || "Enterprise Software").trim().slice(0, 100);
+  const customerType = String(body.customerType || "B2B SMBs").trim().slice(0, 100);
+  const question = String(body.question || "").trim().slice(0, 500);
+  const consentGiven = Boolean(body.consentGiven);
+  const bypassCache = Boolean(body.bypassCache);
+
+  if (!question) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "A specific market-size or industry research question is required.",
+        code: "MISSING_QUESTION"
+      }),
+      { status: 400, headers: CORS_HEADERS }
+    );
+  }
+
+  // 1. Quota & Safety Limit Enforcement (Max 10 searches / user / day)
+  const MAX_DAILY_SEARCHES = 10;
+  let searchesToday = 0;
+
+  if (supabase && currentUser) {
+    try {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const { data: quotaRow } = await supabase
+        .from("founder_search_quotas")
+        .select("search_count, max_daily_limit")
+        .eq("user_id", currentUser.id)
+        .eq("quota_date", todayStr)
+        .maybeSingle();
+
+      if (quotaRow) {
+        searchesToday = quotaRow.search_count;
+        const dailyLimit = quotaRow.max_daily_limit || MAX_DAILY_SEARCHES;
+        if (searchesToday >= dailyLimit) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: `Daily free-tier search quota reached (${searchesToday}/${dailyLimit} searches used today). Live research halted to guarantee zero unexpected charges.`,
+              code: "DAILY_QUOTA_REACHED",
+              quota: {
+                usedToday: searchesToday,
+                dailyLimit: dailyLimit,
+                remaining: 0
+              }
+            }),
+            { status: 429, headers: CORS_HEADERS }
+          );
+        }
+      }
+    } catch (quotaErr) {
+      console.warn("Quota check error (proceeding safely):", quotaErr);
+    }
+  }
+
+  // 2. 24-Hour Cache Check (Avoid redundant search queries)
+  if (supabase && currentUser && !bypassCache) {
+    try {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: cachedReport } = await supabase
+        .from("founder_grounded_research_reports")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .eq("country_code", countryCode)
+        .eq("industry_domain", industryDomain)
+        .eq("research_question", question)
+        .gte("created_at", oneDayAgo)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cachedReport) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            isCached: true,
+            report: cachedReport,
+            lastUpdatedAt: cachedReport.created_at,
+            quota: {
+              usedToday: searchesToday,
+              dailyLimit: MAX_DAILY_SEARCHES,
+              remaining: Math.max(0, MAX_DAILY_SEARCHES - searchesToday)
+            },
+            privacyNotice: "Using cached research report from within 24 hours. Zero API quota was consumed."
+          }),
+          { status: 200, headers: CORS_HEADERS }
+        );
+      }
+    } catch (cacheErr) {
+      console.warn("Cache check error:", cacheErr);
+    }
+  }
+
+  // 3. Strict Model Selection for Google Search Grounding
+  // Flash-lite models DO NOT support the google_search tool in Gemini API.
+  // We strictly use gemini-2.5-flash or gemini-2.0-flash.
+  let targetModel = "gemini-2.5-flash";
+  if (geminiModel && !geminiModel.includes("lite") && (geminiModel.includes("2.5") || geminiModel.includes("2.0") || geminiModel.includes("1.5"))) {
+    targetModel = geminiModel;
+  }
+
+  const modelCandidates = [
+    targetModel,
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash"
+  ];
+  const uniqueModels = Array.from(new Set(modelCandidates));
+
+  // 4. Construct Prompt with Zero-Hallucination & Provenance Instructions
+  const startupContext = (consentGiven && body.startupDesc)
+    ? `\n- Founder Venture Context (Authorized by user): "${String(body.startupDesc).slice(0, 400)}"`
+    : "\n- Founder Venture Context: [Withheld by founder privacy policy - Data Minimization]";
+
+  const promptText = `You are an elite, objective Market Intelligence Analyst.
+Analyze live market size and empirical data using live Google Search grounding.
+
+RESEARCH TARGET:
+- Sovereign Country / Region: ${countryName} (${countryCode})
+- Industry & Product Domain: ${industryDomain}
+- Customer Target Type: ${customerType}
+- Founder's Market Question: "${question}"${startupContext}
+
+RESEARCH RULES & SOURCING METHODOLOGY:
+1. USE GOOGLE SEARCH GROUNDING: Do not rely solely on model memory. Verify all market sizes, growth rates, and customer statistics against live web search evidence.
+2. PREFERRED SOURCES:
+   - Official statistics agencies (e.g. US Census Bureau, Eurostat, UK ONS, Destatis, StatCan)
+   - Multilateral and central banking bodies (World Bank, IMF, UNCTAD, ITU, ECB, Federal Reserve)
+   - Regulatory and corporate filings (SEC 10-K, 10-Q, annual audited reports)
+   - Respected market intelligence publishers that disclose survey methodology (Gartner, IDC, Statista, McKinsey, Bain)
+3. CITATION REQUIREMENTS:
+   - For every key claim and numeric metric, identify: publisher, publication/article title, URL, publication date (if available), and reference year.
+   - Do NOT copy long verbatim paragraphs from source pages. Provide concise, synthesized insights.
+4. TAM / SAM / SOM DEFINITIONS:
+   - If discussing market size, clearly differentiate:
+     * TAM (Total Addressable Market): Total annual demand for this category in the geography.
+     * SAM (Serviceable Available Market): Portion of TAM reachable by the specific product segment/model.
+     * SOM (Serviceable Obtainable Market): Realistic share captureable in the near term (1-3 years).
+   - Show the explicit formula, assumptions, or published source for each.
+   - CRITICAL: DO NOT invent or extrapolate an exact multi-million/billion dollar figure if no reliable source exists. If reliable data is missing, explicitly state: "Authoritative market size unavailable for this niche segment."
+5. DISAGREEMENTS & CONTRADICTIONS:
+   - If sources report conflicting numbers (e.g. one report says $2B and another says $5B), explicitly document both figures and explain the variance (different definitions, years, or methodologies).
+
+OUTPUT FORMAT:
+Return a structured Markdown report followed by a JSON block enclosed in \`\`\`json ... \`\`\`.
+
+Markdown Structure:
+## Executive Summary
+## Sourced Market Sizing & Dynamics (Citing Sources)
+## TAM / SAM / SOM Analysis & Assumptions
+## Verified Source Citations & Methodology
+## Data Gaps, Discrepancies & Risks to Investigate
+
+JSON Schema:
+\`\`\`json
+{
+  "structured_records": [
+    {
+      "metric": "Name of metric",
+      "value": "Numeric value or range (or null)",
+      "currency": "USD, EUR, local currency, or N/A",
+      "period": "Reference year or forecast period",
+      "geography": "Country or Region",
+      "industry": "Industry sector",
+      "definition": "What this metric measures exactly",
+      "method": "Survey, official census, revenue model, or analyst estimate",
+      "source_citations": [
+        {
+          "publisher": "Name of publisher",
+          "title": "Document title",
+          "url": "https://...",
+          "publicationDate": "YYYY-MM (or null)",
+          "referenceYear": 2023
+        }
+      ],
+      "confidence_quality_notes": "High / Medium / Low (reason)",
+      "limitations": "What this metric fails to cover"
+    }
+  ],
+  "tam_sam_som": {
+    "tam": { "value": "...", "currency": "...", "definition": "...", "source_or_calculation": "..." },
+    "sam": { "value": "...", "currency": "...", "definition": "...", "source_or_calculation": "..." },
+    "som": { "value": "...", "currency": "...", "definition": "...", "source_or_calculation": "..." }
+  },
+  "disagreements_or_gaps": "Explicit notes on source conflicts or missing data",
+  "confidence_notes": "Overall assessment of source quality",
+  "limitations": "Boundary conditions of the research"
+}
+\`\`\``;
+
+  // 5. Dispatch to Gemini with Google Search Grounding Tool
+  let responseData: any = null;
+  let usedModelName = targetModel;
+  let lastErrorMsg = "";
+
+  for (const modelCandidate of uniqueModels) {
+    try {
+      usedModelName = modelCandidate;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelCandidate}:generateContent?key=${geminiApiKey}`;
+
+      const geminiPayload = {
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: promptText }]
+          }
+        ],
+        tools: [
+          { google_search: {} }
+        ],
+        generationConfig: {
+          temperature: 0.15,
+          topP: 0.8,
+          maxOutputTokens: 2500
+        }
+      };
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s timeout for search grounding
+
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(geminiPayload),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.status === 429) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Google Gemini Free Tier rate limit reached (15 RPM). Please wait 60 seconds before submitting another research query.",
+            code: "RATE_LIMIT_EXCEEDED"
+          }),
+          { status: 429, headers: CORS_HEADERS }
+        );
+      }
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        const msg = errJson.error?.message || `HTTP ${res.status}`;
+        lastErrorMsg = `${modelCandidate}: ${msg}`;
+        if (res.status === 404 || res.status === 400) {
+          continue;
+        }
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Gemini Search Grounding error: ${msg}`,
+            code: `GEMINI_HTTP_${res.status}`,
+            model: modelCandidate
+          }),
+          { status: res.status, headers: CORS_HEADERS }
+        );
+      }
+
+      responseData = await res.json();
+      break;
+    } catch (fetchErr: any) {
+      if (fetchErr.name === "AbortError") {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Gemini search grounding query timed out after 35 seconds. Please try a more specific question.",
+            code: "TIMEOUT"
+          }),
+          { status: 504, headers: CORS_HEADERS }
+        );
+      }
+      lastErrorMsg = fetchErr.message || String(fetchErr);
+    }
+  }
+
+  if (!responseData) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: `Failed to execute search grounding: ${lastErrorMsg || "No response received"}`,
+        code: "SEARCH_GROUNDING_FAILED"
+      }),
+      { status: 502, headers: CORS_HEADERS }
+    );
+  }
+
+  // 6. Extract Response & Grounding Metadata
+  const candidate = responseData.candidates?.[0];
+  const responseText = candidate?.content?.parts?.[0]?.text || "No research could be generated.";
+  const groundingMetadata = candidate?.groundingMetadata || {};
+  const webSearchQueries = groundingMetadata.webSearchQueries || [];
+  const groundingChunks = groundingMetadata.groundingChunks || [];
+
+  // Extract structured citations from grounding chunks
+  const parsedCitations: any[] = [];
+  if (Array.isArray(groundingChunks)) {
+    for (const chunk of groundingChunks) {
+      if (chunk.web && chunk.web.uri) {
+        parsedCitations.push({
+          title: chunk.web.title || "External Source",
+          url: chunk.web.uri,
+          publisher: extractPublisherFromUrl(chunk.web.uri),
+          referenceYear: extractYearFromTitle(chunk.web.title)
+        });
+      }
+    }
+  }
+
+  // Extract JSON payload from model response
+  const structuredData = parseJsonFromMarkdown(responseText) || {};
+  const structuredRecords = Array.isArray(structuredData.structured_records) ? structuredData.structured_records : [];
+  const tamSamSom = structuredData.tam_sam_som || null;
+  const disagreementsOrGaps = structuredData.disagreements_or_gaps || null;
+  const confidenceNotes = structuredData.confidence_notes || null;
+  const limitations = structuredData.limitations || null;
+
+  // Combine citations
+  const allCitationsMap = new Map<string, any>();
+  for (const c of parsedCitations) {
+    allCitationsMap.set(c.url, c);
+  }
+  for (const rec of structuredRecords) {
+    if (Array.isArray(rec.source_citations)) {
+      for (const sc of rec.source_citations) {
+        if (sc.url) allCitationsMap.set(sc.url, sc);
+      }
+    }
+  }
+  const mergedCitations = Array.from(allCitationsMap.values());
+
+  // Clean Markdown
+  const cleanMarkdown = responseText.replace(/```(?:json)?\s*\{[\s\S]*\}\s*```/g, "").trim();
+
+  // 7. Persist to Founder's Private Research Records & Increment Daily Quota
+  let savedReportId: string | null = null;
+  searchesToday += 1;
+
+  if (supabase && currentUser) {
+    try {
+      const todayStr = new Date().toISOString().split("T")[0];
+      await supabase
+        .from("founder_search_quotas")
+        .upsert({
+          user_id: currentUser.id,
+          quota_date: todayStr,
+          search_count: searchesToday,
+          max_daily_limit: MAX_DAILY_SEARCHES,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id,quota_date" });
+
+      const { data: insertedReport, error: insertErr } = await supabase
+        .from("founder_grounded_research_reports")
+        .insert({
+          user_id: currentUser.id,
+          workspace_id: currentWorkspaceId,
+          country_code: countryCode,
+          country_name: countryName,
+          industry_domain: industryDomain,
+          customer_type: customerType,
+          research_question: question,
+          model_used: usedModelName,
+          synthesis_markdown: cleanMarkdown,
+          structured_records: structuredRecords,
+          citations: mergedCitations,
+          search_queries: webSearchQueries,
+          tam_sam_som: tamSamSom,
+          disagreements_or_gaps: disagreementsOrGaps,
+          confidence_notes: confidenceNotes,
+          limitations: limitations,
+          grounding_metadata: groundingMetadata,
+          is_cached: false
+        })
+        .select("id")
+        .maybeSingle();
+
+      if (!insertErr && insertedReport) {
+        savedReportId = insertedReport.id;
+      }
+    } catch (saveErr) {
+      console.warn("Could not save to founder_grounded_research_reports:", saveErr);
+    }
+  }
+
+  // 8. Return Final Result
+  return new Response(
+    JSON.stringify({
+      success: true,
+      reportId: savedReportId,
+      countryCode,
+      countryName,
+      industryDomain,
+      customerType,
+      question,
+      modelUsed: usedModelName,
+      synthesisMarkdown: cleanMarkdown,
+      structuredRecords,
+      tamSamSom,
+      disagreementsOrGaps,
+      confidenceNotes,
+      limitations,
+      citations: mergedCitations,
+      searchQueries: webSearchQueries,
+      groundingEntryPoint: groundingMetadata.searchEntryPoint || null,
+      isCached: false,
+      lastUpdatedAt: new Date().toISOString(),
+      quota: {
+        usedToday: searchesToday,
+        dailyLimit: MAX_DAILY_SEARCHES,
+        remaining: Math.max(0, MAX_DAILY_SEARCHES - searchesToday)
+      },
+      privacyNotice: "Google AI Studio Free Tier terms: Prompt and queries may be reviewed by human evaluators. Confidential venture pitch details were stripped prior to dispatch.",
+      disclaimer: "Market intelligence grounded in live web search sources. Sourced findings represent third-party reporting and do not predict your startup's specific customer demand or revenue."
+    }),
+    { status: 200, headers: CORS_HEADERS }
+  );
+}
+
 // -----------------------------------------------------------------------------
 // Main Edge Function Handler
 // -----------------------------------------------------------------------------
@@ -619,6 +1098,8 @@ serve(async (req: Request) => {
         function: "gemini-market-analyst",
         configured: Boolean(geminiApiKey),
         model: geminiModel,
+        searchGroundingSupported: true,
+        recommendedSearchGroundingModel: "gemini-2.5-flash",
         supabaseConnected: Boolean(supabaseUrl && supabaseAnonKey),
         freeTierTermsNotice: "Google AI Studio Free Tier terms apply. Data submitted may be used to improve Google products unless an enterprise agreement is configured.",
         timestamp: new Date().toISOString()
@@ -678,6 +1159,8 @@ serve(async (req: Request) => {
       JSON.stringify({
         configured: true,
         model: geminiModel,
+        searchGroundingSupported: true,
+        recommendedSearchGroundingModel: "gemini-2.5-flash",
         status: "ready"
       }),
       { status: 200, headers: CORS_HEADERS }
@@ -715,6 +1198,19 @@ serve(async (req: Request) => {
         console.warn("Auth token verification error (proceeding in public context):", authErr);
       }
     }
+  }
+
+  // 5b. Route to Live Grounded Market Research (Google Search Grounding)
+  if (body.action === "live_grounded_research" || body.mode === "live_grounded_research") {
+    return await handleLiveGroundedResearch({
+      req,
+      body,
+      geminiApiKey,
+      supabase,
+      currentUser,
+      currentWorkspaceId,
+      geminiModel
+    });
   }
 
   // 6. Extract Parameters

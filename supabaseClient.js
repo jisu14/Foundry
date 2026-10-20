@@ -1852,6 +1852,104 @@
       }
     }
 
+    // -------------------------------------------------------------
+    // LIVE CITED MARKET RESEARCH (GOOGLE SEARCH GROUNDING)
+    // -------------------------------------------------------------
+    async performGroundedMarketResearch(params) {
+      if (!this.client) {
+        throw new Error('Supabase client is not configured. Please connect Supabase in Cloud Settings to access live search grounding.');
+      }
+
+      // Client-side rate-limiting / cooldown protection (minimum 5 seconds between searches)
+      const now = Date.now();
+      if (this._lastSearchGroundingTime && (now - this._lastSearchGroundingTime < 5000)) {
+        throw new Error('Please wait 5 seconds before sending another live research request (Free Tier cooldown).');
+      }
+      this._lastSearchGroundingTime = now;
+
+      // Data Minimization: Send only country, industry, customer type, and question by default.
+      // Do NOT send startup description unless explicit consent is true.
+      const payload = {
+        action: 'live_grounded_research',
+        countryCode: params.countryCode || 'USA',
+        countryName: params.countryName || 'United States',
+        industryDomain: params.industryDomain || 'Enterprise Software',
+        customerType: params.customerType || 'B2B/B2C',
+        question: params.question || '',
+        consentGiven: Boolean(params.consentGiven),
+        bypassCache: Boolean(params.bypassCache),
+        startupDesc: params.consentGiven ? (params.startupDesc || '') : null
+      };
+
+      const { data, error } = await this.client.functions.invoke('gemini-market-analyst', {
+        body: payload
+      });
+
+      if (error) {
+        if (error.message && error.message.includes('429')) {
+          throw new Error('Daily search quota reached (10 searches/day) or Gemini Free Tier rate limit reached. Halting safely to prevent paid charges.');
+        }
+        if (error.message && error.message.includes('503')) {
+          throw new Error('GEMINI_API_KEY secret is not set in Supabase Secrets. Please configure your key in your Supabase dashboard via supabase secrets set GEMINI_API_KEY=your_key.');
+        }
+        throw new Error(error.message || 'Live market research request failed.');
+      }
+
+      if (data && data.error && !data.success) {
+        throw new Error(data.error);
+      }
+
+      return data;
+    }
+
+    async loadFounderGroundedReports(limit = 10) {
+      if (!this.isAuthenticated()) return [];
+      try {
+        const { data, error } = await this.client
+          .from('founder_grounded_research_reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.warn('Could not load founder_grounded_research_reports:', err);
+        return [];
+      }
+    }
+
+    async getSearchQuotaStatus() {
+      if (!this.isAuthenticated()) {
+        return { usedToday: 0, dailyLimit: 10, remaining: 10, isAuth: false };
+      }
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const user = this.getUser();
+        const { data, error } = await this.client
+          .from('founder_search_quotas')
+          .select('search_count, max_daily_limit')
+          .eq('user_id', user.id)
+          .eq('quota_date', todayStr)
+          .maybeSingle();
+
+        if (error || !data) {
+          return { usedToday: 0, dailyLimit: 10, remaining: 10, isAuth: true };
+        }
+        const used = data.search_count || 0;
+        const limit = data.max_daily_limit || 10;
+        return {
+          usedToday: used,
+          dailyLimit: limit,
+          remaining: Math.max(0, limit - used),
+          isAuth: true
+        };
+      } catch (err) {
+        console.warn('Could not query search quota:', err);
+        return { usedToday: 0, dailyLimit: 10, remaining: 10, isAuth: true };
+      }
+    }
+
     // ==========================================================
     // DATA PORTABILITY & RETENTION: EXPORT WORKSPACE DATA (GDPR)
     // ==========================================================

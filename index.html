@@ -2001,78 +2001,224 @@
           </p>
         </div>
 
-        <!-- Filter Controls -->
-        <div class="city-panel library-filter-panel">
-          <div class="library-filters-row">
-            <div class="filter-group">
-              <label for="filterLibraryCountry">Country:</label>
-              <select id="filterLibraryCountry" class="form-select filter-select">
-                <option value="ALL">All Sovereign Countries</option>
-                <option value="USA" selected>United States (USA)</option>
-                <option value="GBR">United Kingdom (GBR)</option>
-                <option value="DEU">Germany (DEU)</option>
-                <option value="IND">India (IND)</option>
-                <option value="KEN">Kenya (KEN)</option>
-                <option value="FRA">France (FRA)</option>
-                <option value="CAN">Canada (CAN)</option>
-                <option value="JPN">Japan (JPN)</option>
-                <option value="SGP">Singapore (SGP)</option>
-                <option value="BRA">Brazil (BRA)</option>
-              </select>
+        <!-- Library Subnavigation Tabs -->
+        <div class="library-nav-tabs" style="display: flex; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+          <button type="button" class="btn btn-sm btn-outline-cyan active" id="tabBtnMacroCatalog" style="display: flex; align-items: center; gap: 6px;">
+            <span>🏛️</span>
+            <span>Verified Macro Indicators</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-cyan" id="tabBtnLiveGroundedResearch" style="display: flex; align-items: center; gap: 6px;">
+            <span>🔍</span>
+            <span>Live Cited Market Research (Google Search Grounding)</span>
+            <span class="badge-status-new" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">Gemini 2.5 Flash</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: VERIFIED MACRO CATALOG -->
+        <div id="macroCatalogSection">
+          <!-- Filter Controls -->
+          <div class="city-panel library-filter-panel">
+            <div class="library-filters-row">
+              <div class="filter-group">
+                <label for="filterLibraryCountry">Country:</label>
+                <select id="filterLibraryCountry" class="form-select filter-select">
+                  <option value="ALL">All Sovereign Countries</option>
+                  <option value="USA" selected>United States (USA)</option>
+                  <option value="GBR">United Kingdom (GBR)</option>
+                  <option value="DEU">Germany (DEU)</option>
+                  <option value="IND">India (IND)</option>
+                  <option value="KEN">Kenya (KEN)</option>
+                  <option value="FRA">France (FRA)</option>
+                  <option value="CAN">Canada (CAN)</option>
+                  <option value="JPN">Japan (JPN)</option>
+                  <option value="SGP">Singapore (SGP)</option>
+                  <option value="BRA">Brazil (BRA)</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filterLibraryTopic">Topic:</label>
+                <select id="filterLibraryTopic" class="form-select filter-select">
+                  <option value="ALL">All Indicator Topics</option>
+                  <option value="Demographics & Market Size">Demographics &amp; Market Size</option>
+                  <option value="Economic Context">Economic Context</option>
+                  <option value="Digital Infrastructure & Connectivity">Digital Infrastructure &amp; Connectivity</option>
+                  <option value="Mobile Infrastructure">Mobile Infrastructure</option>
+                  <option value="Broadband Infrastructure">Broadband Infrastructure</option>
+                  <option value="Financial Inclusion & Payments">Financial Inclusion &amp; Payments</option>
+                  <option value="Digital Payments & Transaction Behavior">Digital Payments &amp; Transaction Behavior</option>
+                  <option value="Payment Cards & Infrastructure">Payment Cards &amp; Infrastructure</option>
+                  <option value="E-Commerce & Digital Economy">E-Commerce &amp; Digital Economy</option>
+                  <option value="Digital Trade & Services">Digital Trade &amp; Services</option>
+                  <option value="Enterprise ICT Adoption">Enterprise ICT Adoption</option>
+                  <option value="Mobile Apps & Software Ecosystem">Mobile Apps &amp; Software Ecosystem</option>
+                  <option value="Fintech & Mobile Banking Apps">Fintech &amp; Mobile Banking Apps</option>
+                  <option value="Digital Health & Wellness Apps">Digital Health &amp; Wellness Apps</option>
+                  <option value="Entertainment & Video Apps">Entertainment &amp; Video Apps</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filterLibraryYear">Year:</label>
+                <select id="filterLibraryYear" class="form-select filter-select">
+                  <option value="ALL">All Available Years</option>
+                  <option value="2024">2024 (Latest Findex Survey)</option>
+                  <option value="2023" selected>2023</option>
+                  <option value="2022">2022</option>
+                  <option value="2021">2021 (Findex Survey)</option>
+                  <option value="2020">2020</option>
+                  <option value="2019">2019</option>
+                  <option value="2018">2018</option>
+                  <option value="2017">2017 (Findex Survey)</option>
+                  <option value="2014">2014 (Findex Survey)</option>
+                </select>
+              </div>
+
+              <div class="filter-group filter-search-group">
+                <label for="filterLibrarySearch">Search:</label>
+                <input type="text" id="filterLibrarySearch" class="form-input filter-search-input" placeholder="Search indicator or code...">
+              </div>
             </div>
 
-            <div class="filter-group">
-              <label for="filterLibraryTopic">Topic:</label>
-              <select id="filterLibraryTopic" class="form-select filter-select">
-                <option value="ALL">All Indicator Topics</option>
-                <option value="Demographics & Market Size">Demographics &amp; Market Size</option>
-                <option value="Economic Context">Economic Context</option>
-                <option value="Digital Infrastructure & Connectivity">Digital Infrastructure &amp; Connectivity</option>
-                <option value="Mobile Infrastructure">Mobile Infrastructure</option>
-                <option value="Broadband Infrastructure">Broadband Infrastructure</option>
-                <option value="Financial Inclusion & Payments">Financial Inclusion &amp; Payments</option>
-                <option value="Digital Payments & Transaction Behavior">Digital Payments &amp; Transaction Behavior</option>
-                <option value="Payment Cards & Infrastructure">Payment Cards &amp; Infrastructure</option>
-                <option value="E-Commerce & Digital Economy">E-Commerce &amp; Digital Economy</option>
-                <option value="Digital Trade & Services">Digital Trade &amp; Services</option>
-                <option value="Enterprise ICT Adoption">Enterprise ICT Adoption</option>
-                <option value="Mobile Apps & Software Ecosystem">Mobile Apps &amp; Software Ecosystem</option>
-                <option value="Fintech & Mobile Banking Apps">Fintech &amp; Mobile Banking Apps</option>
-                <option value="Digital Health & Wellness Apps">Digital Health &amp; Wellness Apps</option>
-                <option value="Entertainment & Video Apps">Entertainment &amp; Video Apps</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label for="filterLibraryYear">Year:</label>
-              <select id="filterLibraryYear" class="form-select filter-select">
-                <option value="ALL">All Available Years</option>
-                <option value="2024">2024 (Latest Findex Survey)</option>
-                <option value="2023" selected>2023</option>
-                <option value="2022">2022</option>
-                <option value="2021">2021 (Findex Survey)</option>
-                <option value="2020">2020</option>
-                <option value="2019">2019</option>
-                <option value="2018">2018</option>
-                <option value="2017">2017 (Findex Survey)</option>
-                <option value="2014">2014 (Findex Survey)</option>
-              </select>
-            </div>
-
-            <div class="filter-group filter-search-group">
-              <label for="filterLibrarySearch">Search:</label>
-              <input type="text" id="filterLibrarySearch" class="form-input filter-search-input" placeholder="Search indicator or code...">
+            <div class="library-filter-status" id="libraryFilterStatus">
+              Showing observations for selected filters. Missing values are preserved as unavailable.
             </div>
           </div>
 
-          <div class="library-filter-status" id="libraryFilterStatus">
-            Showing observations for selected filters. Missing values are preserved as unavailable.
+          <!-- Indicators Grid -->
+          <div class="library-cards-grid" id="libraryCardsContainer">
+            <!-- Rendered dynamically -->
           </div>
         </div>
 
-        <!-- Indicators Grid -->
-        <div class="library-cards-grid" id="libraryCardsContainer">
-          <!-- Rendered dynamically -->
+        <!-- TAB 2: LIVE GROUNDED MARKET RESEARCH (GEMINI GOOGLE SEARCH) -->
+        <div id="liveGroundedResearchSection" class="hidden">
+          
+          <!-- Grounding Privacy & Zero-Spend Notice Banner -->
+          <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <span style="font-size: 1.1rem;">🌐</span>
+                  <strong style="color: #38bdf8; font-size: 0.95rem;">Live Cited Market Research (Google Search Grounding)</strong>
+                  <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Gemini 2.5 Flash</span>
+                </div>
+                <p style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.5; margin: 0 0 8px 0; max-width: 820px;">
+                  Query live web sources, official statistics agencies (US Census, Eurostat, ONS), multilateral institutions (World Bank, UNCTAD, ITU), and audited company filings. Every finding returns clickable citations, publisher names, and explicit methodology notes.
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.75rem; color: #94a3b8;">
+                  <span>🔒 <strong>Data Minimization:</strong> Confidential pitch notes are withheld by default.</span>
+                  <span>🛡️ <strong>Zero-Spend Guarantee:</strong> Strictly halts at 10 searches/day to prevent paid overage.</span>
+                  <span>⚡ <strong>Smart 24h Cache:</strong> Duplicate queries load instantly without burning quota.</span>
+                </div>
+              </div>
+              <div style="text-align: right; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 12px; min-width: 140px;">
+                <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block;">Daily Free Quota</span>
+                <span id="groundedSearchQuotaBadge" style="font-size: 1.1rem; font-weight: 800; color: #38bdf8; font-family: monospace;">10 / 10 Left</span>
+                <span style="font-size: 0.68rem; color: #64748b; display: block; margin-top: 2px;">Resets at midnight UTC</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Free-Tier Google Privacy Warning Box -->
+          <div style="background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.35); border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.76rem; color: #fde68a; display: flex; align-items: flex-start; gap: 10px;">
+            <span style="font-size: 1.1rem; line-height: 1;">⚠️</span>
+            <div>
+              <strong>Google AI Studio Free Tier Privacy Disclosure:</strong> Content submitted to the free Gemini tier may be reviewed by human evaluators and used by Google to improve its models and services. Foundry automatically strips your private startup pitch and confidential notes before dispatch unless you explicitly toggle the authorization below.
+            </div>
+          </div>
+
+          <!-- Research Request Form Panel -->
+          <div class="city-panel" style="background: #091a13; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+            <h3 style="font-size: 1rem; color: #f8fafc; margin-top: 0; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+              <span>📝</span> Configure Market Research Request
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 14px;">
+              <div>
+                <label for="researchCountry" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 5px;">Target Country / Region *</label>
+                <select id="researchCountry" class="form-select" style="width: 100%; background: #030a06; border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; border-radius: 4px; padding: 8px 10px; font-size: 0.85rem;">
+                  <option value="USA">United States (USA)</option>
+                  <option value="DEU">Germany (DEU)</option>
+                  <option value="GBR">United Kingdom (GBR)</option>
+                  <option value="FRA">France (FRA)</option>
+                  <option value="IND">India (IND)</option>
+                  <option value="BRA">Brazil (BRA)</option>
+                  <option value="KEN">Kenya (KEN)</option>
+                  <option value="JPN">Japan (JPN)</option>
+                  <option value="SGP">Singapore (SGP)</option>
+                  <option value="CAN">Canada (CAN)</option>
+                  <option value="NGA">Nigeria (NGA)</option>
+                  <option value="GLOBAL">Global / Worldwide</option>
+                  <option value="EU">European Union (EU)</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="researchIndustry" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 5px;">Industry &amp; Product Category *</label>
+                <input type="text" id="researchIndustry" class="form-input" placeholder="e.g. B2B SaaS Warehouse Logistics, Telehealth App, EdTech" value="B2B SaaS - Supply Chain Logistics" style="width: 100%; background: #030a06; border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; border-radius: 4px; padding: 8px 10px; font-size: 0.85rem;">
+              </div>
+
+              <div>
+                <label for="researchCustomerType" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 5px;">Customer Type / Segment</label>
+                <input type="text" id="researchCustomerType" class="form-input" placeholder="e.g. Mid-Market Freight Forwarders, Independent Clinics" value="Mid-Market Warehouse Operators" style="width: 100%; background: #030a06; border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; border-radius: 4px; padding: 8px 10px; font-size: 0.85rem;">
+              </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label for="researchQuestion" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 5px;">Market-Size or Empirical Sourcing Question *</label>
+              <textarea id="researchQuestion" class="form-textarea" rows="2" placeholder="e.g. What is the total addressable market (TAM) for warehouse management software in Germany? What are the verifiable enterprise IT spending benchmarks?" style="width: 100%; background: #030a06; border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; border-radius: 4px; padding: 8px 10px; font-size: 0.85rem; resize: vertical;">What is the total addressable market (TAM) for warehouse inventory management software in Germany? What are the verified market size figures and methodology?</textarea>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 0.78rem; color: #cbd5e1; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="researchConsentToggle">
+                  <span>Authorize sending startup venture description for contextual relevance (Optional)</span>
+                </label>
+                <label style="font-size: 0.78rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="researchBypassCache">
+                  <span>Bypass 24-hour cache (force fresh live web crawl)</span>
+                </label>
+              </div>
+
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" class="btn btn-outline-cyan btn-sm" id="btnLoadExampleResearch">Load Example Questions</button>
+                <button type="button" class="btn btn-lime" id="btnRunGroundedResearch" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>🔍</span>
+                  <span>Run Live Grounded Research</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading Spinner -->
+          <div id="groundedResearchSpinner" class="hidden" style="text-align: center; padding: 40px 20px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 24px; border: 1px dashed rgba(56, 189, 248, 0.3);">
+            <div class="spinner" style="margin: 0 auto 14px auto; width: 36px; height: 36px; border: 3px solid rgba(56, 189, 248, 0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            <h4 style="color: #38bdf8; margin: 0 0 6px 0;">Searching Live Web Index via Gemini 2.5 Flash Grounding...</h4>
+            <p style="color: #94a3b8; font-size: 0.8rem; margin: 0;">Cross-referencing statistical bodies, central banks, and market reports. This may take 10-25 seconds.</p>
+          </div>
+
+          <!-- Research Results Container -->
+          <div id="groundedResearchResultsContainer" class="hidden">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Past Private Research History -->
+          <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h4 style="color: #f8fafc; font-size: 0.95rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <span>📚</span> Past Private Research Reports for This Workspace
+              </h4>
+              <button type="button" class="btn btn-outline-cyan btn-sm" id="btnRefreshPastReports">Refresh History</button>
+            </div>
+            <div id="pastResearchReportsList">
+              <div style="color: #94a3b8; font-size: 0.8rem; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 6px; text-align: center;">
+                No past research reports saved yet. Run your first query above to build your private research dossier.
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 

@@ -920,6 +920,14 @@ body {
   color: #ffffff;
 }
 
+.btn-outline-cyan.active {
+  background: rgba(45, 212, 191, 0.22);
+  border-color: var(--cyan);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(45, 212, 191, 0.25);
+}
+
 .btn-secondary {
   background-color: var(--bg-panel-subtle);
   color: var(--text-main);

@@ -4034,6 +4034,87 @@ function initLibraryView() {
   if (searchInput) searchInput.addEventListener('input', renderLibraryView);
   if (refreshBtn) refreshBtn.addEventListener('click', renderLibraryView);
 
+  // Tab switching between Macro Catalog and Live Grounded Research
+  const tabMacro = document.getElementById('tabBtnMacroCatalog');
+  const tabGrounded = document.getElementById('tabBtnLiveGroundedResearch');
+  const secMacro = document.getElementById('macroCatalogSection');
+  const secGrounded = document.getElementById('liveGroundedResearchSection');
+
+  function switchLibTab(mode) {
+    if (mode === 'macro') {
+      if (tabMacro) tabMacro.classList.add('active');
+      if (tabGrounded) tabGrounded.classList.remove('active');
+      if (secMacro) secMacro.classList.remove('hidden');
+      if (secGrounded) secGrounded.classList.add('hidden');
+    } else {
+      if (tabGrounded) tabGrounded.classList.add('active');
+      if (tabMacro) tabMacro.classList.remove('active');
+      if (secGrounded) secGrounded.classList.remove('hidden');
+      if (secMacro) secMacro.classList.add('hidden');
+      updateGroundedQuotaBadge();
+      loadPastGroundedResearchReports();
+    }
+  }
+
+  if (tabMacro) tabMacro.addEventListener('click', () => switchLibTab('macro'));
+  if (tabGrounded) tabGrounded.addEventListener('click', () => switchLibTab('grounded'));
+
+  // Example Questions Cycler
+  const btnExamples = document.getElementById('btnLoadExampleResearch');
+  const exampleQueries = [
+    {
+      country: 'DEU',
+      industry: 'B2B SaaS - Supply Chain Logistics',
+      customer: 'Mid-Market Warehouse Operators',
+      question: 'What is the total addressable market (TAM) for warehouse inventory management software in Germany? What are verified IT spending benchmarks?'
+    },
+    {
+      country: 'USA',
+      industry: 'Digital Health & Telemedicine',
+      customer: 'Independent Outpatient Clinics',
+      question: 'What is the market size and annual software spending for outpatient EHR and telehealth systems in the United States?'
+    },
+    {
+      country: 'GBR',
+      industry: 'Fintech & Open Banking',
+      customer: 'UK SME Accounting Firms',
+      question: 'What is the TAM for automated invoice reconciliation software in the United Kingdom, and what proportion of UK SMEs use open banking APIs?'
+    },
+    {
+      country: 'IND',
+      industry: 'AgriTech & Rural Supply Chain',
+      customer: 'Farmers Producer Organizations (FPOs)',
+      question: 'What is the market size of digital procurement platforms for agricultural produce in India, and what are government penetration figures?'
+    }
+  ];
+  let currentExampleIdx = 0;
+  if (btnExamples) {
+    btnExamples.addEventListener('click', () => {
+      const ex = exampleQueries[currentExampleIdx % exampleQueries.length];
+      currentExampleIdx++;
+      const cEl = document.getElementById('researchCountry');
+      const iEl = document.getElementById('researchIndustry');
+      const custEl = document.getElementById('researchCustomerType');
+      const qEl = document.getElementById('researchQuestion');
+      if (cEl) cEl.value = ex.country;
+      if (iEl) iEl.value = ex.industry;
+      if (custEl) custEl.value = ex.customer;
+      if (qEl) qEl.value = ex.question;
+    });
+  }
+
+  // Run Grounded Research Handler
+  const btnRunResearch = document.getElementById('btnRunGroundedResearch');
+  if (btnRunResearch) {
+    btnRunResearch.addEventListener('click', handleRunLiveGroundedResearch);
+  }
+
+  // Refresh Past Reports
+  const btnRefreshPast = document.getElementById('btnRefreshPastReports');
+  if (btnRefreshPast) {
+    btnRefreshPast.addEventListener('click', loadPastGroundedResearchReports);
+  }
+
   // Populate dynamic countries from Supabase if available
   if (window.foundrySupabase && window.foundrySupabase.isConfigured()) {
     window.foundrySupabase.getAvailableCountries().then(countries => {
@@ -4047,6 +4128,452 @@ function initLibraryView() {
         countrySelect.value = currentVal || 'USA';
       }
     }).catch(() => {});
+  }
+}
+
+async function updateGroundedQuotaBadge() {
+  const badge = document.getElementById('groundedSearchQuotaBadge');
+  if (!badge) return;
+  if (window.foundrySupabase && window.foundrySupabase.isConfigured()) {
+    try {
+      const q = await window.foundrySupabase.getSearchQuotaStatus();
+      badge.textContent = `${q.remaining} / ${q.dailyLimit} Left`;
+      if (q.remaining <= 2) {
+        badge.style.color = '#f59e0b';
+      } else {
+        badge.style.color = '#38bdf8';
+      }
+    } catch {
+      badge.textContent = '10 / 10 Left';
+    }
+  } else {
+    badge.textContent = '10 / 10 Left';
+  }
+}
+
+async function handleRunLiveGroundedResearch() {
+  const btnRun = document.getElementById('btnRunGroundedResearch');
+  const spinner = document.getElementById('groundedResearchSpinner');
+  const resultsContainer = document.getElementById('groundedResearchResultsContainer');
+
+  const countryEl = document.getElementById('researchCountry');
+  const industryEl = document.getElementById('researchIndustry');
+  const customerEl = document.getElementById('researchCustomerType');
+  const questionEl = document.getElementById('researchQuestion');
+  const consentEl = document.getElementById('researchConsentToggle');
+  const bypassEl = document.getElementById('researchBypassCache');
+
+  const countryCode = countryEl ? countryEl.value : 'USA';
+  const countryName = countryEl && countryEl.selectedOptions[0] ? countryEl.selectedOptions[0].text.split('(')[0].trim() : 'United States';
+  const industryDomain = (industryEl ? industryEl.value : '').trim() || 'General Tech';
+  const customerType = (customerEl ? customerEl.value : '').trim() || 'B2B/B2C';
+  const question = (questionEl ? questionEl.value : '').trim();
+  const consentGiven = Boolean(consentEl && consentEl.checked);
+  const bypassCache = Boolean(bypassEl && bypassEl.checked);
+
+  if (!question) {
+    alert('Please enter a market-size or empirical research question.');
+    if (questionEl) questionEl.focus();
+    return;
+  }
+
+  if (btnRun) {
+    btnRun.disabled = true;
+    btnRun.innerHTML = '<span>⏳</span><span>Searching Live Web Index...</span>';
+  }
+  if (spinner) spinner.classList.remove('hidden');
+  if (resultsContainer) resultsContainer.classList.add('hidden');
+
+  try {
+    if (!window.foundrySupabase || !window.foundrySupabase.isConfigured()) {
+      throw new Error('Supabase client is not connected. Please connect Supabase in Cloud Settings to access live search grounding.');
+    }
+
+    const startupDesc = consentGiven && state.profile ? state.profile.desc : '';
+
+    const data = await window.foundrySupabase.performGroundedMarketResearch({
+      countryCode,
+      countryName,
+      industryDomain,
+      customerType,
+      question,
+      consentGiven,
+      bypassCache,
+      startupDesc
+    });
+
+    if (spinner) spinner.classList.add('hidden');
+    renderGroundedResearchResult(data);
+    updateGroundedQuotaBadge();
+    loadPastGroundedResearchReports();
+  } catch (err) {
+    if (spinner) spinner.classList.add('hidden');
+    if (resultsContainer) {
+      resultsContainer.classList.remove('hidden');
+      resultsContainer.innerHTML = `
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 20px; color: #fca5a5;">
+          <h4 style="color: #f87171; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+            <span>❌</span> Market Research Grounding Notice
+          </h4>
+          <p style="font-size: 0.84rem; line-height: 1.5; margin: 0 0 12px 0;">${escapeHtml(err.message)}</p>
+          <div style="font-size: 0.74rem; color: #cbd5e1; background: rgba(0,0,0,0.3); border-radius: 4px; padding: 10px;">
+            <strong>Setup Checklist:</strong>
+            <ul style="margin: 6px 0 0 16px; padding: 0;">
+              <li>Ensure <code>GEMINI_API_KEY</code> is set in your Supabase project secrets: <code>supabase secrets set GEMINI_API_KEY=your_key</code></li>
+              <li>Free-tier quota limit is 10 searches per day. This safe stop prevents any accidental billing.</li>
+              <li>The target model is <code>gemini-2.5-flash</code> (Google Search Grounding requires full flash, not flash-lite).</li>
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+  } finally {
+    if (btnRun) {
+      btnRun.disabled = false;
+      btnRun.innerHTML = '<span>🔍</span><span>Run Live Grounded Research</span>';
+    }
+  }
+}
+
+function renderGroundedResearchResult(data) {
+  const container = document.getElementById('groundedResearchResultsContainer');
+  if (!container) return;
+
+  const countryCode = data.countryCode || 'USA';
+  const countryName = data.countryName || 'Target Market';
+  const industryDomain = data.industryDomain || 'Industry';
+  const customerType = data.customerType || 'B2B/B2C';
+  const question = data.question || '';
+  const modelUsed = data.modelUsed || 'gemini-2.5-flash';
+  const synthesisMarkdown = data.synthesisMarkdown || '';
+  const structuredRecords = data.structuredRecords || [];
+  const tamSamSom = data.tamSamSom || null;
+  const disagreementsOrGaps = data.disagreementsOrGaps || null;
+  const citations = data.citations || [];
+  const isCached = Boolean(data.isCached);
+  const lastUpdatedAt = data.lastUpdatedAt || new Date().toISOString();
+  const dateStr = new Date(lastUpdatedAt).toLocaleString();
+
+  // Structured metrics table rows
+  let recordsHtml = '';
+  if (structuredRecords && structuredRecords.length > 0) {
+    recordsHtml = `
+      <div style="margin-top: 20px; margin-bottom: 20px;">
+        <h4 style="color: #38bdf8; font-size: 0.88rem; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.04em;">
+          📊 Structured Market Metrics &amp; Provenance Record
+        </h4>
+        <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem; text-align: left;">
+            <thead>
+              <tr style="background: rgba(14, 165, 233, 0.12); color: #f8fafc; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <th style="padding: 8px 10px;">Metric</th>
+                <th style="padding: 8px 10px;">Value &amp; Currency</th>
+                <th style="padding: 8px 10px;">Period &amp; Geo</th>
+                <th style="padding: 8px 10px;">Method &amp; Definition</th>
+                <th style="padding: 8px 10px;">Publisher &amp; Quality</th>
+                <th style="padding: 8px 10px;">Limitations</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${structuredRecords.map(r => `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); color: #cbd5e1;">
+                  <td style="padding: 8px 10px; font-weight: 600; color: #f8fafc;">${escapeHtml(r.metric || 'N/A')}</td>
+                  <td style="padding: 8px 10px; color: #38bdf8; font-family: monospace; font-weight: 700;">
+                    ${escapeHtml(r.value !== null && r.value !== undefined ? String(r.value) : 'Unavailable')} ${escapeHtml(r.currency && r.currency !== 'N/A' ? r.currency : '')}
+                  </td>
+                  <td style="padding: 8px 10px;">${escapeHtml(r.period || '')} • ${escapeHtml(r.geography || countryCode)}</td>
+                  <td style="padding: 8px 10px; max-width: 220px;">
+                    <div>${escapeHtml(r.definition || '')}</div>
+                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;"><em>Method: ${escapeHtml(r.method || 'Not disclosed')}</em></div>
+                  </td>
+                  <td style="padding: 8px 10px;">
+                    ${(r.source_citations || []).map(sc => `
+                      <div><strong>${escapeHtml(sc.publisher || 'Source')}</strong></div>
+                    `).join('')}
+                    <span style="font-size: 0.68rem; color: #38bdf8;">${escapeHtml(r.confidence_quality_notes || '')}</span>
+                  </td>
+                  <td style="padding: 8px 10px; font-size: 0.72rem; color: #94a3b8; max-width: 180px;">${escapeHtml(r.limitations || 'None noted')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  // TAM / SAM / SOM breakdown card
+  let tamSamSomHtml = '';
+  if (tamSamSom && (tamSamSom.tam || tamSamSom.sam || tamSamSom.som)) {
+    tamSamSomHtml = `
+      <div style="background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 16px; margin: 18px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h4 style="color: #38bdf8; margin: 0; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+            <span>🎯</span> Market Size Breakdown (TAM / SAM / SOM)
+          </h4>
+          <span style="font-size: 0.7rem; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;">Formulas &amp; Stated Assumptions</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+          ${tamSamSom.tam ? `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 12px;">
+              <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">TAM (Total Addressable)</span>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #f8fafc; margin: 4px 0;">${escapeHtml(tamSamSom.tam.value || 'Unavailable')} ${escapeHtml(tamSamSom.tam.currency || '')}</div>
+              <p style="font-size: 0.73rem; color: #cbd5e1; margin: 0 0 6px 0;">${escapeHtml(tamSamSom.tam.definition || 'Entire market category demand')}</p>
+              <div style="font-size: 0.68rem; color: #94a3b8; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;"><strong>Calculation:</strong> ${escapeHtml(tamSamSom.tam.source_or_calculation || 'Source estimate')}</div>
+            </div>
+          ` : ''}
+          ${tamSamSom.sam ? `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 12px;">
+              <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">SAM (Serviceable Available)</span>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin: 4px 0;">${escapeHtml(tamSamSom.sam.value || 'Unavailable')} ${escapeHtml(tamSamSom.sam.currency || '')}</div>
+              <p style="font-size: 0.73rem; color: #cbd5e1; margin: 0 0 6px 0;">${escapeHtml(tamSamSom.sam.definition || 'Segment reachable by target model')}</p>
+              <div style="font-size: 0.68rem; color: #94a3b8; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;"><strong>Calculation:</strong> ${escapeHtml(tamSamSom.sam.source_or_calculation || 'Segment filter')}</div>
+            </div>
+          ` : ''}
+          ${tamSamSom.som ? `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 12px;">
+              <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">SOM (Serviceable Obtainable)</span>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #34d399; margin: 4px 0;">${escapeHtml(tamSamSom.som.value || 'Unavailable')} ${escapeHtml(tamSamSom.som.currency || '')}</div>
+              <p style="font-size: 0.73rem; color: #cbd5e1; margin: 0 0 6px 0;">${escapeHtml(tamSamSom.som.definition || 'Target near-term captured share')}</p>
+              <div style="font-size: 0.68rem; color: #94a3b8; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;"><strong>Calculation:</strong> ${escapeHtml(tamSamSom.som.source_or_calculation || 'Channel capacity')}</div>
+            </div>
+          ` : ''}
+        </div>
+        <p style="font-size: 0.7rem; color: #94a3b8; margin: 10px 0 0 0; font-style: italic;">
+          * Note: Foundry strictly distinguishes verified third-party published statistics from hypothetical calculations. We do not invent figures when reliable sources do not support one.
+        </p>
+      </div>
+    `;
+  }
+
+  // Citations list
+  let citationsHtml = '';
+  if (citations && citations.length > 0) {
+    citationsHtml = `
+      <div style="margin: 20px 0;">
+        <h4 style="color: #38bdf8; font-size: 0.88rem; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.04em;">
+          🔗 Verified Source Citations &amp; Clickable References (${citations.length})
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
+          ${citations.map(c => `
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">
+                    ${escapeHtml(c.publisher || 'Web Source')}
+                  </span>
+                  ${c.referenceYear ? `<span style="font-size: 0.68rem; color: #94a3b8;">Ref: ${c.referenceYear}</span>` : ''}
+                </div>
+                <div style="font-size: 0.8rem; color: #f8fafc; font-weight: 600; line-height: 1.35; margin-bottom: 6px;">
+                  ${escapeHtml(c.title || 'Source Document')}
+                </div>
+              </div>
+              <a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; font-size: 0.74rem; text-decoration: none; word-break: break-all; display: inline-flex; align-items: center; gap: 4px;">
+                <span>Visit Source URL</span>
+                <span>↗</span>
+              </a>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Disagreements & evidence gaps
+  let disagreementsHtml = '';
+  if (disagreementsOrGaps) {
+    disagreementsHtml = `
+      <div style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 12px 16px; margin: 18px 0; font-size: 0.78rem; color: #fde68a;">
+        <strong style="display: block; margin-bottom: 4px; font-size: 0.82rem;">⚠️ Source Conflicts, Missing Data, or Disagreements Noted:</strong>
+        <p style="margin: 0; line-height: 1.45; color: #fef3c7;">${escapeHtml(disagreementsOrGaps)}</p>
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="city-panel" style="background: #06150f; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 24px; position: relative;">
+      
+      <!-- Report Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px; margin-bottom: 18px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #0284c7; color: white; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+              ${isCached ? '⚡ 24h Cached Report' : '🌐 Live Web Grounded'}
+            </span>
+            <span style="font-size: 0.74rem; color: #94a3b8;">Model: ${escapeHtml(modelUsed)}</span>
+            <span style="font-size: 0.74rem; color: #94a3b8;">•</span>
+            <span style="font-size: 0.74rem; color: #94a3b8;">Verified: ${escapeHtml(dateStr)}</span>
+          </div>
+          <h3 style="color: #f8fafc; font-size: 1.15rem; margin: 0 0 4px 0;">
+            ${escapeHtml(countryName)}: ${escapeHtml(industryDomain)}
+          </h3>
+          <div style="font-size: 0.82rem; color: #cbd5e1; font-style: italic;">
+            Q: "${escapeHtml(question)}"
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-outline-cyan btn-sm" id="btnCopyGroundedReport">
+            📋 Copy Markdown
+          </button>
+          <button type="button" class="btn btn-lime btn-sm" id="btnSaveToFieldEvidence">
+            🧪 Save to Real Evidence
+          </button>
+        </div>
+      </div>
+
+      <!-- Markdown Synthesis -->
+      <div class="ai-report-prose" style="font-size: 0.84rem; line-height: 1.6; color: #cbd5e1;">
+        ${(typeof marked !== 'undefined' && marked.parse) ? marked.parse(synthesisMarkdown) : escapeHtml(synthesisMarkdown).replace(/\n/g, '<br>')}
+      </div>
+
+      ${tamSamSomHtml}
+      ${recordsHtml}
+      ${disagreementsHtml}
+      ${citationsHtml}
+
+      <!-- Footer Disclaimer -->
+      <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; font-size: 0.7rem; color: #64748b; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span>🔒 Saved privately in founder's workspace. Never promoted to shared global catalog.</span>
+        <span>Search Grounding Provider: Google Gemini 2.5 Flash</span>
+      </div>
+
+    </div>
+  `;
+
+  container.classList.remove('hidden');
+
+  // Copy button handler
+  const btnCopy = document.getElementById('btnCopyGroundedReport');
+  if (btnCopy) {
+    btnCopy.addEventListener('click', () => {
+      const fullMarkdown = `# Live Cited Market Research: ${countryName} (${industryDomain})
+Verified: ${dateStr}
+Question: ${question}
+
+${synthesisMarkdown}
+
+## Citations
+${citations.map(c => `- [${c.publisher}: ${c.title}](${c.url})`).join('\n')}
+`;
+      navigator.clipboard.writeText(fullMarkdown).then(() => {
+        btnCopy.textContent = '✓ Copied!';
+        setTimeout(() => { btnCopy.textContent = '📋 Copy Markdown'; }, 2000);
+      }).catch(() => {});
+    });
+  }
+
+  // Save to Real Evidence button handler
+  const btnSave = document.getElementById('btnSaveToFieldEvidence');
+  if (btnSave) {
+    btnSave.addEventListener('click', async () => {
+      if (!window.foundrySupabase || !window.foundrySupabase.isAuthenticated()) {
+        alert('Please sign in to save this research report to your private empirical field research log.');
+        return;
+      }
+      try {
+        btnSave.disabled = true;
+        btnSave.textContent = 'Saving...';
+        await window.foundrySupabase.recordRealEvidence({
+          title: `Market Research: ${industryDomain} in ${countryName}`,
+          researchMethod: 'industry_report',
+          evidenceType: 'secondary_research',
+          countryCode: countryCode,
+          sampleSize: 1,
+          keyFindings: question + ' — ' + (structuredRecords[0] ? structuredRecords[0].definition : 'Sourced research report.'),
+          qualitativeNotes: synthesisMarkdown.slice(0, 1000),
+          privacyStatus: 'strictly_private',
+          sourcesUsed: citations.map(c => c.url)
+        });
+        btnSave.textContent = '✓ Saved to Real Evidence';
+      } catch (err) {
+        btnSave.disabled = false;
+        btnSave.textContent = 'Save to Real Evidence';
+        alert('Could not save to Real Evidence: ' + err.message);
+      }
+    });
+  }
+}
+
+async function loadPastGroundedResearchReports() {
+  const container = document.getElementById('pastResearchReportsList');
+  if (!container) return;
+
+  if (!window.foundrySupabase || !window.foundrySupabase.isAuthenticated()) {
+    container.innerHTML = `
+      <div style="color: #94a3b8; font-size: 0.8rem; padding: 14px; background: rgba(0,0,0,0.2); border-radius: 6px; text-align: center;">
+        Sign in to your founder account to save and access your past live market research reports.
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const reports = await window.foundrySupabase.loadFounderGroundedReports(8);
+    if (!reports || reports.length === 0) {
+      container.innerHTML = `
+        <div style="color: #94a3b8; font-size: 0.8rem; padding: 14px; background: rgba(0,0,0,0.2); border-radius: 6px; text-align: center;">
+          No past research reports saved yet. Run your first query above to build your private research dossier.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = reports.map(r => {
+      const dateStr = new Date(r.created_at).toLocaleDateString();
+      const recordsCount = Array.isArray(r.structured_records) ? r.structured_records.length : 0;
+      const citationsCount = Array.isArray(r.citations) ? r.citations.length : 0;
+      return `
+        <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <span style="font-weight: 700; color: #38bdf8; font-size: 0.82rem;">${escapeHtml(r.country_name)} (${escapeHtml(r.country_code)})</span>
+              <span style="color: #64748b; font-size: 0.72rem;">•</span>
+              <span style="color: #cbd5e1; font-size: 0.78rem;">${escapeHtml(r.industry_domain)}</span>
+              <span style="color: #64748b; font-size: 0.72rem;">•</span>
+              <span style="color: #94a3b8; font-size: 0.72rem;">${escapeHtml(dateStr)}</span>
+            </div>
+            <div style="font-size: 0.76rem; color: #94a3b8; max-width: 600px;">
+              Q: "${escapeHtml(r.research_question)}"
+            </div>
+            <div style="font-size: 0.68rem; color: #38bdf8; margin-top: 4px;">
+              ${recordsCount} structured metric(s) • ${citationsCount} verified citation(s)
+            </div>
+          </div>
+          <button type="button" class="btn btn-outline-cyan btn-sm btn-view-past-report" data-report-id="${r.id}">
+            View Report
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    // Attach click listeners to past report buttons
+    container.querySelectorAll('.btn-view-past-report').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-report-id');
+        const report = reports.find(r => r.id === id);
+        if (report) {
+          renderGroundedResearchResult({
+            countryCode: report.country_code,
+            countryName: report.country_name,
+            industryDomain: report.industry_domain,
+            customerType: report.customer_type,
+            question: report.research_question,
+            modelUsed: report.model_used,
+            synthesisMarkdown: report.synthesis_markdown,
+            structuredRecords: report.structured_records,
+            tamSamSom: report.tam_sam_som,
+            disagreementsOrGaps: report.disagreements_or_gaps,
+            citations: report.citations,
+            isCached: true,
+            lastUpdatedAt: report.created_at
+          });
+          window.scrollTo({ top: document.getElementById('groundedResearchResultsContainer').offsetTop - 60, behavior: 'smooth' });
+        }
+      });
+    });
+  } catch (err) {
+    console.warn('Error loading past reports:', err);
   }
 }
 
