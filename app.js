@@ -2464,6 +2464,37 @@ function finalizeLaunchRun(targetGroup, countryCode, countryName, industryDomain
     body: `Simulated virtual launch in ${countryName} generated ${totalImpressions.toLocaleString()} reach, ${totalSignups.toLocaleString()} signups, and ${totalPaidUsers.toLocaleString()} paid customers (${netProfit >= 0 ? '+' : ''}$${netProfit.toLocaleString()} net outcome).`
   });
 
+  // Save to Supabase backend if authenticated
+  if (window.foundrySupabase && window.foundrySupabase.isAuthenticated()) {
+    try {
+      const simEvents = reports.map(r => ({
+        district: 'marketplace',
+        event_type: 'daily_cohort_step',
+        title: `Day ${r.day}: ${r.bottleneckStep ? r.bottleneckStep.name : 'Simulated Market'}`,
+        body: `${r.visits} visitors entered, ${r.signups} signed up, ${r.paidUsers} paid conversions ($${r.dailyRevenue} rev). Top bottleneck: ${r.bottleneckStep ? r.bottleneckStep.name : 'None'} (-${(r.bottleneckStep?.dropRate * 100 || 0).toFixed(0)}%).`,
+        metrics: {
+          day: r.day,
+          visits: r.visits,
+          signups: r.signups,
+          activations: r.activations,
+          coreCompletions: r.coreCompletions,
+          paidUsers: r.paidUsers,
+          returningUsers: r.returningUsers,
+          dau: r.dau,
+          revenue: r.dailyRevenue
+        }
+      }));
+
+      window.foundrySupabase.recordSimulationRun({
+        run: runRecord,
+        events: simEvents,
+        evidenceList: []
+      }).catch(err => console.warn('Supabase recordSimulationRun error:', err));
+    } catch (err) {
+      console.warn('Supabase sync error in finalizeLaunchRun:', err);
+    }
+  }
+
   renderHistoryTable();
   populateRunComparisonDropdowns();
 }
@@ -7079,6 +7110,12 @@ async function handleUserSignedIn() {
     if (history && history.length > 0) {
       state.history = history;
       saveState(STORAGE_HISTORY, state.history);
+      const multiDayRuns = history.filter(h => h.dailyReports && h.dailyReports.length > 0);
+      if (multiDayRuns.length > 0) {
+        state.launchRuns = multiDayRuns;
+        saveState(STORAGE_LAUNCH_RUNS, state.launchRuns);
+        populateRunComparisonDropdowns();
+      }
     }
 
     // 6. Real Market Evidence
