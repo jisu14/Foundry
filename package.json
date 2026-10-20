@@ -1,0 +1,14 @@
+{
+  "name": "foundry-virtual-startup-world",
+  "version": "2.2.0",
+  "description": "Foundry: Product-led virtual startup market simulator with day-by-day cohort acceleration and Supabase cloud sync.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  }
+}
