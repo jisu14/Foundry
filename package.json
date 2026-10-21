@@ -1,0 +1,27 @@
+{
+  "name": "primary",
+  "version": "1.0.0",
+  "description": "A client-side virtual startup environment where founders define their own venture, create custom customer segments, run simulated marketing campaigns, and observe simulated outcomes without pre-filled sample data.",
+  "main": "app.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jisu14/Foundry.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jisu14/Foundry/issues"
+  },
+  "homepage": "https://github.com/jisu14/Foundry#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
