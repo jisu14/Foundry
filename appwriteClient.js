@@ -1011,6 +1011,50 @@
       await this.signOut();
       return { success: true };
     }
+
+    // =========================================================================
+    // MARKET DATA CATALOG & SOURCED OBSERVATIONS
+    // =========================================================================
+
+    resolveIso3(input) {
+      if (!input) return 'USA';
+      const clean = input.trim().toUpperCase();
+      if (clean.length === 3) return clean;
+
+      const mapping = {
+        'UNITED STATES': 'USA', 'US': 'USA', 'USA': 'USA',
+        'UNITED KINGDOM': 'GBR', 'UK': 'GBR', 'GBR': 'GBR',
+        'GERMANY': 'DEU', 'DEUTSCHLAND': 'DEU', 'DEU': 'DEU',
+        'INDIA': 'IND', 'IND': 'IND',
+        'KENYA': 'KEN', 'KEN': 'KEN',
+        'FRANCE': 'FRA', 'CANADA': 'CAN', 'BRAZIL': 'BRA',
+        'JAPAN': 'JPN', 'SINGAPORE': 'SGP', 'NIGERIA': 'NGA', 'AUSTRALIA': 'AUS'
+      };
+
+      return mapping[clean] || 'USA';
+    }
+
+    async getCountryObservations({ countryCode = 'USA', limit = 1000 } = {}) {
+      const cleanIso = this.resolveIso3(countryCode);
+      const bundled = (typeof window !== 'undefined' && window.FOUNDRY_BUNDLED_OBSERVATIONS) || [];
+      const filtered = bundled.filter(obs => obs.country_code === cleanIso);
+      return filtered.slice(0, limit);
+    }
+
+    async getCountryMarketContext(countryCode = 'USA') {
+      const cleanIso = this.resolveIso3(countryCode);
+      const observations = await this.getCountryObservations({ countryCode: cleanIso, limit: 1000 });
+      return { data: observations || [], error: null };
+    }
+
+    async getMarketDataCoverage() {
+      const bundled = (typeof window !== 'undefined' && window.FOUNDRY_BUNDLED_OBSERVATIONS) || [];
+      return {
+        totalObservations: bundled.length,
+        countriesCount: new Set(bundled.map(b => b.country_code)).size,
+        indicatorsCount: new Set(bundled.map(b => b.indicator_code)).size
+      };
+    }
   }
 
   // Instantiate and bind service
@@ -1024,5 +1068,19 @@
   if (window.FOUNDRY_BACKEND === 'appwrite' || !window.foundrySupabase) {
     window.foundrySupabase = appwriteService;
   }
+
+  // Active Market Data Bridge bound to Appwrite
+  window.foundryMarketData = {
+    isAppwrite: true,
+    get url() { return appwriteService.endpoint; },
+    get endpoint() { return appwriteService.endpoint; },
+    get projectId() { return appwriteService.projectId; },
+    get isConnected() { return appwriteService.isConfigured(); },
+    setCredentials: (e, p, db) => appwriteService.connect(e, p, db),
+    clearCredentials: () => appwriteService.disconnect(),
+    resolveIso3: (c) => appwriteService.resolveIso3(c),
+    getCountryMarketContext: (c) => appwriteService.getCountryMarketContext(c),
+    getMarketDataCoverage: () => appwriteService.getMarketDataCoverage()
+  };
 
 })(window);

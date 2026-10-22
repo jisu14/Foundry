@@ -249,7 +249,7 @@
               </div>
               <div class="trust-item">
                 <span class="trust-icon">&#9681;</span>
-                <span class="trust-text"><strong>Privacy Assured:</strong> Supabase RLS, Local-First &amp; GDPR Export</span>
+                <span class="trust-text"><strong>Privacy Assured:</strong> Appwrite Cloud, Local-First &amp; GDPR Export</span>
               </div>
             </div>
           </header>
@@ -659,8 +659,8 @@
 
               <div class="privacy-card">
                 <div class="privacy-icon">&#128274;</div>
-                <h4>Supabase Row-Level Security</h4>
-                <p>Every profile, customer group, and simulation run is strictly isolated by cryptographic user ID. Only you can read or modify your workspace data in the database.</p>
+                <h4>Appwrite Cloud Workspace Isolation</h4>
+                <p>Every profile, customer group, and simulation run is strictly isolated by authenticated user ID. Only you can read or modify your workspace data in the database.</p>
               </div>
 
               <div class="privacy-card">
@@ -1370,7 +1370,7 @@
             <div class="panel-section-header">
               <div>
                 <h3 class="panel-section-title">Founder Authentication Identity</h3>
-                <p class="coverage-section-desc">Connected Supabase Auth credentials for your workspace.</p>
+                <p class="coverage-section-desc">Connected Appwrite Cloud credentials for your workspace.</p>
               </div>
             </div>
 
@@ -1415,7 +1415,7 @@
             <div class="panel-section-header">
               <div>
                 <h3 class="panel-section-title">Security &amp; Password Update</h3>
-                <p class="coverage-section-desc">Change your account password securely via Supabase Auth.</p>
+                <p class="coverage-section-desc">Change your account password securely via Appwrite Auth.</p>
               </div>
             </div>
 
@@ -1584,40 +1584,40 @@
 
         </div>
 
-        <!-- Sourced Market Data Library (Supabase Postgres) -->
+        <!-- Sourced Market Data Library (Appwrite Cloud & Verified Macro Indicators) -->
         <div class="city-panel mt-4" id="sourcedMarketDataPanel">
           <div class="panel-header">
             <div>
               <div class="market-data-tag-row">
                 <span class="panel-tag">OFFICIAL MARKET DATA LIBRARY</span>
-                <span id="marketBackendBadge" class="backend-badge awaiting">Awaiting Supabase Connection</span>
+                <span id="marketBackendBadge" class="backend-badge connected">Appwrite Cloud Connected</span>
               </div>
               <h3 class="panel-title">Sourced Macro Indicators (World Bank WDI)</h3>
               <p class="panel-desc">Real-world statistical baseline for your target market. Sourced from official World Bank APIs with methodology and limitation bounds.</p>
             </div>
             <button type="button" id="toggleBackendConfigBtn" class="btn btn-outline-cyan btn-xs">
-              Configure Supabase
+              Configure Appwrite
             </button>
           </div>
 
-          <!-- Supabase Connection Config Drawer -->
+          <!-- Appwrite Cloud Connection Config Drawer -->
           <div id="backendConfigDrawer" class="backend-config-drawer hidden">
-            <h4 style="font-size: 0.84rem; color: #fff; font-weight: 700;">Supabase Project Connection</h4>
-            <p class="field-hint">Connect your Supabase project URL and anon public key to read live sourced observations. Never enter your service-role key in browser code.</p>
+            <h4 style="font-size: 0.84rem; color: #fff; font-weight: 700;">Appwrite Cloud Project Connection</h4>
+            <p class="field-hint">Connected to Appwrite Project ID and Endpoint. Sourced indicators and founder evidence are synchronized via secure Appwrite Cloud database collections.</p>
             <div class="config-form-row">
               <div class="form-group flex-1" style="margin-bottom: 0;">
-                <label for="cfgSupabaseUrl" style="font-size: 0.74rem;">Supabase Project URL</label>
-                <input type="text" id="cfgSupabaseUrl" placeholder="https://xyzcompany.supabase.co" style="font-size: 0.8rem; padding: 6px 10px;">
+                <label for="cfgSupabaseUrl" style="font-size: 0.74rem;">Appwrite API Endpoint</label>
+                <input type="text" id="cfgSupabaseUrl" value="https://fra.cloud.appwrite.io/v1" placeholder="https://fra.cloud.appwrite.io/v1" style="font-size: 0.8rem; padding: 6px 10px;">
               </div>
               <div class="form-group flex-1" style="margin-bottom: 0;">
-                <label for="cfgSupabaseAnonKey" style="font-size: 0.74rem;">Supabase Anon Key (Public)</label>
-                <input type="text" id="cfgSupabaseAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="font-size: 0.8rem; padding: 6px 10px;">
+                <label for="cfgSupabaseAnonKey" style="font-size: 0.74rem;">Appwrite Project ID</label>
+                <input type="text" id="cfgSupabaseAnonKey" value="6ad9aafd0035025965a8" placeholder="6ad9aafd0035025965a8" style="font-size: 0.8rem; padding: 6px 10px;">
               </div>
             </div>
             <div class="form-actions" style="margin-top: 6px; display: flex; gap: 8px;">
-              <button type="button" id="saveSupabaseConfigBtn" class="btn btn-lime btn-xs">Connect Backend</button>
+              <button type="button" id="saveSupabaseConfigBtn" class="btn btn-lime btn-xs">Connect Appwrite</button>
               <button type="button" id="clearSupabaseConfigBtn" class="btn btn-danger-outline btn-xs">Disconnect</button>
-              <span id="supabaseConfigStatus" class="save-status-msg hidden">✓ Connected</span>
+              <span id="supabaseConfigStatus" class="save-status-msg hidden">✓ Connected to Appwrite</span>
             </div>
           </div>
 

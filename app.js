@@ -2193,8 +2193,8 @@ function initMarketForms() {
   }
 
   if (urlInput && keyInput && window.foundryMarketData) {
-    if (window.foundryMarketData.url) urlInput.value = window.foundryMarketData.url;
-    if (window.foundryMarketData.anonKey) keyInput.value = window.foundryMarketData.anonKey;
+    urlInput.value = window.foundryMarketData.endpoint || window.foundryMarketData.url || 'https://fra.cloud.appwrite.io/v1';
+    keyInput.value = window.foundryMarketData.projectId || window.foundryMarketData.anonKey || '6ad9aafd0035025965a8';
   }
 
   if (saveConfigBtn && urlInput && keyInput && window.foundryMarketData) {
@@ -2202,12 +2202,12 @@ function initMarketForms() {
       const u = urlInput.value.trim();
       const k = keyInput.value.trim();
       if (!u || !k) {
-        alert('Please provide both the Supabase project URL and anon public key.');
+        alert('Please provide the Appwrite API endpoint and Project ID.');
         return;
       }
       window.foundryMarketData.setCredentials(u, k);
       if (configStatus) {
-        configStatus.textContent = '✓ Connected to Supabase';
+        configStatus.textContent = '✓ Connected to Appwrite';
         configStatus.classList.remove('hidden');
         setTimeout(() => configStatus.classList.add('hidden'), 2500);
       }
@@ -4755,10 +4755,10 @@ async function renderSourcedMarketData() {
   if (badge) {
     if (isConnected) {
       badge.className = 'backend-badge connected';
-      badge.textContent = 'Supabase Connected';
+      badge.textContent = 'Appwrite Cloud Connected';
     } else {
       badge.className = 'backend-badge awaiting';
-      badge.textContent = 'Awaiting Supabase Connection';
+      badge.textContent = 'Awaiting Appwrite Connection';
     }
   }
 
@@ -4810,7 +4810,7 @@ async function renderSourcedMarketData() {
     } else {
       valueDisplayHtml = `
         <div class="indicator-val-missing" style="color: #94a3b8;">
-          Registered Catalog Indicator • Connect Supabase backend to load verified ${escapeHtml(countryDisplayName)} observations.
+          Registered Catalog Indicator • Connect Appwrite backend to load verified ${escapeHtml(countryDisplayName)} observations.
         </div>
       `;
       refYearStr = `Target Market: ${escapeHtml(countryDisplayName)} (${iso3}) • Unit: ${escapeHtml(ind.unit)}`;
@@ -9692,7 +9692,7 @@ function updateCloudStatusUI() {
     }
   } else if (isConn) {
     dot.className = 'cloud-status-dot connected';
-    label.textContent = 'Supabase Connected';
+    label.textContent = 'Appwrite Connected';
     actionsContainer.innerHTML = `
       <button class="btn btn-lime-outline btn-xs btn-full" id="btnOpenAuthModal" type="button">
         Sign In to Sync
