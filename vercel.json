@@ -2,6 +2,9 @@
   "version": 2,
   "name": "foundry-virtual-startup-world",
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

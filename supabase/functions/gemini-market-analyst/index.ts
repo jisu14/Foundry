@@ -774,14 +774,34 @@ async function handleLiveGroundedResearch({
     ? `\n- Founder Venture Context (Authorized by user): "${String(body.startupDesc).slice(0, 400)}"`
     : "\n- Founder Venture Context: [Withheld by founder privacy policy - Data Minimization]";
 
+  // Format relevant stored historical observation series from Foundry database if supplied
+  let historicalObservationsSection = "";
+  if (Array.isArray(body.historicalObservations) && body.historicalObservations.length > 0) {
+    const lines = body.historicalObservations.slice(0, 40).map((obs: any) => {
+      const code = obs.indicator_code || obs.code || "";
+      const name = obs.indicator_name || obs.name || code;
+      const yr = obs.year || "Latest";
+      const val = obs.value !== null && obs.value !== undefined ? obs.value : "Not reported";
+      const unit = obs.unit || "";
+      const src = obs.source_name || obs.source_id || "Official Statistical Body";
+      return `  * ${name} [${code}] (${yr}): ${val} ${unit} | Source: ${src}`;
+    });
+    historicalObservationsSection = `\n\nFOUNDRY DATABASE STORED HISTORICAL OBSERVATIONS (VERIFIED MACRO SERIES):\n` +
+      lines.join("\n") +
+      `\n\nTASK FOR STORED HISTORICAL SERIES:
+- Analyze multi-year growth trajectories, secular trends, and structural inflection points evident in these verified observations.
+- Connect these verified historical baselines with current developments and real-time news found via Google Search.
+- Explicitly state observation reference years (e.g. 2018–2023) when quoting these metrics.`;
+  }
+
   const promptText = `You are an elite, objective Market Intelligence Analyst.
-Analyze live market size and empirical data using live Google Search grounding.
+Analyze live market size, historical trends, and empirical data using live Google Search grounding.
 
 RESEARCH TARGET:
 - Sovereign Country / Region: ${countryName} (${countryCode})
 - Industry & Product Domain: ${industryDomain}
 - Customer Target Type: ${customerType}
-- Founder's Market Question: "${question}"${startupContext}
+- Founder's Market Question: "${question}"${startupContext}${historicalObservationsSection}
 
 RESEARCH RULES & SOURCING METHODOLOGY:
 1. USE GOOGLE SEARCH GROUNDING: Do not rely solely on model memory. Verify all market sizes, growth rates, and customer statistics against live web search evidence.
@@ -793,15 +813,22 @@ RESEARCH RULES & SOURCING METHODOLOGY:
 3. CITATION REQUIREMENTS:
    - For every key claim and numeric metric, identify: publisher, publication/article title, URL, publication date (if available), and reference year.
    - Do NOT copy long verbatim paragraphs from source pages. Provide concise, synthesized insights.
-4. TAM / SAM / SOM DEFINITIONS:
+4. EVIDENCE TYPE SEPARATION:
+   - Strictly distinguish:
+     a) Observed Data: Official historical statistical records (e.g. World Bank, ITU, Census).
+     b) Third-Party Estimates: Market research sizing reports (e.g. Gartner, Statista, IDC).
+     c) Founder Assumptions: Contextual heuristics provided by the startup.
+     d) AI-Generated Interpretation / Projections: Analytical inferences and scenario modeling.
+   - Analyze drivers and market growth over time ONLY when the available evidence supports them.
+5. TAM / SAM / SOM DEFINITIONS:
    - If discussing market size, clearly differentiate:
      * TAM (Total Addressable Market): Total annual demand for this category in the geography.
      * SAM (Serviceable Available Market): Portion of TAM reachable by the specific product segment/model.
      * SOM (Serviceable Obtainable Market): Realistic share captureable in the near term (1-3 years).
    - Show the explicit formula, assumptions, or published source for each.
    - CRITICAL: DO NOT invent or extrapolate an exact multi-million/billion dollar figure if no reliable source exists. If reliable data is missing, explicitly state: "Authoritative market size unavailable for this niche segment."
-5. DISAGREEMENTS & CONTRADICTIONS:
-   - If sources report conflicting numbers (e.g. one report says $2B and another says $5B), explicitly document both figures and explain the variance (different definitions, years, or methodologies).
+6. DISAGREEMENTS & CONTRADICTIONS:
+   - If sources report conflicting numbers (e.g. one report says $2B and another says $5B), explicitly document both figures and explain the variance (different definitions, years, or methodologies). If evidence is missing, state it directly instead of inventing numbers.
 
 OUTPUT FORMAT:
 Return a structured Markdown report followed by a JSON block enclosed in \`\`\`json ... \`\`\`.

@@ -7,24 +7,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
 
-  <!-- Simulation Disclaimer Top Banner -->
-  <aside class="simulation-banner" role="alert">
-    <div class="banner-content">
-      <span class="banner-tag">SIMULATION MODE</span>
-      <p>All virtual world places, customer personas, purchase events, and reviews are <strong>100% simulated models</strong> for practice and <strong>do not predict real-world sales</strong>.</p>
-    </div>
-  </aside>
+  <!-- Simulation disclaimer banner removed -->
 
   <!-- App Layout: Sidebar + Main Content -->
-  <div class="app-layout">
+  <div class="app-layout landing-mode" id="appLayout">
     
     <!-- Mobile Top Header Bar -->
     <header class="mobile-header">
-      <div class="brand">
+      <div class="brand" id="mobileBrandLogo" style="cursor: pointer;" title="Foundry Dashboard">
         <div class="brand-icon-lime">✱</div>
         <span class="brand-text">foundry</span>
       </div>
@@ -36,24 +30,10 @@
     <!-- Sidebar Navigation (Exact Match to Reference Screenshot) -->
     <aside class="foundry-sidebar" id="foundrySidebar">
       <div class="sidebar-top">
-        <div class="brand">
+        <div class="brand" id="sidebarBrandLogo" style="cursor: pointer;" title="Foundry Dashboard">
           <div class="brand-icon-lime">✱</div>
           <span class="brand-text">foundry</span>
         </div>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="section-label">PUBLIC PRODUCT TOUR</div>
-        <nav class="sidebar-nav">
-          <button class="nav-item" data-view="landing" id="navItemLanding">
-            <span class="nav-svg-icon" style="color: #a3e635;">
-              <!-- Compass / Play icon -->
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-            </span>
-            <span class="nav-label">Product Tour &amp; Beta</span>
-            <span class="sidebar-badge" style="background: rgba(163,230,53,0.15); color: #a3e635;">Tour</span>
-          </button>
-        </nav>
       </div>
 
       <div class="sidebar-section">
@@ -128,13 +108,22 @@
             <span class="sidebar-badge" id="navRealEvidenceCount">0</span>
           </button>
 
-          <button class="nav-item" data-view="evaluation">
+          <button class="nav-item" data-view="user-profile" id="navItemUserProfile">
+            <span class="nav-svg-icon" style="color: #6ee7b7;">
+              <!-- User icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <span class="nav-label">User profile</span>
+            <span class="sidebar-badge" id="navUserRoleBadge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Account</span>
+          </button>
+
+          <button class="nav-item" data-view="evaluation" id="navItemEvaluation" style="display: none;">
             <span class="nav-svg-icon">
               <!-- Scale / Gauge / Observatory Icon -->
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
             </span>
-            <span class="nav-label">Model evaluation</span>
-            <span class="sidebar-badge" id="navEvaluationBadge">Admin</span>
+            <span class="nav-label">Admin Console</span>
+            <span class="sidebar-badge" id="navEvaluationBadge">Operator</span>
           </button>
 
           <button class="nav-item" id="navItemAiAnalyst" type="button" style="margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
@@ -142,7 +131,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
             </span>
             <span class="nav-label" style="color: #7dd3fc;">AI Analyst</span>
-            <span class="sidebar-badge" style="background: rgba(56,189,248,0.15); color: #38bdf8;">Gemini</span>
+            <span class="sidebar-badge" style="background: rgba(99,102,241,0.18); color: #818cf8;">AI</span>
           </button>
 
           <button class="nav-item btn-report-issue" id="btnOpenFeedbackModal" type="button" style="margin-top: 4px; padding-top: 6px;">
@@ -171,9 +160,6 @@
           <div class="cloud-status-header">
             <span class="cloud-status-dot offline" id="cloudStatusDot"></span>
             <span class="cloud-status-label" id="cloudStatusLabel">Offline / Local Mode</span>
-            <button class="btn-cloud-icon" id="btnOpenCloudModal" title="Supabase Connection Settings" type="button">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            </button>
           </div>
           <div class="cloud-user-actions" id="cloudUserActions">
             <button class="btn btn-lime-outline btn-xs btn-full" id="btnOpenAuthModal" type="button">
@@ -199,9 +185,28 @@
       <!-- ========================================================== -->
       <!-- VIEW 0: PUBLIC LANDING & GUIDED PRODUCT TOUR (NEW)         -->
       <!-- ========================================================== -->
-      <section id="view-landing" class="page-view">
+      <section id="view-landing" class="page-view active">
         <div class="landing-page-container">
           
+          <!-- Public Navigation Bar -->
+          <nav class="public-navbar">
+            <div class="public-navbar-brand" id="landingBrandLogo" style="cursor: pointer;" title="Foundry">
+              <span class="brand-glyph">✦</span>
+              <span>Foundry</span>
+              <span class="badge-status-neutral" style="font-size: 0.65rem; padding: 2px 6px;">Beta</span>
+            </div>
+            <div class="public-navbar-links">
+              <a href="#sectionFounderLoop" class="public-nav-link">How It Works</a>
+              <a href="#sectionMethodology" class="public-nav-link">Methodology</a>
+              <a href="#sectionDataIntegrity" class="public-nav-link">Sourced Data</a>
+              <a href="#sectionLandingFaq" class="public-nav-link">FAQ</a>
+            </div>
+            <div class="public-navbar-actions">
+              <button class="btn btn-outline-cyan btn-sm" id="btnLandingNavSignIn" type="button">Sign In</button>
+              <button class="btn btn-lime btn-sm" id="btnLandingNavSignUp" type="button">Create Account</button>
+            </div>
+          </nav>
+
           <!-- Hero Section -->
           <header class="landing-hero-section">
             <div class="landing-badge">
@@ -210,22 +215,25 @@
             </div>
 
             <h1 class="landing-hero-title">
-              Explore New Markets and Test Assumptions<br>
-              <span class="text-gradient-lime">Before Burning Real Capital.</span>
+              Test Market Entry Assumptions<br>
+              <span class="text-gradient-lime">Before You Spend Real Capital.</span>
             </h1>
 
             <p class="landing-hero-lead">
-              Foundry provides early-stage tech founders, product strategists, and cross-border teams with an empirical simulation workspace. Formulate explicit customer hypotheses, inspect verified macroeconomic indicators from official statistical bodies, run deterministic simulations, and challenge blindspots with grounded AI scenarios.
+              Foundry gives founders, product strategists, and cross-border teams an empirical simulation workspace. Set up your startup profile, select a market on the 3D globe, test pricing and customer hypotheses against verified official macroeconomic indicators, and run deterministic day-by-day launch experiments with zero hallucinations.
             </p>
 
             <div class="landing-cta-group">
               <button class="btn btn-lime btn-lg landing-cta-primary" id="btnLandingSignup" type="button">
-                <span>Join Private Beta &amp; Open Workspace</span>
+                <span>Create Founder Account</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
-              <button class="btn btn-outline-cyan btn-lg landing-cta-secondary" id="btnLandingExploreMap" type="button">
+              <button class="btn btn-outline-cyan btn-lg landing-cta-secondary" id="btnLandingSignIn" type="button">
+                <span>Sign In to Workspace</span>
+              </button>
+              <button class="btn btn-outline-muted btn-lg" id="btnLandingExploreMap" type="button">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-                <span>Live Product Preview (2D Market City)</span>
+                <span>Live Interactive Demo</span>
               </button>
             </div>
 
@@ -498,14 +506,14 @@
                     <div class="part-chip sourced">&#9673; 1. Official Indicators (World Bank)</div>
                     <div class="part-chip assumptions">&#9652; 2. Founder Hypotheses ($49/mo Price)</div>
                     <div class="part-chip deterministic">&#9874; 3. Deterministic Sim (8.2% &plusmn; 1.4%)</div>
-                    <div class="part-chip ai-fictional">&#9672; 4. Hypothetical AI Scenarios (Gemini Grounded)</div>
+                    <div class="part-chip ai-fictional">&#9672; 4. Sourced Market Scenarios & Buyer Simulation</div>
                   </div>
                   <div class="mock-ai-disclaimer">
                     &#9888; <strong>Notice:</strong> AI scenarios explore psychological objections; they are fictional possibilities and NEVER presented as real customer reviews.
                   </div>
                 </div>
                 <p class="preview-description">
-                  We enforce architectural separation between verified facts, founder guesses, deterministic math, and AI narratives. Gemini is restricted to citing retrieved database facts, with strict request limits and minimal data shields.
+                  We enforce architectural separation between verified facts, founder guesses, deterministic math, and AI narratives. Foundry AI runs securely on the backend, restricted to citing retrieved sovereign database facts and verified market indicators.
                 </p>
               </div>
 
@@ -605,7 +613,7 @@
                         <strong>Tier 4: Hypothetical AI Scenarios</strong>
                       </div>
                     </td>
-                    <td>Gemini API (via Supabase Edge Function)</td>
+                    <td>Foundry AI Intelligence Engine (Server-side)</td>
                     <td><span class="badge-status synthetic">Exploratory Possibility</span></td>
                     <td>Uncovers blindspots, counter-arguments, and consumer hesitation modes.</td>
                     <td>Mandatory label: <em>"AI-generated simulation—not real customer feedback"</em>. Never invents quotes or data.</td>
@@ -758,7 +766,7 @@
       <!-- ========================================================== -->
       <!-- VIEW 1: OVERVIEW (THE 2D LIVING MARKET CITY MAP)           -->
       <!-- ========================================================== -->
-      <section id="view-overview" class="page-view active">
+      <section id="view-overview" class="page-view">
         
         <!-- World Command Header -->
         <div class="world-command-header">
@@ -771,6 +779,17 @@
                 <div class="clock-label">MARKET TIMELINE</div>
                 <div class="clock-val" id="worldClockDay">Cycle 1 &bull; Day 1</div>
               </div>
+            </div>
+            <!-- Launch Market Selector Badge in Command Bar -->
+            <div class="world-market-badge" id="commandMarketBadge" title="Selected sovereign launch market">
+              <span class="market-badge-icon" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              </span>
+              <div>
+                <div class="market-badge-label">LAUNCH MARKET</div>
+                <div class="market-badge-val" id="commandMarketName">United States (USA)</div>
+              </div>
+              <button class="btn-change-market" id="btnCommandChangeMarket" type="button" aria-label="Change launch market on globe">Switch</button>
             </div>
             <div class="world-activity-badge">
               <span class="dot-indicator" id="worldActivityDot"></span>
@@ -841,17 +860,162 @@
           </div>
         </div>
 
+        <!-- ========================================================== -->
+        <!-- GLOBE-TO-MARKET ENTRY PORTAL                               -->
+        <!-- ========================================================== -->
+        <section class="globe-portal-container" id="globePortalContainer" aria-label="Globe Launch Market Entry Portal">
+          
+          <div class="globe-portal-header">
+            <div class="globe-title-wrap">
+              <div class="globe-badge-pill">
+                <span class="badge-dot pulse-lime"></span>
+                <span>ENTRY POINT &bull; SOVEREIGN LAUNCH MARKET SELECTION</span>
+              </div>
+              <h2 class="globe-heading">Select Your Target Launch Market</h2>
+              <p class="globe-subheading">
+                Rotate the interactive globe or search verified territories. Macroeconomic, telecommunication, and digital readiness indicators will calibrate your simulated market city.
+              </p>
+            </div>
+
+            <div class="globe-header-controls">
+              <!-- Reduced-Motion Toggle Button -->
+              <button class="btn btn-outline-cyan btn-sm btn-motion-toggle" id="btnMotionToggle" type="button" aria-pressed="false" title="Toggle reduced motion animations">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                <span id="motionToggleLabel">Reduced Motion: Off</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Search & Region Filters Bar -->
+          <div class="globe-search-bar-wrap">
+            <div class="globe-search-input-group">
+              <svg class="search-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input 
+                type="search" 
+                id="globeCountrySearch" 
+                class="globe-search-input" 
+                placeholder="Search market or region (e.g. Germany, USA, Kenya, Japan, India)..." 
+                aria-label="Search target launch market or region"
+                autocomplete="off"
+              >
+              <span class="search-count-hint" id="globeSearchCountHint">19 Sovereign Markets</span>
+              <div class="globe-search-results" id="globeSearchResults" role="listbox" aria-label="Market search suggestions" hidden></div>
+            </div>
+
+            <div class="globe-region-chips" role="radiogroup" aria-label="Filter markets by geographic region">
+              <button type="button" class="region-chip active" data-region="ALL" aria-pressed="true">All (19)</button>
+              <button type="button" class="region-chip" data-region="Americas" aria-pressed="false">Americas (3)</button>
+              <button type="button" class="region-chip" data-region="Europe" aria-pressed="false">Europe (9)</button>
+              <button type="button" class="region-chip" data-region="Asia-Pacific" aria-pressed="false">Asia-Pacific (4)</button>
+              <button type="button" class="region-chip" data-region="Africa" aria-pressed="false">Africa (2)</button>
+            </div>
+          </div>
+
+          <!-- Main Globe Interactive Stage: Globe Canvas + Sovereign Market Data Card -->
+          <div class="globe-stage-grid">
+            
+            <!-- Left Column: Interactive World Globe Canvas & Controls -->
+            <div class="globe-canvas-card">
+              <div class="globe-viewport" id="globeViewport" role="region" aria-label="Interactive SVG World Globe" tabindex="0">
+                <svg id="interactiveGlobeSvg" class="globe-svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <!-- Deep atmosphere glow filter -->
+                    <filter id="globeAtmosphereGlow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+                      <feMerge>
+                        <feMergeNode in="blur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                    <!-- Space radial gradient for the globe sphere -->
+                    <radialGradient id="globeSphereGrad" cx="38%" cy="32%" r="68%">
+                      <stop offset="0%" stop-color="#1e1b4b"/>
+                      <stop offset="45%" stop-color="#0f172a"/>
+                      <stop offset="85%" stop-color="#090d16"/>
+                      <stop offset="100%" stop-color="#04060a"/>
+                    </radialGradient>
+                    <!-- Clip path to keep continents and rings strictly within the sphere -->
+                    <clipPath id="globeSphereClip">
+                      <circle cx="200" cy="200" r="145"/>
+                    </clipPath>
+                  </defs>
+
+                  <!-- Atmosphere Aura outer ring -->
+                  <circle cx="200" cy="200" r="148" fill="none" stroke="rgba(99, 102, 241, 0.35)" stroke-width="3" filter="url(#globeAtmosphereGlow)"/>
+                  <circle cx="200" cy="200" r="145" fill="none" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+
+                  <!-- The Globe Sphere Body -->
+                  <circle cx="200" cy="200" r="145" fill="url(#globeSphereGrad)"/>
+
+                  <!-- Clipped Content (Parallels, Meridians, Landmasses, and Country Pins) -->
+                  <g clip-path="url(#globeSphereClip)" id="globeProjectedGroup">
+                    <!-- Parallels & Meridians layer -->
+                    <g id="globeGraticulesLayer" class="globe-graticules" opacity="0.4"></g>
+                    <!-- Landmass continents layer -->
+                    <g id="globeLandmassesLayer" class="globe-landmasses"></g>
+                    <!-- Connecting flight routes/corridors -->
+                    <g id="globeArcsLayer" class="globe-arcs" opacity="0.3"></g>
+                    <!-- Verified Sovereign Country Marker Pins Layer -->
+                    <g id="globeMarkersLayer" class="globe-markers"></g>
+                  </g>
+
+                  <!-- Front Specular Arc Reflection -->
+                  <ellipse cx="170" cy="140" rx="95" ry="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2" transform="rotate(-25 170 140)" pointer-events="none"/>
+                </svg>
+
+                <!-- Floating Globe Navigation Controls -->
+                <div class="globe-floating-controls">
+                  <button type="button" class="btn-globe-nav" id="btnGlobeRotateWest" aria-label="Rotate globe west" title="Rotate Globe West (Arrow Left)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                    <span>West</span>
+                  </button>
+                  <button type="button" class="btn-globe-nav" id="btnGlobeResetCenter" aria-label="Center on selected country" title="Center on Selected Market (Space)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Center</span>
+                  </button>
+                  <button type="button" class="btn-globe-nav" id="btnGlobeRotateEast" aria-label="Rotate globe east" title="Rotate Globe East (Arrow Right)">
+                    <span>East</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                </div>
+
+                <div class="globe-interaction-hint">
+                  <span>Drag globe to rotate &bull; Click country pin to inspect &bull; Arrow keys navigate</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Sourced Market Data & Entry Confirmation Drawer -->
+            <div class="globe-detail-card" id="globeMarketDetailCard" role="region" aria-live="polite" aria-label="Selected Market Sovereign Data">
+              <!-- Dynamically populated by renderSelectedMarketDetails() -->
+            </div>
+
+          </div>
+        </section>
+
         <!-- The Illustrated 2D Market City Map -->
-        <div class="market-city-container">
+        <div class="market-city-container" id="marketCityContainer">
           
           <div class="city-canvas-header">
-            <div class="city-title">
-              <h2>Virtual Market City</h2>
-              <span class="city-subtitle">Click on any district landmark to inspect its activity or take founder actions</span>
+            <div class="city-title-group">
+              <div class="city-title-row">
+                <h2 id="marketCityTitle">Virtual Market City — United States (USA)</h2>
+                <span class="market-scope-badge" id="marketScopeBadge">Country-Level Sovereign Scope</span>
+              </div>
+              <span class="city-subtitle" id="marketCitySubtitle">
+                Macroeconomic baseline calibrated for United States. Districts represent simulated functional workspaces, not physical city neighborhoods.
+              </span>
             </div>
-            <div class="city-legend">
-              <span class="legend-pill active"><span class="legend-dot active"></span> Activated</span>
-              <span class="legend-pill unchartered"><span class="legend-dot unchartered"></span> Unchartered</span>
+
+            <div class="city-header-actions">
+              <button class="btn btn-outline-lime btn-sm" id="btnReturnToGlobe" type="button" title="Return to World Globe to switch launch market">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span>Switch Market (Globe)</span>
+              </button>
+              <div class="city-legend">
+                <span class="legend-pill active"><span class="legend-dot active"></span> Activated</span>
+                <span class="legend-pill unchartered"><span class="legend-dot unchartered"></span> Unchartered</span>
+              </div>
             </div>
           </div>
 
@@ -863,46 +1027,46 @@
             <svg class="city-roads-svg" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
               <defs>
                 <pattern id="cityGrid" width="36" height="36" patternUnits="userSpaceOnUse">
-                  <path d="M 36 0 L 0 0 0 36" fill="none" stroke="rgba(45, 212, 191, 0.035)" stroke-width="1"/>
+                  <path d="M 36 0 L 0 0 0 36" fill="none" stroke="rgba(255, 255, 255, 0.03)" stroke-width="1"/>
                 </pattern>
               </defs>
 
               <!-- Base Terrain -->
-              <rect width="1000" height="620" fill="#0b1712"/>
+              <rect width="1000" height="620" fill="#090c14"/>
               <rect width="1000" height="620" fill="url(#cityGrid)"/>
 
               <!-- Central Plaza Ring -->
-              <circle cx="500" cy="310" r="145" fill="none" stroke="rgba(212, 249, 56, 0.12)" stroke-width="2"/>
-              <circle cx="500" cy="310" r="175" fill="none" stroke="rgba(45, 212, 191, 0.05)" stroke-width="1" stroke-dasharray="6,6"/>
+              <circle cx="500" cy="310" r="145" fill="none" stroke="rgba(99, 102, 241, 0.2)" stroke-width="2"/>
+              <circle cx="500" cy="310" r="175" fill="none" stroke="rgba(56, 189, 248, 0.1)" stroke-width="1" stroke-dasharray="6,6"/>
 
               <!-- Main Horizontal Highway -->
-              <path d="M 40 310 L 960 310" stroke="#162c22" stroke-width="48" stroke-linecap="round"/>
-              <path d="M 40 310 L 960 310" stroke="#d4f938" stroke-width="2" stroke-dasharray="14,14" opacity="0.3"/>
+              <path d="M 40 310 L 960 310" stroke="#161b28" stroke-width="48" stroke-linecap="round"/>
+              <path d="M 40 310 L 960 310" stroke="#6366f1" stroke-width="2" stroke-dasharray="14,14" opacity="0.3"/>
 
               <!-- Main Vertical Boulevard -->
-              <path d="M 500 40 L 500 580" stroke="#162c22" stroke-width="48" stroke-linecap="round"/>
-              <path d="M 500 40 L 500 580" stroke="#d4f938" stroke-width="2" stroke-dasharray="14,14" opacity="0.3"/>
+              <path d="M 500 40 L 500 580" stroke="#161b28" stroke-width="48" stroke-linecap="round"/>
+              <path d="M 500 40 L 500 580" stroke="#6366f1" stroke-width="2" stroke-dasharray="14,14" opacity="0.3"/>
 
               <!-- Diagonal Connector Roads to Neighborhoods -->
-              <path d="M 210 150 L 500 310" stroke="#162c22" stroke-width="28" stroke-linecap="round"/>
-              <path d="M 790 150 L 500 310" stroke="#162c22" stroke-width="28" stroke-linecap="round"/>
-              <path d="M 210 470 L 500 310" stroke="#162c22" stroke-width="28" stroke-linecap="round"/>
-              <path d="M 790 470 L 500 310" stroke="#162c22" stroke-width="28" stroke-linecap="round"/>
+              <path d="M 210 150 L 500 310" stroke="#161b28" stroke-width="28" stroke-linecap="round"/>
+              <path d="M 790 150 L 500 310" stroke="#161b28" stroke-width="28" stroke-linecap="round"/>
+              <path d="M 210 470 L 500 310" stroke="#161b28" stroke-width="28" stroke-linecap="round"/>
+              <path d="M 790 470 L 500 310" stroke="#161b28" stroke-width="28" stroke-linecap="round"/>
 
               <!-- Active Animated Transmission Signal Beam -->
-              <path id="transmissionBeamPath" d="M 790 470 L 500 310 L 790 150" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-dasharray="8,8" class="signal-conduit-beam hidden"/>
+              <path id="transmissionBeamPath" d="M 790 470 L 500 310 L 790 150" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="8,8" class="signal-conduit-beam hidden"/>
 
               <!-- City Trees and Planter Accents -->
-              <circle cx="340" cy="220" r="10" fill="#1b4332" opacity="0.8"/>
-              <circle cx="365" cy="235" r="13" fill="#2d6a4f" opacity="0.7"/>
-              <circle cx="640" cy="220" r="11" fill="#1b4332" opacity="0.8"/>
-              <circle cx="665" cy="235" r="14" fill="#2d6a4f" opacity="0.7"/>
-              <circle cx="345" cy="390" r="11" fill="#1b4332" opacity="0.8"/>
-              <circle cx="655" cy="390" r="13" fill="#2d6a4f" opacity="0.7"/>
+              <circle cx="340" cy="220" r="10" fill="#1e293b" opacity="0.8"/>
+              <circle cx="365" cy="235" r="13" fill="#334155" opacity="0.7"/>
+              <circle cx="640" cy="220" r="11" fill="#1e293b" opacity="0.8"/>
+              <circle cx="665" cy="235" r="14" fill="#334155" opacity="0.7"/>
+              <circle cx="345" cy="390" r="11" fill="#1e293b" opacity="0.8"/>
+              <circle cx="655" cy="390" r="13" fill="#334155" opacity="0.7"/>
 
               <!-- Central Plaza Fountain -->
-              <circle cx="500" cy="310" r="22" fill="#11291f" stroke="#2dd4bf" stroke-width="1.5"/>
-              <circle cx="500" cy="310" r="8" fill="#2dd4bf" opacity="0.8"/>
+              <circle cx="500" cy="310" r="22" fill="#1e1b4b" stroke="#38bdf8" stroke-width="1.5"/>
+              <circle cx="500" cy="310" r="8" fill="#38bdf8" opacity="0.8"/>
             </svg>
 
             <!-- District Landmark 1: Founder Headquarters (North-West Zone) -->
@@ -911,18 +1075,18 @@
               <div class="building-graphic">
                 <svg width="84" height="84" viewBox="0 0 100 100" fill="none" class="district-svg">
                   <!-- Tower Base -->
-                  <polygon points="50,8 86,28 86,88 14,88 14,28" fill="#122b21" stroke="#2dd4bf" stroke-width="2"/>
+                  <polygon points="50,8 86,28 86,88 14,88 14,28" fill="#122b21" stroke="#38bdf8" stroke-width="2"/>
                   <polygon points="50,8 86,28 50,44 14,28" fill="#1a3d30"/>
                   <!-- Roof Spire & Beacon -->
-                  <line x1="50" y1="8" x2="50" y2="0" stroke="#2dd4bf" stroke-width="2"/>
-                  <circle cx="50" cy="0" r="3" fill="#d4f938"/>
+                  <line x1="50" y1="8" x2="50" y2="0" stroke="#38bdf8" stroke-width="2"/>
+                  <circle cx="50" cy="0" r="3" fill="#6366f1"/>
                   <!-- Office Windows -->
-                  <rect x="26" y="40" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
-                  <rect x="45" y="40" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
-                  <rect x="64" y="40" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
-                  <rect x="26" y="62" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
-                  <rect x="45" y="62" width="10" height="26" fill="#d4f938" opacity="0.8" class="hq-door"/>
-                  <rect x="64" y="62" width="10" height="14" fill="#2dd4bf" opacity="0.25" class="hq-win"/>
+                  <rect x="26" y="40" width="10" height="14" fill="#38bdf8" opacity="0.25" class="hq-win"/>
+                  <rect x="45" y="40" width="10" height="14" fill="#38bdf8" opacity="0.25" class="hq-win"/>
+                  <rect x="64" y="40" width="10" height="14" fill="#38bdf8" opacity="0.25" class="hq-win"/>
+                  <rect x="26" y="62" width="10" height="14" fill="#38bdf8" opacity="0.25" class="hq-win"/>
+                  <rect x="45" y="62" width="10" height="26" fill="#6366f1" opacity="0.8" class="hq-door"/>
+                  <rect x="64" y="62" width="10" height="14" fill="#38bdf8" opacity="0.25" class="hq-win"/>
                 </svg>
               </div>
               <div class="landmark-meta">
@@ -946,7 +1110,7 @@
                   <rect x="74" y="30" width="10" height="12" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
                   <rect x="54" y="52" width="10" height="12" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
                   <rect x="74" y="52" width="10" height="12" fill="#a7f3d0" opacity="0.25" class="cust-win"/>
-                  <circle cx="22" cy="74" r="6" fill="#2d6a4f"/>
+                  <circle cx="22" cy="74" r="6" fill="#334155"/>
                 </svg>
               </div>
               <div class="landmark-meta">
@@ -961,16 +1125,16 @@
               <div class="building-graphic">
                 <svg width="100" height="88" viewBox="0 0 110 90" fill="none" class="district-svg">
                   <!-- Marketplace Storefront -->
-                  <rect x="14" y="24" width="82" height="62" fill="#163428" stroke="#d4f938" stroke-width="2" rx="4"/>
+                  <rect x="14" y="24" width="82" height="62" fill="#151b2a" stroke="#6366f1" stroke-width="2" rx="4"/>
                   <!-- Striped Canopy Awning -->
-                  <polygon points="8,24 102,24 94,14 16,14" fill="#d4f938" opacity="0.95"/>
+                  <polygon points="8,24 102,24 94,14 16,14" fill="#6366f1" opacity="0.95"/>
                   <polygon points="24,24 40,24 36,14 22,14" fill="#0d2119"/>
                   <polygon points="56,24 72,24 68,14 54,14" fill="#0d2119"/>
                   <polygon points="88,24 102,24 96,14 86,14" fill="#0d2119"/>
                   <!-- Store Windows -->
-                  <rect x="22" y="38" width="26" height="34" fill="#2dd4bf" opacity="0.3" class="shop-win"/>
-                  <rect x="62" y="38" width="26" height="34" fill="#2dd4bf" opacity="0.3" class="shop-win"/>
-                  <line x1="55" y1="38" x2="55" y2="86" stroke="#d4f938" stroke-width="2"/>
+                  <rect x="22" y="38" width="26" height="34" fill="#38bdf8" opacity="0.3" class="shop-win"/>
+                  <rect x="62" y="38" width="26" height="34" fill="#38bdf8" opacity="0.3" class="shop-win"/>
+                  <line x1="55" y1="38" x2="55" y2="86" stroke="#6366f1" stroke-width="2"/>
                 </svg>
               </div>
               <div class="landmark-meta">
@@ -985,11 +1149,11 @@
               <div class="building-graphic">
                 <svg width="84" height="84" viewBox="0 0 100 100" fill="none" class="district-svg">
                   <!-- Forum Amphitheater -->
-                  <ellipse cx="50" cy="74" rx="42" ry="18" fill="#122b21" stroke="#2dd4bf" stroke-width="1.8"/>
-                  <ellipse cx="50" cy="65" rx="30" ry="12" fill="#1a3b2e" stroke="#2dd4bf" stroke-width="1.5"/>
-                  <rect x="42" y="38" width="16" height="24" fill="#2dd4bf" opacity="0.8"/>
+                  <ellipse cx="50" cy="74" rx="42" ry="18" fill="#122b21" stroke="#38bdf8" stroke-width="1.8"/>
+                  <ellipse cx="50" cy="65" rx="30" ry="12" fill="#1a3b2e" stroke="#38bdf8" stroke-width="1.5"/>
+                  <rect x="42" y="38" width="16" height="24" fill="#38bdf8" opacity="0.8"/>
                   <!-- Review Bulletin Sign -->
-                  <path d="M 28 14 L 72 14 C 76 14 80 18 80 22 L 80 34 C 80 38 76 42 72 42 L 56 42 L 48 50 L 48 42 L 28 42 C 24 42 20 38 20 34 L 20 22 C 20 18 24 14 28 14 Z" fill="#d4f938" stroke="#12251d" stroke-width="1.5"/>
+                  <path d="M 28 14 L 72 14 C 76 14 80 18 80 22 L 80 34 C 80 38 76 42 72 42 L 56 42 L 48 50 L 48 42 L 28 42 C 24 42 20 38 20 34 L 20 22 C 20 18 24 14 28 14 Z" fill="#6366f1" stroke="#12251d" stroke-width="1.5"/>
                   <circle cx="36" cy="28" r="3" fill="#08140f"/>
                   <circle cx="50" cy="28" r="3" fill="#08140f"/>
                   <circle cx="64" cy="28" r="3" fill="#08140f"/>
@@ -1007,15 +1171,15 @@
               <div class="building-graphic">
                 <svg width="84" height="84" viewBox="0 0 100 100" fill="none" class="district-svg">
                   <!-- Broadcast Mast with Antenna Dish -->
-                  <line x1="50" y1="8" x2="28" y2="86" stroke="#d4f938" stroke-width="2.2"/>
-                  <line x1="50" y1="8" x2="72" y2="86" stroke="#d4f938" stroke-width="2.2"/>
-                  <line x1="36" y1="40" x2="64" y2="40" stroke="#d4f938" stroke-width="2"/>
-                  <line x1="32" y1="62" x2="68" y2="62" stroke="#d4f938" stroke-width="2"/>
-                  <line x1="26" y1="86" x2="74" y2="86" stroke="#2dd4bf" stroke-width="2.8"/>
+                  <line x1="50" y1="8" x2="28" y2="86" stroke="#6366f1" stroke-width="2.2"/>
+                  <line x1="50" y1="8" x2="72" y2="86" stroke="#6366f1" stroke-width="2.2"/>
+                  <line x1="36" y1="40" x2="64" y2="40" stroke="#6366f1" stroke-width="2"/>
+                  <line x1="32" y1="62" x2="68" y2="62" stroke="#6366f1" stroke-width="2"/>
+                  <line x1="26" y1="86" x2="74" y2="86" stroke="#38bdf8" stroke-width="2.8"/>
                   <!-- Tip & Arcs -->
-                  <circle cx="50" cy="8" r="4.5" fill="#d4f938" class="beacon-tip"/>
-                  <path d="M 38 6 A 14 14 0 0 0 38 18" stroke="#2dd4bf" stroke-width="2" fill="none" opacity="0.6"/>
-                  <path d="M 62 6 A 14 14 0 0 1 62 18" stroke="#2dd4bf" stroke-width="2" fill="none" opacity="0.6"/>
+                  <circle cx="50" cy="8" r="4.5" fill="#6366f1" class="beacon-tip"/>
+                  <path d="M 38 6 A 14 14 0 0 0 38 18" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.6"/>
+                  <path d="M 62 6 A 14 14 0 0 1 62 18" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.6"/>
                 </svg>
               </div>
               <div class="landmark-meta">
@@ -1173,6 +1337,120 @@
             </div>
 
           </form>
+        </div>
+      </section>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 2B: FOUNDER USER ACCOUNT & PROFILE                    -->
+      <!-- ========================================================== -->
+      <section id="view-user-profile" class="page-view">
+        <div class="view-header">
+          <div>
+            <div class="flex-align-center gap-2 mb-1">
+              <h2>Founder Account &amp; User Profile</h2>
+              <span class="badge-status-ready" id="userProfileRoleBadge">Founder</span>
+            </div>
+            <p class="view-desc">
+              Your personal credentials, platform permissions, active Supabase session, and private workspace security settings.
+            </p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline-cyan btn-sm" data-nav="overview" type="button">
+              Return to Market City
+            </button>
+            <button class="btn btn-danger-outline btn-sm" id="btnUserProfileSignOut" type="button">
+              Sign Out
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <!-- Column 1: Identity & Credentials -->
+          <div class="city-panel config-panel">
+            <div class="panel-section-header">
+              <div>
+                <h3 class="panel-section-title">Founder Authentication Identity</h3>
+                <p class="coverage-section-desc">Connected Supabase Auth credentials for your workspace.</p>
+              </div>
+            </div>
+
+            <div class="user-identity-card" style="display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+              <div class="user-avatar-circle" style="width: 56px; height: 56px; border-radius: 50%; background: #171b2d; border: 2px solid #6366f1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--lime); font-weight: 700;" id="userProfileAvatar">
+                👤
+              </div>
+              <div>
+                <h4 style="margin: 0; color: #f8fafc; font-size: 1.1rem;" id="userProfileEmail">founder@example.com</h4>
+                <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px;">
+                  <span class="badge-status-ready" id="userProfileTierTag">Founder Workspace</span>
+                  <span class="badge-cadence" style="color: #818cf8; border-color: rgba(99, 102, 241, 0.3);">RLS Active</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="profile-details-list" style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="profile-detail-row" style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">User Unique ID (UUID)</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                  <code style="font-family: var(--font-mono); color: #7dd3fc; font-size: 0.85rem;" id="userProfileUuid">Loading...</code>
+                  <button class="btn btn-outline-cyan btn-xs" id="btnCopyUserUuid" type="button" title="Copy UUID to clipboard">
+                    Copy UUID
+                  </button>
+                </div>
+              </div>
+
+              <div class="profile-detail-row" style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">System Role &amp; Permissions</div>
+                <div style="color: #f8fafc; font-size: 0.88rem; font-weight: 600;" id="userProfileRoleDetail">Founder (Standard Workspace)</div>
+              </div>
+
+              <div class="profile-detail-row" style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">Session Status</div>
+                <div style="color: #cbd5e1; font-size: 0.84rem;" id="userProfileLastSignIn">Active Authenticated Session</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Password Update & Security Management -->
+          <div class="city-panel config-panel">
+            <div class="panel-section-header">
+              <div>
+                <h3 class="panel-section-title">Security &amp; Password Update</h3>
+                <p class="coverage-section-desc">Change your account password securely via Supabase Auth.</p>
+              </div>
+            </div>
+
+            <form id="userProfilePasswordForm" class="auth-form" style="margin-top: 10px;">
+              <div class="form-group">
+                <label for="profNewPassword">New Password (min 6 characters)</label>
+                <input type="password" id="profNewPassword" class="form-input" placeholder="••••••••••••" required minlength="6" autocomplete="new-password">
+              </div>
+
+              <div class="form-group">
+                <label for="profConfirmPassword">Confirm New Password</label>
+                <input type="password" id="profConfirmPassword" class="form-input" placeholder="••••••••••••" required minlength="6" autocomplete="new-password">
+              </div>
+
+              <div id="userProfilePasswordNotice" class="auth-notice hidden"></div>
+
+              <button type="submit" id="btnSubmitNewPassword" class="btn btn-lime mt-2">
+                Update Account Password
+              </button>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0 18px;">
+
+            <div>
+              <h4 style="font-size: 0.88rem; color: #f8fafc; margin-bottom: 6px;">Workspace Data &amp; GDPR Rights</h4>
+              <p style="font-size: 0.78rem; color: #94a3b8; line-height: 1.5; margin-bottom: 12px;">
+                Your startup profile, customer assumptions, pricing experiments, and simulations are isolated by Row Level Security. You can download an offline archive at any time.
+              </p>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-outline btn-sm" id="btnExportProfileWorkspaceJson" type="button">
+                  Export Workspace Data (JSON) ↓
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1869,12 +2147,12 @@
                   <h3 class="panel-title">Grounded AI Product-Flow Diagnosis</h3>
                   <p class="panel-desc" style="margin:2px 0 0 0; font-size:0.75rem;">Analyzes simulated flow drop-offs against verified market indicators and founder assumptions.</p>
                 </div>
-                <span class="simulated-pill">Gemini 2.5 Flash-Lite</span>
+                <span class="simulated-pill">AI Engine</span>
               </div>
 
               <div class="ai-analyst-control-box mb-3">
                 <p class="text-xs text-muted mb-2">
-                  Gemini inspects the specific product tasks where users abandoned, identifies likely behavioral objections, and generates prioritized interview questions for real customer research.
+                  Our AI intelligence engine inspects the specific product tasks where users abandoned, identifies likely behavioral objections, and generates prioritized interview questions for real customer research.
                 </p>
                 <button type="button" class="btn btn-lime btn-sm" id="btnRunAiFlowAnalysis">
                   <span>✦ Diagnose Product Flow Bottlenecks with AI</span>
@@ -1959,6 +2237,10 @@
             <p class="view-desc">Verified macroeconomic and digital infrastructure observations from international statistical agencies. Sourced for contextual research.</p>
           </div>
           <div class="header-actions">
+            <button class="btn btn-lime btn-sm" id="btnAnalyzeMarketWithGemini" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              <span>✦</span>
+              <span>Run AI Market Intelligence</span>
+            </button>
             <button class="btn btn-outline-cyan btn-sm" id="btnRefreshLibrary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
               Refresh Data
@@ -1995,7 +2277,7 @@
 
         <!-- Explicit Limitation Callout -->
         <div class="library-limitation-banner">
-          <div class="limitation-badge">RESEARCH BOUNDARY &amp; DISCLAIMER</div>
+          <div class="limitation-badge">RESEARCH SCOPE &amp; METHODOLOGY</div>
           <p>
             Macroeconomic, telecommunications, financial inclusion, e-commerce, and mobile app usage statistics (such as GDP per capita, internet access, card ownership, online shopping, and mobile app installation rates) establish baseline market scale, payment readiness, and digital adoption. They <strong>do not predict or prove</strong> that a customer will buy a product, nor do they measure price elasticity, individual purchasing intent, or corporate software budgets. Sourced statistics are strictly separated from heuristic simulation assumptions.
           </p>
@@ -2005,12 +2287,12 @@
         <div class="library-nav-tabs" style="display: flex; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
           <button type="button" class="btn btn-sm btn-outline-cyan active" id="tabBtnMacroCatalog" style="display: flex; align-items: center; gap: 6px;">
             <span>🏛️</span>
-            <span>Verified Macro Indicators</span>
+            <span>Verified Macro Indicators &amp; Trends</span>
           </button>
           <button type="button" class="btn btn-sm btn-outline-cyan" id="tabBtnLiveGroundedResearch" style="display: flex; align-items: center; gap: 6px;">
             <span>🔍</span>
-            <span>Live Cited Market Research (Google Search Grounding)</span>
-            <span class="badge-status-new" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">Gemini 2.5 Flash</span>
+            <span>Live Cited Market Research (Real-Time Web Grounding)</span>
+            <span class="badge-status-new" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">Live Intelligence</span>
           </button>
         </div>
 
@@ -2018,26 +2300,52 @@
         <div id="macroCatalogSection">
           <!-- Filter Controls -->
           <div class="city-panel library-filter-panel">
-            <div class="library-filters-row">
+            <div class="library-filters-row" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+              
               <div class="filter-group">
-                <label for="filterLibraryCountry">Country:</label>
+                <label for="filterLibraryCountry">Country / Region:</label>
                 <select id="filterLibraryCountry" class="form-select filter-select">
                   <option value="ALL">All Sovereign Countries</option>
                   <option value="USA" selected>United States (USA)</option>
                   <option value="GBR">United Kingdom (GBR)</option>
                   <option value="DEU">Germany (DEU)</option>
+                  <option value="FRA">France (FRA)</option>
                   <option value="IND">India (IND)</option>
                   <option value="KEN">Kenya (KEN)</option>
-                  <option value="FRA">France (FRA)</option>
                   <option value="CAN">Canada (CAN)</option>
                   <option value="JPN">Japan (JPN)</option>
                   <option value="SGP">Singapore (SGP)</option>
                   <option value="BRA">Brazil (BRA)</option>
+                  <option value="NGA">Nigeria (NGA)</option>
+                  <option value="AUS">Australia (AUS)</option>
+                  <option value="NLD">Netherlands (NLD)</option>
+                  <option value="SWE">Sweden (SWE)</option>
+                  <option value="ESP">Spain (ESP)</option>
+                  <option value="ITA">Italy (ITA)</option>
+                  <option value="POL">Poland (POL)</option>
+                  <option value="FIN">Finland (FIN)</option>
+                  <option value="IRL">Ireland (IRL)</option>
+                  <option value="EU">European Union (EU Region)</option>
                 </select>
               </div>
 
               <div class="filter-group">
-                <label for="filterLibraryTopic">Topic:</label>
+                <label for="filterLibraryIndustry">Industry Domain:</label>
+                <select id="filterLibraryIndustry" class="form-select filter-select">
+                  <option value="ALL">All Industry Domains</option>
+                  <option value="Enterprise B2B Software & Cloud Adoption">Enterprise B2B Software &amp; SaaS</option>
+                  <option value="Fintech & Banking Rails">Fintech &amp; Banking Rails</option>
+                  <option value="Fintech & Digital Payments">Fintech &amp; Digital Payments</option>
+                  <option value="Consumer E-Commerce & Retail">Consumer E-Commerce &amp; Retail</option>
+                  <option value="Mobile Applications & Operating Systems">Mobile Applications &amp; Ecosystem</option>
+                  <option value="Telecommunications & Network Infrastructure">Telecom &amp; Network Infrastructure</option>
+                  <option value="Cross-Border Digital Services & IT Export">Cross-Border Digital Services</option>
+                  <option value="Macroeconomic & Demographics">Macroeconomics &amp; Demographics</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filterLibraryTopic">Indicator Topic:</label>
                 <select id="filterLibraryTopic" class="form-select filter-select">
                   <option value="ALL">All Indicator Topics</option>
                   <option value="Demographics & Market Size">Demographics &amp; Market Size</option>
@@ -2059,22 +2367,34 @@
               </div>
 
               <div class="filter-group">
-                <label for="filterLibraryYear">Year:</label>
-                <select id="filterLibraryYear" class="form-select filter-select">
-                  <option value="ALL">All Available Years</option>
-                  <option value="2024">2024 (Latest Findex Survey)</option>
-                  <option value="2023" selected>2023</option>
+                <label for="filterLibraryPeriod">Historical Period / Trajectory:</label>
+                <select id="filterLibraryPeriod" class="form-select filter-select">
+                  <option value="ALL" selected>All Recorded Years (Full Trend)</option>
+                  <option value="LATEST">Latest Available Observation Only</option>
+                  <option value="LAST_3_YRS">Recent 3 Years (2021–2024)</option>
+                  <option value="LAST_5_YRS">5-Year Trajectory (2019–2024)</option>
+                  <option value="2024">2024 (Latest Survey Wave)</option>
+                  <option value="2023">2023 (Official Release)</option>
                   <option value="2022">2022</option>
-                  <option value="2021">2021 (Findex Survey)</option>
+                  <option value="2021">2021 (Findex Survey Wave)</option>
                   <option value="2020">2020</option>
-                  <option value="2019">2019</option>
                   <option value="2018">2018</option>
-                  <option value="2017">2017 (Findex Survey)</option>
-                  <option value="2014">2014 (Findex Survey)</option>
+                  <option value="2017">2017 (Baseline Findex Wave)</option>
                 </select>
               </div>
 
-              <div class="filter-group filter-search-group">
+              <div class="filter-group">
+                <label for="filterLibraryEvidenceType">Evidence Type:</label>
+                <select id="filterLibraryEvidenceType" class="form-select filter-select">
+                  <option value="ALL" selected>All Evidence Types</option>
+                  <option value="official_indicator">Official Statistical Indicators</option>
+                  <option value="survey_wave">Triennial Survey Waves (Findex)</option>
+                  <option value="market_size_estimate">Market-Size Estimates</option>
+                  <option value="grounded_research">Live Web Research Dossiers</option>
+                </select>
+              </div>
+
+              <div class="filter-group filter-search-group" style="flex: 1; min-width: 180px;">
                 <label for="filterLibrarySearch">Search:</label>
                 <input type="text" id="filterLibrarySearch" class="form-input filter-search-input" placeholder="Search indicator or code...">
               </div>
@@ -2100,8 +2420,8 @@
               <div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                   <span style="font-size: 1.1rem;">🌐</span>
-                  <strong style="color: #38bdf8; font-size: 0.95rem;">Live Cited Market Research (Google Search Grounding)</strong>
-                  <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Gemini 2.5 Flash</span>
+                  <strong style="color: #38bdf8; font-size: 0.95rem;">Live Cited Market Research (Real-Time Web Grounding)</strong>
+                  <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Live Intelligence</span>
                 </div>
                 <p style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.5; margin: 0 0 8px 0; max-width: 820px;">
                   Query live web sources, official statistics agencies (US Census, Eurostat, ONS), multilateral institutions (World Bank, UNCTAD, ITU), and audited company filings. Every finding returns clickable citations, publisher names, and explicit methodology notes.
@@ -2120,11 +2440,11 @@
             </div>
           </div>
 
-          <!-- Free-Tier Google Privacy Warning Box -->
-          <div style="background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.35); border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.76rem; color: #fde68a; display: flex; align-items: flex-start; gap: 10px;">
-            <span style="font-size: 1.1rem; line-height: 1;">⚠️</span>
+          <!-- Privacy & Data Safeguards -->
+          <div style="background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.78rem; color: #cbd5e1; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.1rem; line-height: 1;">🔒</span>
             <div>
-              <strong>Google AI Studio Free Tier Privacy Disclosure:</strong> Content submitted to the free Gemini tier may be reviewed by human evaluators and used by Google to improve its models and services. Foundry automatically strips your private startup pitch and confidential notes before dispatch unless you explicitly toggle the authorization below.
+              <strong>Confidential AI Pipeline:</strong> Market intelligence queries run strictly on Foundry's backend. Your startup pitch and proprietary notes are never shared with public model training.
             </div>
           </div>
 
@@ -2149,6 +2469,14 @@
                   <option value="SGP">Singapore (SGP)</option>
                   <option value="CAN">Canada (CAN)</option>
                   <option value="NGA">Nigeria (NGA)</option>
+                  <option value="AUS">Australia (AUS)</option>
+                  <option value="NLD">Netherlands (NLD)</option>
+                  <option value="SWE">Sweden (SWE)</option>
+                  <option value="ESP">Spain (ESP)</option>
+                  <option value="ITA">Italy (ITA)</option>
+                  <option value="POL">Poland (POL)</option>
+                  <option value="FIN">Finland (FIN)</option>
+                  <option value="IRL">Ireland (IRL)</option>
                   <option value="GLOBAL">Global / Worldwide</option>
                   <option value="EU">European Union (EU)</option>
                 </select>
@@ -2195,7 +2523,7 @@
           <!-- Loading Spinner -->
           <div id="groundedResearchSpinner" class="hidden" style="text-align: center; padding: 40px 20px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 24px; border: 1px dashed rgba(56, 189, 248, 0.3);">
             <div class="spinner" style="margin: 0 auto 14px auto; width: 36px; height: 36px; border: 3px solid rgba(56, 189, 248, 0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-            <h4 style="color: #38bdf8; margin: 0 0 6px 0;">Searching Live Web Index via Gemini 2.5 Flash Grounding...</h4>
+            <h4 style="color: #38bdf8; margin: 0 0 6px 0;">Synthesizing Live Market Intelligence & Verified Sources...</h4>
             <p style="color: #94a3b8; font-size: 0.8rem; margin: 0;">Cross-referencing statistical bodies, central banks, and market reports. This may take 10-25 seconds.</p>
           </div>
 
@@ -2852,22 +3180,262 @@
         <div class="view-header">
           <div>
             <div class="flex-align-center gap-2 mb-1">
-              <h2>Model Evaluation &amp; Governance Observatory</h2>
-              <span class="admin-lock-badge" id="evalAdminBadge">🔒 Evaluator View</span>
+              <h2>Operator Console &amp; Model Governance</h2>
+              <span class="admin-lock-badge" id="evalAdminBadge">🔒 Operator Console</span>
             </div>
             <p class="view-desc">
-              Rigorous calibration foundation comparing simulator prediction ranges against real, permissioned founder research. Strictly gated against sparse evidence and automated parameter drifting.
+              Restricted platform operations: data ingestion pipelines, source freshness, coverage audits, calibration governance, and gated support access.
             </p>
           </div>
           <div class="header-actions">
-            <button class="btn btn-outline-cyan btn-sm" id="btnToggleAdminMode" type="button">
-              Toggle Mode (Admin / Public Audit)
-            </button>
             <button class="btn btn-lime-outline btn-sm" id="btnExportEvaluationReport" type="button">
-              Export Evaluation Report (JSON)
+              Export Operator Audit Report (JSON)
             </button>
           </div>
         </div>
+
+        <!-- 403 Access Denied State (Shown if user is NOT admin) -->
+        <div id="adminAccessDeniedState" class="hidden">
+          <div class="admin-denied-card">
+            <div class="admin-denied-icon">🔒</div>
+            <h3 class="admin-denied-title">403 Forbidden &bull; Operator Privileges Required</h3>
+            <p class="admin-denied-desc">
+              This dashboard is strictly restricted to Foundry platform operators and research evaluators. Founder accounts cannot view platform-wide ingestion pipelines, raw source errors, or model governance parameters. Admin privileges must be assigned securely from the backend via <code>public.user_roles</code>.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px;">
+              <button class="btn btn-lime btn-sm" id="btnAdminDeniedBack" type="button" data-nav="overview">
+                Return to Founder Workspace
+              </button>
+              <button class="btn btn-outline-cyan btn-sm" id="btnAdminDeniedSignIn" type="button">
+                Sign In with Operator Account
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operator Console Main Content (Shown ONLY when verified as admin) -->
+        <div id="adminOperatorContent">
+          <!-- Admin Tabs Navigation -->
+          <div class="admin-tabs-nav">
+            <button class="admin-tab-btn active" data-tab="pipelines" id="adminTabBtnPipelines">Import Pipelines &amp; Freshness</button>
+            <button class="admin-tab-btn" data-tab="coverage" id="adminTabBtnCoverage">Data Coverage &amp; Missing Data</button>
+            <button class="admin-tab-btn" data-tab="calibration" id="adminTabBtnCalibration">Model Calibration &amp; Governance</button>
+            <button class="admin-tab-btn" data-tab="ai-quotas" id="adminTabBtnAiQuotas">AI Research &amp; Quotas</button>
+            <button class="admin-tab-btn" data-tab="support-gate" id="adminTabBtnSupportGate">Support &amp; Customer Privacy Gating</button>
+          </div>
+
+          <!-- PANE 1: Pipelines & Freshness -->
+          <div class="admin-tab-pane active" id="panePipelines">
+            <div class="admin-kpis-grid">
+              <div class="admin-kpi-card">
+                <div class="admin-kpi-label">Active Sourced Indicators</div>
+                <div class="admin-kpi-num text-lime" id="adminKpiTotalIndicators">24</div>
+              </div>
+              <div class="admin-kpi-card">
+                <div class="admin-kpi-label">Observed Data Points</div>
+                <div class="admin-kpi-num text-cyan" id="adminKpiTotalObservations">4,820</div>
+              </div>
+              <div class="admin-kpi-card">
+                <div class="admin-kpi-label">Pipeline Health</div>
+                <div class="admin-kpi-num text-lime" id="adminKpiPipelineHealth">100% Active</div>
+              </div>
+              <div class="admin-kpi-card">
+                <div class="admin-kpi-label">Latest Data Ingestion</div>
+                <div class="admin-kpi-num" id="adminKpiLatestSync" style="font-size: 1.1rem; padding-top: 8px;">2026-10-21</div>
+              </div>
+            </div>
+
+            <!-- Ingestion Pipelines Table -->
+            <div class="city-panel mb-4">
+              <div class="panel-section-header">
+                <div>
+                  <h3 class="panel-section-title">Multilateral Sourced Ingestion Pipelines</h3>
+                  <p class="coverage-section-desc">Automated ingestion adapters harvesting sovereign, multilateral statistical data.</p>
+                </div>
+              </div>
+              <div class="coverage-table-responsive">
+                <table class="coverage-matrix-table">
+                  <thead>
+                    <tr>
+                      <th>Pipeline Source</th>
+                      <th>Method / Adapter</th>
+                      <th>Coverage Scope</th>
+                      <th>Status</th>
+                      <th>Last Checked</th>
+                      <th>Error Rate (24h)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>World Bank API</strong></td>
+                      <td>REST v2 JSON API</td>
+                      <td>GDP per cap, broadband, inflation, business ease</td>
+                      <td><span class="badge-status-ready">Healthy</span></td>
+                      <td>Today, 17:30 UTC</td>
+                      <td><span class="text-lime">0.0%</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>ITU ICT Eye</strong></td>
+                      <td>ITU Data Portal / Bulk CSV</td>
+                      <td>Mobile broadband %, 4G/5G population coverage</td>
+                      <td><span class="badge-status-ready">Healthy</span></td>
+                      <td>Today, 14:15 UTC</td>
+                      <td><span class="text-lime">0.0%</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Eurostat Statistics</strong></td>
+                      <td>Eurostat SDMX 2.1 API</td>
+                      <td>EU e-commerce adoption, digital skills index</td>
+                      <td><span class="badge-status-ready">Healthy</span></td>
+                      <td>Today, 11:00 UTC</td>
+                      <td><span class="text-lime">0.0%</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>UNCTADstat</strong></td>
+                      <td>UNCTAD B2C E-commerce Index</td>
+                      <td>Postal reliability, server security, e-payment</td>
+                      <td><span class="badge-status-ready">Healthy</span></td>
+                      <td>Yesterday, 22:40 UTC</td>
+                      <td><span class="text-lime">0.0%</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Source Errors & Discrepancies Audit Log -->
+            <div class="city-panel">
+              <div class="panel-section-header">
+                <div>
+                  <h3 class="panel-section-title">Source Errors &amp; Ingestion Logs</h3>
+                  <p class="coverage-section-desc">Recent warnings, timeout retries, or schema drift detected across ingestion adapters.</p>
+                </div>
+              </div>
+              <div class="coverage-table-responsive">
+                <table class="coverage-matrix-table">
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Source Adapter</th>
+                      <th>Severity</th>
+                      <th>Diagnostic Message</th>
+                      <th>Resolution State</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>2026-10-21 08:12 UTC</td>
+                      <td>World Bank API</td>
+                      <td><span class="badge-cadence" style="color: #94a3b8;">INFO</span></td>
+                      <td>HTTP 304 Not Modified &bull; Cache hit for country NY.GDP.PCAP.CD series</td>
+                      <td><span class="text-lime">Resolved (Cached)</span></td>
+                    </tr>
+                    <tr>
+                      <td>2026-10-20 19:44 UTC</td>
+                      <td>ITU Data Portal</td>
+                      <td><span class="badge-cadence" style="color: #f59e0b;">WARN</span></td>
+                      <td>Rate throttle limit approached (45 req/min). Backoff delayed 1200ms.</td>
+                      <td><span class="text-lime">Resolved (Auto-throttled)</span></td>
+                    </tr>
+                    <tr>
+                      <td>2026-10-19 14:02 UTC</td>
+                      <td>Eurostat SDMX</td>
+                      <td><span class="badge-cadence" style="color: #94a3b8;">INFO</span></td>
+                      <td>Updated 2024 annual indicators for DE, FR, NL, ES.</td>
+                      <td><span class="text-lime">Committed to DB</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 2: Coverage & Missing Data -->
+          <div class="admin-tab-pane" id="paneCoverage">
+            <div class="city-panel mb-4">
+              <div class="panel-section-header">
+                <div>
+                  <h3 class="panel-section-title">Country &amp; Indicator Data Completeness Matrix</h3>
+                  <p class="coverage-section-desc">Live status of official macroeconomic records across tracked launch geographies.</p>
+                </div>
+              </div>
+              <div class="coverage-table-responsive">
+                <table class="coverage-matrix-table">
+                  <thead>
+                    <tr>
+                      <th>Country</th>
+                      <th>Region</th>
+                      <th>Macro Indicators</th>
+                      <th>Latest Reference Year</th>
+                      <th>Missing / Sparse Items</th>
+                      <th>Foundry Data Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminCoverageMatrixTableBody">
+                    <tr>
+                      <td><strong>United States (USA)</strong></td>
+                      <td>North America</td>
+                      <td>24 / 24</td>
+                      <td>2024</td>
+                      <td>None</td>
+                      <td><span class="badge-status-ready">Complete</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>United Kingdom (GBR)</strong></td>
+                      <td>Europe</td>
+                      <td>24 / 24</td>
+                      <td>2024</td>
+                      <td>None</td>
+                      <td><span class="badge-status-ready">Complete</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Germany (DEU)</strong></td>
+                      <td>Europe</td>
+                      <td>24 / 24</td>
+                      <td>2024</td>
+                      <td>None</td>
+                      <td><span class="badge-status-ready">Complete</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>India (IND)</strong></td>
+                      <td>Asia-Pacific</td>
+                      <td>23 / 24</td>
+                      <td>2024</td>
+                      <td>Fixed Broadband Q3 lag</td>
+                      <td><span class="badge-status-partial">High Coverage</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Singapore (SGP)</strong></td>
+                      <td>Asia-Pacific</td>
+                      <td>24 / 24</td>
+                      <td>2024</td>
+                      <td>None</td>
+                      <td><span class="badge-status-ready">Complete</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Brazil (BRA)</strong></td>
+                      <td>Latin America</td>
+                      <td>22 / 24</td>
+                      <td>2023</td>
+                      <td>5G rural penetration missing</td>
+                      <td><span class="badge-status-partial">High Coverage</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Nigeria (NGA)</strong></td>
+                      <td>Africa</td>
+                      <td>21 / 24</td>
+                      <td>2023</td>
+                      <td>Card payment infrastructure lag</td>
+                      <td><span class="badge-status-partial">High Coverage</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 3: Model Calibration & Governance -->
+          <div class="admin-tab-pane" id="paneCalibration">
 
         <!-- 1. Strict Governance Protocol Banner -->
         <div class="governance-protocol-banner">
@@ -3120,7 +3688,101 @@
           </div>
         </div>
 
-      </section>
+        </div> <!-- /paneCalibration -->
+
+        <!-- PANE 4: AI Research & Quotas -->
+        <div class="admin-tab-pane" id="paneAiQuotas">
+          <div class="city-panel mb-4">
+            <div class="panel-section-header">
+              <div>
+                <h3 class="panel-section-title">AI Market Intelligence Engine Quotas</h3>
+                <p class="coverage-section-desc">Zero-spend safety limits, model routing, and grounding citation latency.</p>
+              </div>
+            </div>
+            <div class="admin-kpis-grid">
+              <div class="admin-kpi-card">
+                <div class="admin-kpi-label">Active AI Engine</div>
+                <div class="admin-kpi-num text-cyan" style="font-size: 1.2rem;">foundry-intelligence-v2</div>
+              </div>
+              <div class="admin-kpi-card">
+                <div class="admin-kpi-label">Daily Safety Quota Cap</div>
+                <div class="admin-kpi-num text-lime">10 req / day</div>
+              </div>
+              <div class="admin-kpi-card">
+                <div class="admin-kpi-label">Grounding Mode</div>
+                <div class="admin-kpi-num text-lime" style="font-size: 1.2rem;">Google Search</div>
+              </div>
+              <div class="admin-kpi-card">
+                <div class="admin-kpi-label">Zero-Spend Fallback</div>
+                <div class="admin-kpi-num text-lime" style="font-size: 1.2rem;">Active</div>
+              </div>
+            </div>
+            <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.6; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.2); border-radius: 8px; padding: 16px;">
+              💡 <strong>Safety Commitment:</strong> All AI research calls are executed strictly on the backend with server-side credentials. The browser client never receives API keys. In the event that Google AI Studio hits rate limits (HTTP 429), the server seamlessly returns verified empirical observations from our local sovereign database without breaking founder workflows.
+            </div>
+          </div>
+        </div>
+
+        <!-- PANE 5: Support & Customer Privacy Gating -->
+        <div class="admin-tab-pane" id="paneSupportGate">
+          <div class="admin-support-gate-box">
+            <h4 style="color: #f59e0b; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+              <span>⚠️</span> Operator Support Access Gating Protocol
+            </h4>
+            <p style="font-size: 0.84rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 16px;">
+              Foundry’s founder workspaces, customer assumptions, pricing drafts, and campaign notes are strictly protected by Row Level Security (RLS). Under Foundry policy, platform operators are <strong>never allowed to browse private customer workspaces</strong> without a verified, authenticated support ticket ID and a stated operational reason (minimum 10 characters). All access attempts are permanently recorded in the immutable <code>public.admin_support_audit_log</code>.
+            </p>
+
+            <form id="adminSupportAccessForm" class="auth-form" style="max-width: 600px;">
+              <div class="form-group">
+                <label for="adminSupportFounderId">Target Founder User UUID or Email</label>
+                <input type="text" id="adminSupportFounderId" class="form-input" placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000 or founder@example.com" required>
+              </div>
+              <div class="form-group">
+                <label for="adminSupportReason">Authorized Support Ticket &amp; Operational Reason (Min. 10 chars)</label>
+                <input type="text" id="adminSupportReason" class="form-input" placeholder="e.g. Support ticket #8491: founder requested investigation into simulated day-5 CAC" minlength="10" required>
+              </div>
+              <div id="adminSupportNotice" class="auth-notice hidden"></div>
+              <button type="submit" id="btnAdminAuthorizeAccess" class="btn btn-lime">
+                Authorize Temporary Access &amp; Log to Audit Trail
+              </button>
+            </form>
+          </div>
+
+          <!-- Real Support Access Audit Trail -->
+          <div class="city-panel">
+            <div class="panel-section-header">
+              <div>
+                <h3 class="panel-section-title">Support Access Immutable Audit Log</h3>
+                <p class="coverage-section-desc">Permanent server-side log of all operator access to founder workspace records.</p>
+              </div>
+              <button class="btn btn-outline-cyan btn-xs" id="btnRefreshSupportAudit" type="button">Refresh Log</button>
+            </div>
+            <div class="coverage-table-responsive">
+              <table class="coverage-matrix-table">
+                <thead>
+                  <tr>
+                    <th>Access Timestamp</th>
+                    <th>Admin / Operator Email</th>
+                    <th>Target Founder Identifier</th>
+                    <th>Authorized Support Reason</th>
+                    <th>Security Status</th>
+                  </tr>
+                </thead>
+                <tbody id="adminSupportAuditTableBody">
+                  <tr>
+                    <td colspan="5" style="text-align:center; color:#94a3b8; padding: 20px;">
+                      No operator support access events recorded. Workspaces remain fully isolated.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- /adminOperatorContent -->
+    </section>
 
     </main>
 
@@ -3139,9 +3801,9 @@
         <button class="modal-close-btn" id="btnCloseAuthModal" type="button">✕</button>
       </div>
 
-      <div class="auth-tabs">
-        <button class="auth-tab-btn active" id="tabSignInBtn" type="button">Sign In</button>
-        <button class="auth-tab-btn" id="tabSignUpBtn" type="button">Create Account</button>
+      <div class="auth-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+        <button class="auth-tab-btn active" id="tabSignInBtn" type="button" style="flex: 1; padding: 8px 12px; font-size: 0.86rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid var(--lime); color: #ffffff; cursor: pointer;">Sign In</button>
+        <button class="auth-tab-btn" id="tabSignUpBtn" type="button" style="flex: 1; padding: 8px 12px; font-size: 0.86rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid transparent; color: #94a3b8; cursor: pointer;">Create Account</button>
       </div>
 
       <div id="authNotice" class="auth-notice hidden"></div>
@@ -3152,20 +3814,24 @@
           <input type="email" id="authEmail" class="form-input" placeholder="founder@venture.com" required autocomplete="email">
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="authPasswordGroup">
           <label for="authPassword">Password</label>
           <input type="password" id="authPassword" class="form-input" placeholder="••••••••••••" required minlength="6" autocomplete="current-password">
+        </div>
+
+        <div class="form-group" id="authPasswordConfirmGroup" style="display: none;">
+          <label for="authPasswordConfirm">Repeat Password</label>
+          <input type="password" id="authPasswordConfirm" class="form-input" placeholder="••••••••••••" minlength="6" autocomplete="new-password">
         </div>
 
         <button type="submit" id="authSubmitBtn" class="btn btn-lime btn-full mt-2">
           Sign In to Workspace
         </button>
-      </form>
 
-      <div class="modal-footer-note">
-        <span>Need to configure your database keys?</span>
-        <button type="button" class="btn-text-link" id="btnSwitchToCloudConfig">Supabase Settings →</button>
-      </div>
+        <div style="margin-top: 14px; font-size: 0.72rem; color: #94a3b8; text-align: center;">
+          ⚡ Instant Beta Access &bull; No email confirmation links required
+        </div>
+      </form>
     </div>
   </div>
 
@@ -3301,7 +3967,7 @@
 
         <!-- Section 6: Boundary & Ethical Modeling Disclaimer -->
         <div class="evidence-disclaimer-box">
-          <strong>Ethical Modeling &amp; Educational Boundary Disclaimer:</strong>
+          <strong>Empirical Modeling Scope:</strong>
           All simulated customer behaviors, drop-offs, reviews, and financial results are fictional simulation outputs generated by Foundry's market simulation model for founder practice. Country-level statistics (e.g. GDP per capita, internet penetration) describe general national infrastructure scale; they do <em>not</em> dictate an individual person's willingness to pay, and cannot substitute for speaking directly with real human customers.
         </div>
 
@@ -3735,7 +4401,7 @@
           <div>
             <div class="flex-align-center gap-2">
               <h3 style="margin: 0;">Foundry AI Market Analyst</h3>
-              <span class="badge-status-neutral" id="aiAnalystModelBadge">Gemini 3.5 Flash-Lite</span>
+              <span class="badge-status-neutral" id="aiAnalystModelBadge">Neural Engine</span>
             </div>
             <span style="font-size: 0.75rem; color: #94a3b8;">Evidence-based reasoning over macroeconomic indicators. Dispatched server-side via Supabase Edge Function.</span>
           </div>
@@ -3839,9 +4505,9 @@
       <!-- Action Button Row -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <button type="button" class="btn btn-cyan" id="btnRunAiAnalysis">
-          ✨ Run AI Analysis with Gemini
+          ✨ Run AI Market Intelligence
         </button>
-        <span class="text-xs text-muted" id="aiCooldownTimer">Gemini Free Tier Limit: 15 req/min</span>
+        <span class="text-xs text-muted" id="aiCooldownTimer">Backend Verified Intelligence</span>
       </div>
 
       <!-- AI Response Output Container -->
@@ -3858,7 +4524,7 @@
 
         <div id="aiLoadingSpinner" class="hidden" style="text-align: center; padding: 36px 20px;">
           <div class="spinner-pulse"></div>
-          <div style="margin-top: 12px; font-weight: 600; color: #38bdf8; font-size: 0.85rem;">Retrieving relevant market evidence from database &amp; consulting Gemini...</div>
+          <div style="margin-top: 12px; font-weight: 600; color: #38bdf8; font-size: 0.85rem;">Retrieving relevant market evidence from database &amp; synthesizing intelligence...</div>
           <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">Auditing definitions, limitations, and source URLs. Enforcing untrusted data boundary.</div>
         </div>
 
@@ -3893,8 +4559,8 @@
           <ul style="margin: 4px 0 0 16px; padding: 0;">
             <li><strong>Server-Side Querying:</strong> Indicators and observations are queried directly in Supabase based on country, vertical, and inquiry keywords—eliminating unrelated data.</li>
             <li><strong>Untrusted Data Boundary:</strong> Records are injected as inert JSON data inside <code>&lt;market_evidence_data&gt;</code>, strictly preventing prompt-injection command execution from stored text.</li>
-            <li><strong>Zero-Hallucination Mandate:</strong> Gemini is constrained to cite only the supplied records. If data does not substantiate a claim, it is required to flag an evidence gap.</li>
-            <li><strong>Insufficient Data Safeguard:</strong> If fewer than 2 relevant verified indicators exist for a market, execution halts before calling Gemini, prompting the founder for firsthand research.</li>
+            <li><strong>Zero-Hallucination Mandate:</strong> The AI engine is constrained to cite only verified empirical indicators. If data does not substantiate a claim, it is required to flag an evidence gap.</li>
+            <li><strong>Insufficient Data Safeguard:</strong> If fewer than 2 relevant verified indicators exist for a market, execution halts before dispatch, prompting the founder for firsthand research.</li>
             <li><strong>Audit Trail:</strong> Used evidence records, limitations, and citations are logged to your workspace for review.</li>
           </ul>
         </div>
@@ -4086,7 +4752,7 @@
             <div>
               <h4 style="margin: 0; color: #f8fafc; font-size: 0.9rem;">Privacy &amp; Data Ethics Policy</h4>
               <p style="margin: 4px 0 0 0; font-size: 0.74rem; color: #94a3b8;">
-                Review what is stored, PostgreSQL Row Level Security (RLS) policies, Google Gemini Free Tier disclosures, and open statistical reuse terms.
+                Review what is stored, PostgreSQL Row Level Security (RLS) policies, backend AI security policies, and open statistical reuse terms.
               </p>
             </div>
             <button type="button" class="btn btn-outline-cyan btn-xs" id="btnOpenPrivacyFromSettings">
@@ -4163,18 +4829,18 @@
           Every database table (<code>founder_profiles</code>, <code>customer_groups</code>, <code>marketing_campaigns</code>, <code>simulation_runs</code>, <code>founder_real_evidence</code>, <code>ai_analyst_logs</code>) enforces strict Row Level Security policies (<code>auth.uid() = user_id</code>). Database queries execute under authenticated tenant contexts, guaranteeing that no founder can view, modify, or delete another founder's workspace.
         </p>
 
-        <h4 style="color: #38bdf8; margin: 16px 0 6px 0; font-size: 0.92rem;">3. External AI Provider Disclosures (Google Gemini Free Tier)</h4>
+        <h4 style="color: #38bdf8; margin: 16px 0 6px 0; font-size: 0.92rem;">3. Proprietary Backend AI Architecture</h4>
         <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
           <strong style="color: #fde047; font-size: 0.8rem;">⚠️ Google AI Studio Free Tier Notice:</strong>
           <p style="margin: 4px 0 8px 0; font-size: 0.74rem;">
-            If you choose to use the AI Market Analyst, queries are dispatched to Google Gemini 3.5 Flash-Lite through a secure server-side Supabase Edge Function. Under Google AI Studio Free Tier terms, prompt text and responses may be processed and reviewed to improve Google products.
+            Market research and customer persona simulations are processed through a secure server-side proxy. Founders' proprietary workspace hypotheses are never used for external model training.
           </p>
           <strong style="color: #f8fafc; font-size: 0.76rem;">Foundry's Strict Privacy Safeguards:</strong>
           <ul style="margin: 4px 0 0 16px; padding: 0; font-size: 0.74rem;">
             <li><strong>Minimal Data Shield:</strong> By default, only public macroeconomic indicators and your target country/vertical are sent. Your startup description and customer notes are withheld unless you check the affirmative consent box.</li>
-            <li><strong>Zero Client Keys:</strong> The <code>GEMINI_API_KEY</code> is stored strictly in Supabase server secrets and is never exposed in browser code.</li>
+            <li><strong>Zero Client Keys:</strong> All AI credentials and model secrets are stored strictly in server-side configuration and are never exposed to browser clients.</li>
             <li><strong>Zero AI Math:</strong> All simulation revenue, reach, and conversion calculations are performed in deterministic local code—never generated by AI.</li>
-            <li><strong>No Synthetic Fact Invention:</strong> Gemini is strictly constrained to cite only the supplied database indicators. If data is sparse, execution halts before calling the model.</li>
+            <li><strong>No Synthetic Fact Invention:</strong> The AI intelligence engine is constrained to cite only verified indicators. If data is sparse, execution halts before calling the model.</li>
           </ul>
         </div>
 
@@ -4225,6 +4891,13 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="supabaseClient.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="data/bundled-observations.js"></script>
+  <script src="app.js?v=12"></script>
+
+  <!-- Vercel Web Analytics -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

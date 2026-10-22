@@ -20,8 +20,8 @@ This checklist provides an actionable, end-to-end operational roadmap to launch 
 | Checklist Item | Status | Verification & Operational Action |
 | :--- | :--- | :--- |
 | **1.1 Supabase Project Creation** | `[REQUIRES YOUR ACCOUNT/SETUP]` | Create a free project at [supabase.com](https://supabase.com). Note the **Project URL**, **Anon (Publishable) Key**, and **Service Role Key**. |
-| **1.2 Database Migrations (15 Sequential SQL Scripts)** | `[COMPLETE]` | 15 migration files are located in [`supabase/migrations/`](../supabase/migrations/):<br>1. `01_create_market_data_schema.sql` (country_observations, indicators, sources)<br>2. `02_create_founder_workspace_schema.sql` (profiles, groups, campaigns, simulations with RLS)<br>3. `03_add_itu_data_source.sql` (ITU telecommunications indicators)<br>4. `04_add_global_findex_data_source.sql` (World Bank financial inclusion)<br>5. `05_add_unctad_data_source.sql` (UNCTAD e-commerce & digital trade)<br>6. `06_allow_read_market_import_logs.sql` (Public read for health monitor)<br>7. `07_add_mobile_apps_eurostat.sql` (Eurostat app installations & streaming)<br>8. `08_production_operations_and_health.sql` (System health audit view)<br>9. `09_simulation_grounding_and_evidence.sql` (Macro provenance factors table)<br>10. `10_create_founder_real_evidence_schema.sql` (Founder field research & benchmarks)<br>11. `11_create_model_evaluation_schema.sql` (Model evaluation cohorts & governance reviews)<br>12. `12_create_beta_feedback_schema.sql` (Beta feedback & data error reports)<br>13. `13_create_simulation_feedback_schema.sql` (In-context simulation run ratings & feedback)<br>14. `14_create_ai_analyst_audit_log.sql` (Audit logging for server-side AI analyst queries)<br>15. `15_create_account_deletion_and_retention_policy.sql` (Atomic workspace deletion & GDPR right-to-erasure RPC) |
-| **1.3 Execution of Migrations** | `[REQUIRES YOUR ACCOUNT/SETUP]` | Open your Supabase Dashboard > **SQL Editor** and execute the 15 migration scripts in numerical sequence (or run `supabase db push` if using Supabase CLI). |
+| **1.2 Database Migrations (19 Sequential SQL Scripts)** | `[COMPLETE]` | 19 migration files are located in [`supabase/migrations/`](../supabase/migrations/) and pre-bundled into a single one-click script [`supabase/all_migrations.sql`](../supabase/all_migrations.sql):<br>1. `01_create_market_data_schema.sql`<br>2. `02_create_founder_workspace_schema.sql`<br>3. `03_add_itu_data_source.sql`<br>4. `04_add_global_findex_data_source.sql`<br>5. `05_add_unctad_data_source.sql`<br>6. `06_allow_read_market_import_logs.sql`<br>7. `07_add_mobile_apps_eurostat.sql`<br>8. `08_production_operations_and_health.sql`<br>9. `09_simulation_grounding_and_evidence.sql`<br>10. `10_create_founder_real_evidence_schema.sql`<br>11. `11_create_model_evaluation_schema.sql`<br>12. `12_create_beta_feedback_schema.sql`<br>13. `13_create_simulation_feedback_schema.sql`<br>14. `14_create_ai_analyst_audit_log.sql`<br>15. `15_create_account_deletion_and_retention_policy.sql`<br>16. `16_seed_country_observations.sql`<br>17. `17_create_live_market_research_schema.sql`<br>18. `18_create_user_roles_and_admin_security.sql`<br>19. `19_auto_confirm_beta_users.sql` |
+| **1.3 Execution of Migrations** | `[REQUIRES YOUR ACCOUNT/SETUP]` | Open your Supabase Dashboard > **SQL Editor** and paste [`supabase/all_migrations.sql`](../supabase/all_migrations.sql) to execute all migrations in one run (or run `supabase db push` if using Supabase CLI). |
 | **1.4 Backend Secrets Configuration (`.env`)** | `[REQUIRES YOUR ACCOUNT/SETUP]` | Copy [`.env.example`](../.env.example) to `.env` locally. Fill in `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a custom `IMPORTER_SECRET`.<br>*(Security note: Never expose the service role key or importer secret in the browser or git repository).* |
 | **1.5 Market Data Importers Initial Run** | `[REQUIRES YOUR ACCOUNT/SETUP]` | Run `node scripts/run-all-scheduled-imports.mjs` locally or via a GitHub Action to ingest live observations from World Bank, ITU, Eurostat, UNCTAD, and Global Findex. |
 | **1.6 Frontend Static Hosting Deployment** | `[REQUIRES YOUR ACCOUNT/SETUP]` | Deploy the static frontend (`index.html`, `app.js`, `styles.css`, `supabaseClient.js`) to GitHub Pages, Vercel, Netlify, or Cloudflare Pages (all zero-cost for static sites). Configure client keys in the UI via the **Supabase Connection Settings** modal. |
@@ -160,7 +160,7 @@ Pair with 2–3 founders live over video call during their first simulation run:
 ## 8. Summary Checklist Status Matrix
 
 ```
-[COMPLETE]                    Database Schema & 12 SQL Migrations
+[COMPLETE]                    Database Schema & 19 SQL Migrations (Bundled in all_migrations.sql)
 [COMPLETE]                    Tenant Isolation via PostgreSQL Row Level Security (RLS)
 [COMPLETE]                    Macroeconomic Grounding (5 Publishers, 20 Indicators, 11 Nations)
 [COMPLETE]                    Strict Visual Separation (Sourced vs Simulated vs Real Evidence)
@@ -170,11 +170,12 @@ Pair with 2–3 founders live over video call during their first simulation run:
 [COMPLETE]                    Beta Feedback & Data Error Reporting Modal and Integration
 [COMPLETE]                    Offline LocalStorage Fallback & State Persistence
 [COMPLETE]                    Zero Artificial Data / Zero Synthesized Founder Results
+[COMPLETE]                    Vercel Edge & Serverless Deployment Readiness with Web Analytics
 -------------------------------------------------------------------------------------------------
 [REQUIRES YOUR ACCOUNT/SETUP] Create Supabase Project at supabase.com
-[REQUIRES YOUR ACCOUNT/SETUP] Execute 12 Migration Scripts in Supabase SQL Editor
-[REQUIRES YOUR ACCOUNT/SETUP] Populate .env with SUPABASE_URL and SERVICE_ROLE_KEY
-[REQUIRES YOUR ACCOUNT/SETUP] Run Initial Market Data Ingest (node scripts/run-all-scheduled-imports.mjs)
-[REQUIRES YOUR ACCOUNT/SETUP] Deploy Static Frontend to Host (GitHub Pages / Vercel / Netlify)
+[REQUIRES YOUR ACCOUNT/SETUP] Paste and Run supabase/all_migrations.sql in Supabase SQL Editor
+[REQUIRES YOUR ACCOUNT/SETUP] Populate .env with SUPABASE_URL and SERVICE_ROLE_KEY (optional for importers)
+[REQUIRES YOUR ACCOUNT/SETUP] Run Initial Market Data Ingest (or use bundled observations)
+[REQUIRES YOUR ACCOUNT/SETUP] Deploy Frontend to Vercel (push to GitHub triggers automatic Vercel build)
 [REQUIRES YOUR ACCOUNT/SETUP] Send Invitation Emails to Initial Founder Cohort
 ```
