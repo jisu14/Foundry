@@ -34,7 +34,7 @@ To automatically create the `foundry_db` database and all 10 collections + attri
    - `attributes.read`, `attributes.write`
 3. In your terminal, run:
 ```bash
-node scripts/setup-appwrite.js <YOUR_PROJECT_ID> <YOUR_API_KEY>
+node scripts/setup-appwrite.js 6ad9aafd0035025965a8 <YOUR_API_KEY>
 ```
 The script will automatically create:
 - `foundry_db` Database
@@ -53,23 +53,20 @@ The script will automatically create:
 
 ## 3. Connecting in Foundry
 
-### Option A: Via the Web UI
-1. Open Foundry in your browser.
-2. In the bottom-left sidebar, click **⚙ Backend Settings** (or the Cloud Status dot).
-3. Under the **Appwrite Cloud** tab:
-   - **Endpoint:** `https://fra.cloud.appwrite.io/v1` (pre-filled)
-   - **Project ID:** Paste your Appwrite Project ID.
-   - **Database ID:** `foundry_db`
-4. Click **Save & Connect Appwrite**.
-
-### Option B: Via `appwrite-config.js`
-Open [`appwrite-config.js`](../appwrite-config.js) and paste your Project ID:
+### Option A: Pre-Configured Out of the Box
+Foundry is pre-configured with your Project ID in [`appwrite-config.js`](../appwrite-config.js):
 ```javascript
 window.FOUNDRY_BACKEND = 'appwrite';
 window.FOUNDRY_APPWRITE_ENDPOINT = 'https://fra.cloud.appwrite.io/v1';
-window.FOUNDRY_APPWRITE_PROJECT = 'YOUR_APPWRITE_PROJECT_ID';
+window.FOUNDRY_APPWRITE_PROJECT = '6ad9aafd0035025965a8';
 window.FOUNDRY_APPWRITE_DATABASE_ID = 'foundry_db';
 ```
+
+### Option B: Via the In-App Web UI
+1. Open Foundry in your browser.
+2. In the bottom-left sidebar, click **⚙ Cloud Settings** (or the Cloud Status indicator).
+3. Under the **Appwrite Cloud** tab, your Endpoint (`https://fra.cloud.appwrite.io/v1`) and Project ID (`6ad9aafd0035025965a8`) are already filled in.
+4. Click **Save & Connect Appwrite**.
 
 ---
 
