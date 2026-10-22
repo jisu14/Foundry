@@ -49,7 +49,8 @@ let state = {
     events: []
   },
   productFlow: {
-    testUrl: 'https://staging.myproduct.test/demo',
+    testUrl: '',
+    ideaDescription: '',
     verified: true,
     tasks: [
       { id: 'step_1', name: '1. Landing Page Signup', type: 'signup', friction: 'low', description: 'User arrives from ad and creates account with email/SSO.' },
@@ -560,7 +561,8 @@ function handleResetWorld() {
       events: []
     },
     productFlow: {
-      testUrl: 'https://staging.myproduct.test/demo',
+      testUrl: '',
+      ideaDescription: '',
       verified: true,
       tasks: [
         { id: 'step_1', name: '1. Landing Page Signup', type: 'signup', friction: 'low', description: 'User arrives from ad and creates account with email/SSO.' },
@@ -2733,10 +2735,74 @@ function initLaunchLab() {
     });
   });
 
-  // Flow definition events
+  // Startup Idea vs Live Web App Input Tabs
+  const tabConceptIdea = document.getElementById('tabConceptIdea');
+  const tabConceptUrl = document.getElementById('tabConceptUrl');
+  const sectionConceptIdea = document.getElementById('sectionConceptIdea');
+  const sectionConceptUrl = document.getElementById('sectionConceptUrl');
+
+  if (tabConceptIdea && tabConceptUrl && sectionConceptIdea && sectionConceptUrl) {
+    tabConceptIdea.addEventListener('click', () => {
+      tabConceptIdea.classList.add('active');
+      tabConceptIdea.style.borderBottomColor = 'var(--lime)';
+      tabConceptIdea.style.color = '#ffffff';
+      tabConceptUrl.classList.remove('active');
+      tabConceptUrl.style.borderBottomColor = 'transparent';
+      tabConceptUrl.style.color = '#94a3b8';
+      sectionConceptIdea.style.display = 'block';
+      sectionConceptUrl.style.display = 'none';
+    });
+
+    tabConceptUrl.addEventListener('click', () => {
+      tabConceptUrl.classList.add('active');
+      tabConceptUrl.style.borderBottomColor = 'var(--lime)';
+      tabConceptUrl.style.color = '#ffffff';
+      tabConceptIdea.classList.remove('active');
+      tabConceptIdea.style.borderBottomColor = 'transparent';
+      tabConceptIdea.style.color = '#94a3b8';
+      sectionConceptUrl.style.display = 'block';
+      sectionConceptIdea.style.display = 'none';
+    });
+  }
+
+  // Startup Idea Description Input
+  const ideaInput = document.getElementById('productIdeaDescription');
+  if (ideaInput) {
+    ideaInput.value = state.productFlow?.ideaDescription || state.profile?.desc || '';
+    ideaInput.addEventListener('input', (e) => {
+      if (!state.productFlow) state.productFlow = {};
+      state.productFlow.ideaDescription = e.target.value;
+      saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+    });
+  }
+
+  // Sync Idea from Founder Profile button
+  const btnSyncIdea = document.getElementById('btnSyncIdeaFromProfile');
+  if (btnSyncIdea && ideaInput) {
+    btnSyncIdea.addEventListener('click', () => {
+      const profileDesc = state.profile?.desc || '';
+      if (profileDesc) {
+        ideaInput.value = profileDesc;
+        if (!state.productFlow) state.productFlow = {};
+        state.productFlow.ideaDescription = profileDesc;
+        saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+        const statusMsg = document.getElementById('productIdeaStatusMsg');
+        if (statusMsg) {
+          statusMsg.textContent = '✓ Synced concept directly from your Founder Profile!';
+        }
+      }
+    });
+  }
+
+  // Flow definition events (Optional Staging URL)
   const urlInput = document.getElementById('productAppUrl');
-  if (urlInput && state.productFlow?.testUrl) {
-    urlInput.value = state.productFlow.testUrl;
+  if (urlInput) {
+    urlInput.value = state.productFlow?.testUrl || '';
+    urlInput.addEventListener('input', (e) => {
+      if (!state.productFlow) state.productFlow = {};
+      state.productFlow.testUrl = e.target.value.trim();
+      saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+    });
   }
   const btnVerifyUrl = document.getElementById('btnVerifyProductUrl');
   if (btnVerifyUrl) {
@@ -2755,7 +2821,20 @@ function initLaunchLab() {
 
   const btnProceed = document.getElementById('btnProceedToStepper');
   if (btnProceed) {
-    btnProceed.addEventListener('click', () => switchLaunchSubtab('stepper'));
+    btnProceed.addEventListener('click', () => {
+      // Save current idea and URL state before transitioning
+      if (ideaInput && ideaInput.value.trim()) {
+        if (!state.productFlow) state.productFlow = {};
+        state.productFlow.ideaDescription = ideaInput.value.trim();
+        saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+      }
+      if (urlInput && urlInput.value.trim()) {
+        if (!state.productFlow) state.productFlow = {};
+        state.productFlow.testUrl = urlInput.value.trim();
+        saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+      }
+      switchLaunchSubtab('stepper');
+    });
   }
 
   // Stepper campaign parameters
@@ -2975,14 +3054,26 @@ function handleVerifyProductUrl() {
   const statusMsg = document.getElementById('productUrlStatusMsg');
   const urlVal = input ? input.value.trim() : '';
 
-  if (!urlVal || (!urlVal.startsWith('http://') && !urlVal.startsWith('https://'))) {
+  if (!urlVal) {
+    if (statusMsg) {
+      statusMsg.className = 'field-hint text-cyan';
+      statusMsg.textContent = 'ℹ Staging URL is optional. You can proceed directly using your Startup Idea concept.';
+    }
+    if (!state.productFlow) state.productFlow = {};
+    state.productFlow.testUrl = '';
+    saveState(STORAGE_PRODUCT_FLOW, state.productFlow);
+    return;
+  }
+
+  if (!urlVal.startsWith('http://') && !urlVal.startsWith('https://')) {
     if (statusMsg) {
       statusMsg.className = 'field-hint text-danger';
-      statusMsg.textContent = '⚠ Please enter a valid URL beginning with https:// or http://';
+      statusMsg.textContent = '⚠ Please enter a valid URL beginning with https:// or http:// (or leave blank if testing at idea stage)';
     }
     return;
   }
 
+  if (!state.productFlow) state.productFlow = {};
   state.productFlow.testUrl = urlVal;
   state.productFlow.verified = true;
   saveState(STORAGE_PRODUCT_FLOW, state.productFlow);

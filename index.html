@@ -1679,28 +1679,61 @@
             
             <!-- Product Input & Security Notice -->
             <div class="city-panel config-panel">
-              <h3 class="panel-title mb-2">MVP Web App Input</h3>
-              <p class="panel-desc mb-3">Provide your staging or demo web app URL. Foundry models user journeys based on your declared flow steps.</p>
+              <h3 class="panel-title mb-2">MVP &amp; Startup Idea Input</h3>
+              <p class="panel-desc mb-3">Model user journeys either by explaining your startup idea or connecting an optional staging web app URL.</p>
 
               <!-- Security Disclosure Box -->
               <div class="auth-notice safe-notice mb-3" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.3);">
                 <span class="notice-icon" style="color: #34d399;">🛡</span>
                 <div style="font-size: 0.77rem; line-height: 1.5; color: #cbd5e1;">
                   <strong style="color: #6ee7b7;">Safe Architectural Boundary:</strong>
-                  Foundry calculates behavioral cohort dynamics mathematically. Foundry <strong>never</strong> executes arbitrary uploaded scripts, injects code, or asks for production credentials or customer passwords.
+                  Foundry calculates behavioral cohort dynamics mathematically from your idea concept or declared flow steps. Foundry <strong>never</strong> executes arbitrary uploaded scripts, injects code, or asks for production credentials.
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="productAppUrl">Founder Test Web App URL <span class="required">*</span></label>
+              <!-- Input Selection: Idea Concept vs Live Web App -->
+              <div class="launch-flow-input-tabs" style="display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+                <button class="auth-tab-btn active" id="tabConceptIdea" type="button" style="flex: 1; padding: 7px 10px; font-size: 0.82rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid var(--lime); color: #ffffff; cursor: pointer;">
+                  💡 Explain Startup Idea
+                </button>
+                <button class="auth-tab-btn" id="tabConceptUrl" type="button" style="flex: 1; padding: 7px 10px; font-size: 0.82rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid transparent; color: #94a3b8; cursor: pointer;">
+                  🔗 Live Web App URL (Optional)
+                </button>
+              </div>
+
+              <!-- Option 1: Explain the Idea (Primary & Flexible) -->
+              <div id="sectionConceptIdea" class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label for="productIdeaDescription" style="font-size: 0.84rem; font-weight: 600; color: #f1f5f9; margin: 0;">Explain Your Startup Idea &amp; Concept</label>
+                  <span class="badge-cadence" style="font-size: 0.68rem; color: var(--lime); border-color: rgba(212,249,56,0.3); padding: 2px 6px;">Idea-Stage Ready</span>
+                </div>
+                <textarea id="productIdeaDescription" class="form-input" rows="4" placeholder="Explain what your startup does, the customer problem you solve, and how users interact with your solution... (e.g. AI-powered financial copilot for freelance contractors in Germany that auto-categorizes deductible business expenses and files local VAT receipts)." style="resize: vertical; font-size: 0.84rem; line-height: 1.5;"></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                  <div id="productIdeaStatusMsg" class="field-hint text-cyan" style="margin: 0; font-size: 0.72rem;">
+                    ✓ Foundry will simulate user discovery, conversion, and retention directly from your idea.
+                  </div>
+                  <button type="button" class="btn btn-outline btn-xs" id="btnSyncIdeaFromProfile" title="Pull description from Founder Profile" style="font-size: 0.7rem; padding: 2px 8px;">
+                    ↻ Use Profile Idea
+                  </button>
+                </div>
+              </div>
+
+              <!-- Option 2: Live Web App URL (Optional) -->
+              <div id="sectionConceptUrl" class="form-group" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label for="productAppUrl" style="font-size: 0.84rem; font-weight: 600; color: #f1f5f9; margin: 0;">
+                    Founder Test Web App URL <span style="color: #94a3b8; font-weight: 400; font-size: 0.76rem;">(Optional)</span>
+                  </label>
+                  <span class="badge-cadence" style="font-size: 0.68rem; color: #38bdf8; border-color: rgba(56,189,248,0.3); padding: 2px 6px;">Optional Staging</span>
+                </div>
                 <div class="url-input-wrap" style="display: flex; gap: 8px;">
-                  <input type="url" id="productAppUrl" placeholder="https://staging.myproduct.com" value="https://app.foundrydemo.io" required style="flex-grow: 1;">
+                  <input type="url" id="productAppUrl" class="form-input" placeholder="https://staging.myproduct.com (optional)" value="" style="flex-grow: 1;">
                   <button type="button" class="btn btn-outline-cyan btn-sm" id="btnVerifyProductUrl" title="Verify URL format and accessibility">
                     Verify Link
                   </button>
                 </div>
-                <div id="productUrlStatusMsg" class="field-hint text-cyan" style="margin-top: 4px;">
-                  ✓ Valid secure HTTPS protocol endpoint. No credentials required.
+                <div id="productUrlStatusMsg" class="field-hint text-dim" style="margin-top: 4px;">
+                  Optional staging endpoint. Leave blank if you are testing at idea stage.
                 </div>
               </div>
 
@@ -1708,16 +1741,19 @@
               <div class="card-inner-box mt-3" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px;">
                 <h5 style="color: #7dd3fc; margin: 0 0 6px 0; font-size: 0.8rem;">Technical Boundary: What is Read vs Simulated</h5>
                 <ul style="margin: 0 0 0 16px; padding: 0; font-size: 0.73rem; color: #94a3b8; line-height: 1.5;">
-                  <li><strong>Read From Founder:</strong> Endpoint URL, sequential task topology, relative routes, and declared interaction friction.</li>
+                  <li><strong>Read From Founder:</strong> Startup idea description, declared user journey steps, optional test URL, and interaction friction.</li>
                   <li><strong>Simulated by Foundry:</strong> Cohort discovery volume, step-by-step completion probability, drop-offs, pricing tolerance, and returning user retention.</li>
                   <li><strong>Requires Real Customer Research:</strong> Actual UX emotional resonance, qualitative usability bugs, and long-term unassisted organic referrals.</li>
                 </ul>
               </div>
 
-              <div class="form-actions mt-4">
+              <div class="form-actions mt-4" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                 <button type="button" class="btn btn-lime btn-sm" id="btnProceedToStepper">
                   Proceed to Launch Controls &rarr;
                 </button>
+                <span style="font-size: 0.74rem; color: #94a3b8;">
+                  ✓ Staging URL not required &bull; Proceed with your idea
+                </span>
               </div>
             </div>
 
