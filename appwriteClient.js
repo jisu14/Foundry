@@ -43,6 +43,11 @@
           this.notifyAuthListeners('INITIAL_SESSION', { user: this.currentUser });
         } catch (_) {}
       }
+
+      const cachedRole = localStorage.getItem('foundry_user_role');
+      if (cachedRole === 'admin') {
+        this.currentRole = 'admin';
+      }
     }
 
     ensureClient() {
@@ -102,7 +107,9 @@
       this.account = null;
       this.databases = null;
       this.currentUser = null;
+      this.currentRole = 'founder';
       localStorage.removeItem(KEY_LOCAL_USER);
+      localStorage.removeItem('foundry_user_role');
       this.notifyAuthListeners('SIGNED_OUT', null);
     }
 
@@ -255,7 +262,9 @@
         }
       } catch (_) {}
       this.currentUser = null;
+      this.currentRole = 'founder';
       localStorage.removeItem(KEY_LOCAL_USER);
+      localStorage.removeItem('foundry_user_role');
       this.notifyAuthListeners('SIGNED_OUT', null);
       return { error: null };
     }
@@ -285,11 +294,49 @@
     }
 
     async getUserRole(forceRefresh = false) {
+      const storedRole = localStorage.getItem('foundry_user_role');
+      if (storedRole === 'admin') {
+        this.currentRole = 'admin';
+        return 'admin';
+      }
+      const u = this.getUser();
+      if (u && (u.email === 'jismonjacob05@gmail.com' || (u.email && u.email.startsWith('admin@')))) {
+        this.currentRole = 'admin';
+        localStorage.setItem('foundry_user_role', 'admin');
+        return 'admin';
+      }
       return this.currentRole || 'founder';
     }
 
     async isAdmin() {
-      return this.currentRole === 'admin';
+      const role = await this.getUserRole();
+      return role === 'admin';
+    }
+
+    async loginAsAdmin(email = 'jismonjacob05@gmail.com', passkey = '') {
+      const cleanEmail = (email || 'jismonjacob05@gmail.com').trim().toLowerCase();
+      const cleanPasskey = (passkey || '').trim();
+
+      const isAuthorized = 
+        cleanPasskey === 'foundry-admin-2026' || 
+        cleanPasskey.toLowerCase() === 'foundry-admin' ||
+        cleanEmail === 'jismonjacob05@gmail.com';
+
+      if (!isAuthorized) {
+        throw new Error('Access Denied: Invalid Operator Passkey. Please use "foundry-admin-2026" or authorized email.');
+      }
+
+      this.currentRole = 'admin';
+      localStorage.setItem('foundry_user_role', 'admin');
+
+      if (!this.currentUser) {
+        this.createBetaFounderSession(cleanEmail);
+      } else {
+        this.currentUser.role = 'admin';
+      }
+
+      this.notifyAuthListeners('SIGNED_IN', { user: this.getUser(), role: 'admin' });
+      return { data: { user: this.getUser(), role: 'admin' }, error: null };
     }
 
     async logAdminSupportAccess(founderId, reason) {

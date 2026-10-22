@@ -3804,18 +3804,19 @@
       <div class="auth-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
         <button class="auth-tab-btn active" id="tabSignInBtn" type="button" style="flex: 1; padding: 8px 12px; font-size: 0.86rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid var(--lime); color: #ffffff; cursor: pointer;">Sign In</button>
         <button class="auth-tab-btn" id="tabSignUpBtn" type="button" style="flex: 1; padding: 8px 12px; font-size: 0.86rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid transparent; color: #94a3b8; cursor: pointer;">Create Account</button>
+        <button class="auth-tab-btn" id="tabAdminBtn" type="button" style="flex: 1; padding: 8px 12px; font-size: 0.86rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid transparent; color: #94a3b8; cursor: pointer;">🛡️ Admin</button>
       </div>
 
       <div id="authNotice" class="auth-notice hidden"></div>
 
       <form id="authForm" class="auth-form">
         <div class="form-group">
-          <label for="authEmail">Founder Email</label>
+          <label for="authEmail" id="authEmailLabel">Founder Email</label>
           <input type="email" id="authEmail" class="form-input" placeholder="founder@venture.com" required autocomplete="email">
         </div>
 
         <div class="form-group" id="authPasswordGroup">
-          <label for="authPassword">Password</label>
+          <label for="authPassword" id="authPasswordLabel">Password</label>
           <input type="password" id="authPassword" class="form-input" placeholder="••••••••••••" required minlength="6" autocomplete="current-password">
         </div>
 
@@ -3824,11 +3825,19 @@
           <input type="password" id="authPasswordConfirm" class="form-input" placeholder="••••••••••••" minlength="6" autocomplete="new-password">
         </div>
 
+        <div class="form-group" id="authAdminPasskeyGroup" style="display: none;">
+          <label for="authAdminPasskey">Operator Passkey</label>
+          <input type="password" id="authAdminPasskey" class="form-input" placeholder="foundry-admin-2026 (or your admin passkey)">
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+            Default Master Passkey: <code>foundry-admin-2026</code> (or sign in with owner email <code>jismonjacob05@gmail.com</code>)
+          </div>
+        </div>
+
         <button type="submit" id="authSubmitBtn" class="btn btn-lime btn-full mt-2">
           Sign In to Workspace
         </button>
 
-        <div style="margin-top: 14px; font-size: 0.72rem; color: #94a3b8; text-align: center;">
+        <div style="margin-top: 14px; font-size: 0.72rem; color: #94a3b8; text-align: center;" id="authFooterNotice">
           ⚡ Instant Beta Access &bull; No email confirmation links required
         </div>
       </form>

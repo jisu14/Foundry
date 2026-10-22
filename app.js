@@ -7748,7 +7748,12 @@ function initEvaluationView() {
   if (btnAdminDeniedSignIn) {
     btnAdminDeniedSignIn.addEventListener('click', () => {
       const authModal = document.getElementById('authModal');
-      if (authModal) authModal.classList.remove('hidden');
+      if (authModal) {
+        authModal.classList.remove('hidden');
+        if (typeof window.setFoundryAuthMode === 'function') {
+          window.setFoundryAuthMode('admin');
+        }
+      }
     });
   }
 
@@ -9164,19 +9169,36 @@ function initSupabaseAuthAndModals() {
     }
   });
 
-  // Auth Tabs (Sign In vs Create Account with Repeat Password)
-  let authMode = 'signin'; // 'signin' | 'signup'
+  // Auth Tabs (Sign In vs Create Account vs Admin Operator)
+  let authMode = 'signin'; // 'signin' | 'signup' | 'admin'
   const tabSignIn = document.getElementById('tabSignInBtn');
   const tabSignUp = document.getElementById('tabSignUpBtn');
+  const tabAdmin = document.getElementById('tabAdminBtn');
+  const authEmailInput = document.getElementById('authEmail');
+  const authEmailLabel = document.getElementById('authEmailLabel');
   const authPasswordGroup = document.getElementById('authPasswordGroup');
+  const authPasswordInput = document.getElementById('authPassword');
+  const authPasswordLabel = document.getElementById('authPasswordLabel');
   const authPasswordConfirmGroup = document.getElementById('authPasswordConfirmGroup');
   const authPasswordConfirmInput = document.getElementById('authPasswordConfirm');
+  const authAdminPasskeyGroup = document.getElementById('authAdminPasskeyGroup');
+  const authAdminPasskeyInput = document.getElementById('authAdminPasskey');
   const authSubmitBtn = document.getElementById('authSubmitBtn');
   const authNotice = document.getElementById('authNotice');
+  const authFooterNotice = document.getElementById('authFooterNotice');
 
   function setAuthMode(mode) {
     authMode = mode;
     if (authNotice) authNotice.classList.add('hidden');
+
+    // Reset tabs
+    [tabSignIn, tabSignUp, tabAdmin].forEach(t => {
+      if (t) {
+        t.classList.remove('active');
+        t.style.borderBottomColor = 'transparent';
+        t.style.color = '#94a3b8';
+      }
+    });
 
     if (mode === 'signup') {
       if (tabSignUp) {
@@ -9184,14 +9206,41 @@ function initSupabaseAuthAndModals() {
         tabSignUp.style.borderBottomColor = 'var(--lime)';
         tabSignUp.style.color = '#ffffff';
       }
-      if (tabSignIn) {
-        tabSignIn.classList.remove('active');
-        tabSignIn.style.borderBottomColor = 'transparent';
-        tabSignIn.style.color = '#94a3b8';
+      if (authEmailLabel) authEmailLabel.textContent = 'Founder Email';
+      if (authEmailInput) {
+        authEmailInput.placeholder = 'founder@venture.com';
+        authEmailInput.required = true;
       }
+      if (authPasswordGroup) authPasswordGroup.style.display = 'block';
+      if (authPasswordLabel) authPasswordLabel.textContent = 'Password';
+      if (authPasswordInput) authPasswordInput.required = true;
       if (authPasswordConfirmGroup) authPasswordConfirmGroup.style.display = 'block';
       if (authPasswordConfirmInput) authPasswordConfirmInput.required = true;
+      if (authAdminPasskeyGroup) authAdminPasskeyGroup.style.display = 'none';
       if (authSubmitBtn) authSubmitBtn.textContent = 'Create Account & Enter Workspace';
+      if (authFooterNotice) authFooterNotice.innerHTML = '⚡ Instant Beta Access &bull; No email confirmation links required';
+    } else if (mode === 'admin') {
+      if (tabAdmin) {
+        tabAdmin.classList.add('active');
+        tabAdmin.style.borderBottomColor = 'var(--lime)';
+        tabAdmin.style.color = '#ffffff';
+      }
+      if (authEmailLabel) authEmailLabel.textContent = 'Operator / Admin Email';
+      if (authEmailInput) {
+        authEmailInput.placeholder = 'jismonjacob05@gmail.com or admin@foundry.io';
+        if (!authEmailInput.value) authEmailInput.value = 'jismonjacob05@gmail.com';
+        authEmailInput.required = false;
+      }
+      if (authPasswordGroup) authPasswordGroup.style.display = 'none';
+      if (authPasswordInput) authPasswordInput.required = false;
+      if (authPasswordConfirmGroup) authPasswordConfirmGroup.style.display = 'none';
+      if (authPasswordConfirmInput) authPasswordConfirmInput.required = false;
+      if (authAdminPasskeyGroup) authAdminPasskeyGroup.style.display = 'block';
+      if (authAdminPasskeyInput) {
+        authAdminPasskeyInput.focus();
+      }
+      if (authSubmitBtn) authSubmitBtn.textContent = 'Unlock Operator Console 🛡️';
+      if (authFooterNotice) authFooterNotice.innerHTML = '🛡️ Default Master Passkey: <code>foundry-admin-2026</code> (or sign in with owner account)';
     } else {
       authMode = 'signin';
       if (tabSignIn) {
@@ -9199,31 +9248,81 @@ function initSupabaseAuthAndModals() {
         tabSignIn.style.borderBottomColor = 'var(--lime)';
         tabSignIn.style.color = '#ffffff';
       }
-      if (tabSignUp) {
-        tabSignUp.classList.remove('active');
-        tabSignUp.style.borderBottomColor = 'transparent';
-        tabSignUp.style.color = '#94a3b8';
+      if (authEmailLabel) authEmailLabel.textContent = 'Founder Email';
+      if (authEmailInput) {
+        authEmailInput.placeholder = 'founder@venture.com';
+        authEmailInput.required = true;
       }
+      if (authPasswordGroup) authPasswordGroup.style.display = 'block';
+      if (authPasswordLabel) authPasswordLabel.textContent = 'Password';
+      if (authPasswordInput) authPasswordInput.required = true;
       if (authPasswordConfirmGroup) authPasswordConfirmGroup.style.display = 'none';
       if (authPasswordConfirmInput) authPasswordConfirmInput.required = false;
+      if (authAdminPasskeyGroup) authAdminPasskeyGroup.style.display = 'none';
       if (authSubmitBtn) authSubmitBtn.textContent = 'Sign In to Workspace';
+      if (authFooterNotice) authFooterNotice.innerHTML = '⚡ Instant Beta Access &bull; No email confirmation links required';
     }
   }
 
+  window.setFoundryAuthMode = setAuthMode;
+
   if (tabSignIn) tabSignIn.addEventListener('click', () => setAuthMode('signin'));
   if (tabSignUp) tabSignUp.addEventListener('click', () => setAuthMode('signup'));
+  if (tabAdmin) tabAdmin.addEventListener('click', () => setAuthMode('admin'));
 
   // Auth Form Submit
   const authForm = document.getElementById('authForm');
   if (authForm) {
     authForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword') ? document.getElementById('authPassword').value : '';
+      const email = authEmailInput ? authEmailInput.value.trim() : '';
+      const password = authPasswordInput ? authPasswordInput.value : '';
       const confirmPassword = authPasswordConfirmInput ? authPasswordConfirmInput.value : '';
 
       if (window.foundrySupabase && typeof window.foundrySupabase.ensureClient === 'function') {
         window.foundrySupabase.ensureClient();
+      }
+
+      // ADMIN AUTHENTICATION FLOW
+      if (authMode === 'admin') {
+        const passkey = authAdminPasskeyInput ? authAdminPasskeyInput.value.trim() : '';
+        const adminEmail = email || 'jismonjacob05@gmail.com';
+
+        authSubmitBtn.disabled = true;
+        authSubmitBtn.textContent = 'Verifying Operator Passkey...';
+
+        try {
+          if (window.foundrySupabase && typeof window.foundrySupabase.loginAsAdmin === 'function') {
+            await window.foundrySupabase.loginAsAdmin(adminEmail, passkey);
+          } else {
+            // Direct validation fallback
+            if (passkey !== 'foundry-admin-2026' && passkey.toLowerCase() !== 'foundry-admin' && adminEmail !== 'jismonjacob05@gmail.com') {
+              throw new Error('Invalid Operator Passkey. Use "foundry-admin-2026" or owner email.');
+            }
+            localStorage.setItem('foundry_user_role', 'admin');
+            if (window.foundrySupabase) {
+              window.foundrySupabase.currentRole = 'admin';
+            }
+          }
+
+          showAuthNotice('✓ Operator privileges unlocked! Welcome to Governance Observatory.', 'success');
+
+          // Unhide evaluation nav item immediately
+          const evalNavItem = document.getElementById('navItemEvaluation');
+          if (evalNavItem) evalNavItem.style.display = 'flex';
+
+          setTimeout(() => {
+            if (authModal) authModal.classList.add('hidden');
+            handleUserSignedIn();
+            navigateToView('evaluation');
+          }, 600);
+        } catch (err) {
+          showAuthNotice(err.message || 'Operator verification failed', 'error');
+        } finally {
+          authSubmitBtn.disabled = false;
+          authSubmitBtn.textContent = 'Unlock Operator Console 🛡️';
+        }
+        return;
       }
 
       if (authMode === 'signup') {
@@ -9458,6 +9557,14 @@ function updateCloudStatusUI() {
     if (isAuth) {
       client.isAdmin().then(isAdmin => {
         evalNavItem.style.display = isAdmin ? 'flex' : 'none';
+        if (isAdmin) {
+          const userBadge = document.getElementById('btnSidebarUserBadge');
+          if (userBadge) {
+            userBadge.innerHTML = `🛡️ Admin: ${escapeHtml(user.email)}`;
+            userBadge.style.borderColor = 'rgba(212,249,56,0.6)';
+            userBadge.style.color = 'var(--lime)';
+          }
+        }
       }).catch(() => {
         evalNavItem.style.display = 'none';
       });
