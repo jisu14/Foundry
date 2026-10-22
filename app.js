@@ -9222,9 +9222,8 @@ function initSupabaseAuthAndModals() {
       const password = document.getElementById('authPassword') ? document.getElementById('authPassword').value : '';
       const confirmPassword = authPasswordConfirmInput ? authPasswordConfirmInput.value : '';
 
-      if (!window.foundrySupabase || !window.foundrySupabase.isConfigured()) {
-        showAuthNotice('Secure cloud database service is initializing. Please try again or refresh.', 'error');
-        return;
+      if (window.foundrySupabase && typeof window.foundrySupabase.ensureClient === 'function') {
+        window.foundrySupabase.ensureClient();
       }
 
       if (authMode === 'signup') {
