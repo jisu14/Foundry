@@ -3836,38 +3836,69 @@
   </div>
 
   <!-- ========================================================== -->
-  <!-- MODAL: SUPABASE CONNECTION CONFIGURATION                    -->
+  <!-- MODAL: CLOUD BACKEND CONNECTION SETTINGS                   -->
   <!-- ========================================================== -->
   <div id="cloudConfigModal" class="modal-backdrop hidden">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title-row">
           <span class="icon-gear-lime">⚙</span>
-          <h3>Supabase Connection Settings</h3>
+          <h3>Cloud Backend Settings</h3>
         </div>
         <button class="modal-close-btn" id="btnCloseCloudModal" type="button">✕</button>
       </div>
 
-      <div class="cloud-security-alert">
-        <strong style="color: var(--lime);">Client Security Notice:</strong>
-        Enter only your <strong>Project URL</strong> and <strong>Publishable (Anon) Key</strong>. Never enter your service-role key or importer secret in the browser.
+      <div class="auth-tabs" style="display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+        <button class="auth-tab-btn active" id="tabBackendAppwrite" type="button" style="flex: 1; padding: 8px 12px; font-size: 0.86rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid var(--lime); color: #ffffff; cursor: pointer;">Appwrite Cloud</button>
+        <button class="auth-tab-btn" id="tabBackendSupabase" type="button" style="flex: 1; padding: 8px 12px; font-size: 0.86rem; font-weight: 600; background: none; border: none; border-bottom: 2px solid transparent; color: #94a3b8; cursor: pointer;">Supabase</button>
       </div>
 
-      <form id="cloudConfigForm" class="auth-form">
+      <div class="cloud-security-alert">
+        <strong style="color: var(--lime);">Security Notice:</strong>
+        <span id="backendSecurityText">Appwrite connects securely from browser client using Project ID and Endpoint.</span>
+      </div>
+
+      <!-- Appwrite Config Form -->
+      <form id="appwriteConfigForm" class="auth-form">
+        <div class="form-group">
+          <label for="cfgAppwriteEndpoint">Appwrite API Endpoint</label>
+          <input type="url" id="cfgAppwriteEndpoint" class="form-input" value="https://fra.cloud.appwrite.io/v1" placeholder="https://fra.cloud.appwrite.io/v1" required>
+        </div>
+
+        <div class="form-group">
+          <label for="cfgAppwriteProject">Appwrite Project ID</label>
+          <input type="text" id="cfgAppwriteProject" class="form-input" placeholder="e.g. 67... (from your Appwrite Cloud console)" required>
+        </div>
+
+        <div class="form-group">
+          <label for="cfgAppwriteDb">Database ID</label>
+          <input type="text" id="cfgAppwriteDb" class="form-input" value="foundry_db" placeholder="foundry_db">
+        </div>
+
+        <div id="cfgAppwriteNotice" class="auth-notice hidden"></div>
+
+        <div class="modal-actions-row">
+          <button type="submit" class="btn btn-lime">Save &amp; Connect Appwrite</button>
+          <button type="button" id="btnDisconnectAppwrite" class="btn btn-danger-outline">Disconnect</button>
+        </div>
+      </form>
+
+      <!-- Supabase Config Form -->
+      <form id="cloudConfigForm" class="auth-form hidden">
         <div class="form-group">
           <label for="cfgModalUrl">Supabase Project URL</label>
-          <input type="url" id="cfgModalUrl" class="form-input" placeholder="https://xyzcompany.supabase.co" required>
+          <input type="url" id="cfgModalUrl" class="form-input" placeholder="https://xyzcompany.supabase.co">
         </div>
 
         <div class="form-group">
           <label for="cfgModalKey">Supabase Publishable (Anon) Key</label>
-          <input type="text" id="cfgModalKey" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+          <input type="text" id="cfgModalKey" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
         </div>
 
         <div id="cfgModalNotice" class="auth-notice hidden"></div>
 
         <div class="modal-actions-row">
-          <button type="submit" class="btn btn-lime">Save &amp; Connect</button>
+          <button type="submit" class="btn btn-lime">Save &amp; Connect Supabase</button>
           <button type="button" id="btnDisconnectCloud" class="btn btn-danger-outline">Disconnect</button>
         </div>
       </form>
@@ -4887,12 +4918,15 @@
     </div>
   </div>
 
-  <!-- Supabase JS Client & Application Scripts -->
+  <!-- Cloud Backend SDKs: Appwrite Cloud & Supabase -->
+  <script src="appwrite-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@16.1.0/dist/iife/sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="supabaseClient.js"></script>
+  <script src="appwriteClient.js"></script>
   <script src="data/bundled-observations.js"></script>
-  <script src="app.js?v=12"></script>
+  <script src="app.js?v=13"></script>
 
   <!-- Vercel Web Analytics -->
   <script>

@@ -2652,7 +2652,10 @@
 
   // Expose singleton instances on window
   const serviceInstance = new FoundrySupabaseService();
-  window.foundrySupabase = serviceInstance;
+  window.foundrySupabaseRaw = serviceInstance;
+  if (window.FOUNDRY_BACKEND !== 'appwrite') {
+    window.foundrySupabase = serviceInstance;
+  }
 
   // Compatibility bridge for Market Data controls
   window.foundryMarketData = {

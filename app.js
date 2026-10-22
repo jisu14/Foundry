@@ -9071,8 +9071,16 @@ function initSupabaseAuthAndModals() {
     btnOpenCloud.addEventListener('click', () => {
       const urlInput = document.getElementById('cfgModalUrl');
       const keyInput = document.getElementById('cfgModalKey');
-      if (urlInput && window.foundrySupabase) urlInput.value = window.foundrySupabase.url;
-      if (keyInput && window.foundrySupabase) keyInput.value = window.foundrySupabase.anonKey;
+      if (urlInput && window.foundrySupabaseRaw) urlInput.value = window.foundrySupabaseRaw.url;
+      if (keyInput && window.foundrySupabaseRaw) keyInput.value = window.foundrySupabaseRaw.anonKey;
+
+      const appwriteEndpoint = document.getElementById('cfgAppwriteEndpoint');
+      const appwriteProject = document.getElementById('cfgAppwriteProject');
+      const appwriteDb = document.getElementById('cfgAppwriteDb');
+      if (appwriteEndpoint && window.foundryAppwrite) appwriteEndpoint.value = window.foundryAppwrite.endpoint || 'https://fra.cloud.appwrite.io/v1';
+      if (appwriteProject && window.foundryAppwrite) appwriteProject.value = window.foundryAppwrite.projectId || '';
+      if (appwriteDb && window.foundryAppwrite) appwriteDb.value = window.foundryAppwrite.databaseId || 'foundry_db';
+
       if (cloudModal) cloudModal.classList.remove('hidden');
     });
   }
@@ -9271,7 +9279,97 @@ function initSupabaseAuthAndModals() {
     authNotice.classList.remove('hidden');
   }
 
-  // Cloud Config Form Submit
+  // Tab switching inside Cloud Backend modal
+  const tabAppwrite = document.getElementById('tabBackendAppwrite');
+  const tabSupabase = document.getElementById('tabBackendSupabase');
+  const formAppwrite = document.getElementById('appwriteConfigForm');
+  const formSupabase = document.getElementById('cloudConfigForm');
+  const secText = document.getElementById('backendSecurityText');
+
+  if (tabAppwrite && tabSupabase && formAppwrite && formSupabase) {
+    tabAppwrite.addEventListener('click', () => {
+      tabAppwrite.classList.add('active');
+      tabAppwrite.style.borderBottom = '2px solid var(--lime)';
+      tabAppwrite.style.color = '#ffffff';
+      tabSupabase.classList.remove('active');
+      tabSupabase.style.borderBottom = '2px solid transparent';
+      tabSupabase.style.color = '#94a3b8';
+      formAppwrite.classList.remove('hidden');
+      formSupabase.classList.add('hidden');
+      if (secText) secText.textContent = 'Appwrite connects securely from browser client using Project ID and Endpoint.';
+    });
+
+    tabSupabase.addEventListener('click', () => {
+      tabSupabase.classList.add('active');
+      tabSupabase.style.borderBottom = '2px solid var(--lime)';
+      tabSupabase.style.color = '#ffffff';
+      tabAppwrite.classList.remove('active');
+      tabAppwrite.style.borderBottom = '2px solid transparent';
+      tabAppwrite.style.color = '#94a3b8';
+      formSupabase.classList.remove('hidden');
+      formAppwrite.classList.add('hidden');
+      if (secText) secText.textContent = 'Enter only your Project URL and Publishable (Anon) Key. Never enter service-role keys.';
+    });
+  }
+
+  // Appwrite Config Form Submit
+  const appwriteNotice = document.getElementById('cfgAppwriteNotice');
+  const btnDisconnectAppwrite = document.getElementById('btnDisconnectAppwrite');
+
+  if (formAppwrite) {
+    formAppwrite.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const endpoint = (document.getElementById('cfgAppwriteEndpoint').value || '').trim();
+      const project = (document.getElementById('cfgAppwriteProject').value || '').trim();
+      const dbId = (document.getElementById('cfgAppwriteDb').value || 'foundry_db').trim();
+
+      if (!endpoint || !project) return;
+
+      window.FOUNDRY_BACKEND = 'appwrite';
+      const success = window.foundryAppwrite.connect(endpoint, project, dbId);
+      window.foundrySupabase = window.foundryAppwrite;
+      window.foundryBackend = window.foundryAppwrite;
+
+      if (success) {
+        if (appwriteNotice) {
+          appwriteNotice.className = 'auth-notice success';
+          appwriteNotice.textContent = '✓ Connected to Appwrite Cloud (' + endpoint + ')!';
+          appwriteNotice.classList.remove('hidden');
+        }
+        setTimeout(() => {
+          if (cloudModal) cloudModal.classList.add('hidden');
+          updateCloudStatusUI();
+          renderLibraryView();
+        }, 1200);
+      } else {
+        if (appwriteNotice) {
+          appwriteNotice.className = 'auth-notice error';
+          appwriteNotice.textContent = 'Could not initialize Appwrite client. Check Project ID and SDK loading.';
+          appwriteNotice.classList.remove('hidden');
+        }
+      }
+    });
+  }
+
+  if (btnDisconnectAppwrite) {
+    btnDisconnectAppwrite.addEventListener('click', () => {
+      if (window.foundryAppwrite) window.foundryAppwrite.disconnect();
+      const projInput = document.getElementById('cfgAppwriteProject');
+      if (projInput) projInput.value = '';
+      if (appwriteNotice) {
+        appwriteNotice.className = 'auth-notice';
+        appwriteNotice.textContent = 'Disconnected from Appwrite.';
+        appwriteNotice.classList.remove('hidden');
+      }
+      setTimeout(() => {
+        if (cloudModal) cloudModal.classList.add('hidden');
+        updateCloudStatusUI();
+        renderLibraryView();
+      }, 1000);
+    });
+  }
+
+  // Cloud Config Form Submit (Supabase)
   const cloudForm = document.getElementById('cloudConfigForm');
   const cfgNotice = document.getElementById('cfgModalNotice');
   const btnDisconnect = document.getElementById('btnDisconnectCloud');
@@ -9284,7 +9382,12 @@ function initSupabaseAuthAndModals() {
 
       if (!url || !key) return;
 
-      const success = window.foundrySupabase.connect(url, key);
+      window.FOUNDRY_BACKEND = 'supabase';
+      const targetClient = window.foundrySupabaseRaw || window.foundrySupabase;
+      const success = targetClient.connect(url, key);
+      window.foundrySupabase = targetClient;
+      window.foundryBackend = targetClient;
+
       if (success) {
         if (cfgNotice) {
           cfgNotice.className = 'auth-notice success';
@@ -9308,7 +9411,8 @@ function initSupabaseAuthAndModals() {
 
   if (btnDisconnect) {
     btnDisconnect.addEventListener('click', () => {
-      window.foundrySupabase.disconnect();
+      const targetClient = window.foundrySupabaseRaw || window.foundrySupabase;
+      if (targetClient) targetClient.disconnect();
       document.getElementById('cfgModalUrl').value = '';
       document.getElementById('cfgModalKey').value = '';
       if (cfgNotice) {
